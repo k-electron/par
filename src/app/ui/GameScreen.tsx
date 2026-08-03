@@ -10,6 +10,7 @@ import type { ScoringClient } from '../scoring/client';
 import type { GameScore } from '../scoring/protocol';
 import type { PlayerStats } from '../state/stats';
 import type { ConfirmedSettings, StoredScore } from '../storage/repository';
+import type { AppearancePreferences } from '../theme/theme';
 import {
   type GameAction,
   type GameRules,
@@ -20,6 +21,7 @@ import {
   reduceGame,
   replaySession,
 } from '../state/gameSession';
+import { AppearanceMenu } from './AppearanceMenu';
 import { Board } from './Board';
 import { Keyboard } from './Keyboard';
 import { LockedSettings } from './LockedSettings';
@@ -41,6 +43,8 @@ export interface GameScreenProps {
   /** Absent means no scoring — the board still plays. */
   readonly scoring?: ScoringClient | undefined;
   readonly stats?: PlayerStats | undefined;
+  readonly appearance?: AppearancePreferences | undefined;
+  readonly onAppearanceChange?: ((preferences: AppearancePreferences) => void) | undefined;
 }
 
 export function GameScreen({
@@ -53,6 +57,8 @@ export function GameScreen({
   onScored,
   scoring,
   stats,
+  appearance,
+  onAppearanceChange,
 }: GameScreenProps) {
   const [session, dispatch] = useReducer(
     (state: GameSession, action: GameAction) => reduceGame(state, action, rules),
@@ -157,6 +163,9 @@ export function GameScreen({
             </Typography>
           </Stack>
           <Box sx={{ flex: '1 1 0', textAlign: 'right' }}>
+            {appearance !== undefined && onAppearanceChange !== undefined && (
+              <AppearanceMenu preferences={appearance} onChange={onAppearanceChange} />
+            )}
             {stats !== undefined && <StatsButton onOpen={() => setShowingStats(true)} />}
           </Box>
         </Stack>

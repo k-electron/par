@@ -7,6 +7,7 @@
  * start.
  */
 
+import { DEFAULT_APPEARANCE, type AppearancePreferences } from '../theme/theme';
 import type { Storage } from './storage';
 
 const NAMESPACE = 'par';
@@ -18,6 +19,7 @@ const NAMESPACE = 'par';
 export const SCHEMA_VERSION = 2;
 
 const PREFERENCES_KEY = `${NAMESPACE}:v${SCHEMA_VERSION}:preferences`;
+const APPEARANCE_KEY = `${NAMESPACE}:v${SCHEMA_VERSION}:appearance`;
 const DAY_KEY_PREFIX = `${NAMESPACE}:v${SCHEMA_VERSION}:day:`;
 
 /** Bounds growth (spec §8). A year of play is plenty to compute stats from. */
@@ -221,6 +223,24 @@ export class Repository {
 
   savePreferences(preferences: Preferences): void {
     this.storage.write(PREFERENCES_KEY, JSON.stringify(preferences));
+  }
+
+  loadAppearance(): AppearancePreferences {
+    const value = parse(this.storage.read(APPEARANCE_KEY));
+    if (!isPlainObject(value)) return DEFAULT_APPEARANCE;
+
+    const { appearance, tilePalette } = value;
+    return {
+      appearance: appearance === 'light' || appearance === 'dark' ? appearance : DEFAULT_APPEARANCE.appearance,
+      tilePalette:
+        tilePalette === 'accessible' || tilePalette === 'classic'
+          ? tilePalette
+          : DEFAULT_APPEARANCE.tilePalette,
+    };
+  }
+
+  saveAppearance(preferences: AppearancePreferences): void {
+    this.storage.write(APPEARANCE_KEY, JSON.stringify(preferences));
   }
 
   loadDay(puzzleNumber: number): DayRecord | null {
