@@ -18,6 +18,8 @@
  * day, the two settings and the guesses.
  */
 
+import { MAX_GUESSES } from '../../engine/config/constants';
+
 /**
  * The payload format. Bumped to 2 when the scorer version was added, so an
  * older link reports "made by a different version" rather than being misread.
@@ -31,6 +33,11 @@ const GUESS_BITS = 14;
 const DAY_BITS = 20;
 /** Bits for the scorer version. 6 is 63 revisions of the scoring model. */
 const SCORER_BITS = 6;
+/**
+ * Bits for the guess count. Derived from `MAX_GUESSES` rather than fixed, so
+ * raising the guess limit widens the field instead of silently truncating it.
+ */
+const COUNT_BITS = Math.max(1, 32 - Math.clz32(MAX_GUESSES));
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
@@ -183,8 +190,10 @@ function fromBase64Url(text: string): number[] | null {
 const VERSION_CHARS = 6;
 
 export function encodeSharedGame(game: SharedGame): string {
-  if (game.guessIndices.length === 0 || game.guessIndices.length > 6) {
-    throw new RangeError(`A shared game has one to six guesses, not ${game.guessIndices.length}.`);
+  if (game.guessIndices.length === 0 || game.guessIndices.length > MAX_GUESSES) {
+    throw new RangeError(
+      `A shared game has 1 to ${MAX_GUESSES} guesses, not ${game.guessIndices.length}.`,
+    );
   }
   if (game.puzzleNumber < 0 || game.puzzleNumber >= 2 ** DAY_BITS) {
     throw new RangeError(`Puzzle number ${game.puzzleNumber} is outside the encodable range.`);
@@ -203,7 +212,7 @@ export function encodeSharedGame(game: SharedGame): string {
   writer.write(game.scorerVersion, SCORER_BITS);
   writer.write(game.hardMode ? 1 : 0, 1);
   writer.write(game.tookHouseStarter ? 1 : 0, 1);
-  writer.write(game.guessIndices.length, 3);
+  writer.write(game.guessIndices.length, COUNT_BITS);
   for (const index of game.guessIndices) {
     writer.write(index, GUESS_BITS);
   }
@@ -236,8 +245,8 @@ export function decodeSharedGame(text: string): DecodeResult {
   const scorerVersion = reader.read(SCORER_BITS);
   const hardMode = reader.read(1) === 1;
   const tookHouseStarter = reader.read(1) === 1;
-  const count = reader.read(3);
-  if (count < 1 || count > 6) return malformed;
+  const count = reader.read(COUNT_BITS);
+  if (count < 1 || count > MAX_GUESSES) return malformed;
 
   const guessIndices: number[] = [];
   for (let index = 0; index < count; index += 1) {

@@ -10,12 +10,16 @@
  * increment 7, and nothing here is scored yet — increment 8 owns that.
  */
 
+import { MAX_GUESSES } from '../../engine/config/constants';
 import type { Constraints } from '../../engine/rules/constraints';
 import type { Ruleset } from '../../engine/rules/ruleset';
+import { WORD_LENGTH } from '../../engine/words/letters';
 import { Tile, WIN_PATTERN, computePattern, tilesFromPattern } from '../../engine/words/pattern';
 
-export const WORD_LENGTH = 5;
-export const MAX_GUESSES = 6;
+// Re-exported, not redeclared. The board used to carry its own copies of both,
+// which meant the number of rows it drew and the number of buckets the stats
+// histogram allocated were free to disagree.
+export { MAX_GUESSES, WORD_LENGTH };
 
 export type GameStatus = 'playing' | 'won' | 'lost';
 
