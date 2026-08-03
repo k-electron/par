@@ -6,7 +6,13 @@ import { rulesetFor } from '../../engine/rules/ruleset';
 import { puzzleNumberAt } from '../../engine/daily/calendar';
 import { drawPuzzle } from '../../engine/daily/puzzle';
 import { createWorkerScoringClient, type ScoringClient } from '../scoring/client';
-import { Repository, type ConfirmedSettings, type DayRecord } from '../storage/repository';
+import { completedDays, summarise } from '../state/stats';
+import {
+  Repository,
+  type ConfirmedSettings,
+  type DayRecord,
+  type StoredScore,
+} from '../storage/repository';
 import { createBestAvailableStorage } from '../storage/storage';
 import { GameScreen } from './GameScreen';
 import { Replay } from './Replay';
@@ -49,6 +55,14 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
   // Restoring the day's record is what makes the lock survive a reload: the
   // confirmed settings live in the record, not in component state.
   const [record, setRecord] = useState<DayRecord | null>(() => store.loadDay(puzzle.puzzleNumber));
+
+  /**
+   * Bumped whenever a scored day is written, which is the only way the stored
+   * history that stats read can change. Stats come out of mutable storage, so
+   * they need an explicit signal: nothing about the value of `record` says
+   * whether the rest of the history moved.
+   */
+  const [historyRevision, setHistoryRevision] = useState(0);
 
   const rules = useMemo(() => {
     const allowed = new Set(dictionary);
@@ -94,6 +108,31 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
     [store],
   );
 
+  /** Keep the day's score alongside it, so stats need not re-score a year. */
+  const recordScore = useCallback(
+    (score: StoredScore) => {
+      setRecord((current) => {
+        if (current === null) return current;
+        const next: DayRecord = { ...current, score };
+        store.saveDay(next);
+        return next;
+      });
+      // Stored history has moved, so the stats below need recomputing.
+      setHistoryRevision((revision) => revision + 1);
+    },
+    [store],
+  );
+
+  const stats = useMemo(() => {
+    void historyRevision;
+    const scored = completedDays(store.loadHistory())
+      .map((day) =>
+        day.score === undefined ? null : { puzzleNumber: day.puzzleNumber, ...day.score },
+      )
+      .filter((day): day is NonNullable<typeof day> => day !== null);
+    return summarise(scored);
+  }, [store, historyRevision]);
+
   const [replayPayload, setReplayPayload] = useState<string | null>(() =>
     replayPayloadFrom(initialHash ?? (typeof location === 'undefined' ? '' : location.hash)),
   );
@@ -135,7 +174,9 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
           restoredGuesses={record.guesses}
           rules={rules(record.settings)}
           onProgress={persist}
+          onScored={recordScore}
           scoring={scorer}
+          stats={stats}
         />
       )}
     </Box>
