@@ -23,6 +23,6 @@
     "noUncheckedSideEffectImports": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["vite.config.ts", "tests"],
+  "include": ["vite.config.ts", "playwright.config.ts", "tests", "e2e", "tools"],
   "exclude": ["tests/fixtures"]
 }

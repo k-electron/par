@@ -4,9 +4,9 @@ The arrangement below exists so that the concepts most likely to change each sit
 boundary, and so that the rules the game must not break are enforced by module shape and type
 signature rather than by anyone remembering to obey them.
 
-As of increment 1 most of these directories are empty. They are laid down first, with the
-dependency rule already enforced, so that the boundary is in place before the code that has to
-respect it.
+The directories were laid down empty in the first increment, with the dependency rule already
+enforced, so the boundary was in place before the code that had to respect it. They are all
+populated now.
 
 ## Module map
 
@@ -29,7 +29,7 @@ src/
     copy/       every player-facing string
     theme/      MUI theme and palettes
     ui/         components
-  worker/       worker entry, imports engine only
+  worker/       worker entry: the engine, the word lists, the message contract
 tools/          list generator, compute-par, incentive simulation
 ```
 
@@ -39,8 +39,12 @@ Dependencies run one way:
 
 - `engine/` imports nothing from `app/`, `worker/` or `data/`. The engine is pure TypeScript. It
   receives word lists through the injected **Lexicon** port instead of importing `src/data`, which
-  is what lets engine tests run against twenty-word fixtures rather than 13,019 words.
+  is what lets engine tests run against twenty-word fixtures rather than the full 12,972.
 - `app/ui/` never imports `engine/search/`. The UI reaches scoring only through `app/scoring`.
+
+The rule constrains `src/engine/**` and `src/app/ui/**`, and nothing else. `src/worker` is
+deliberately outside it: the worker's whole job is to compose the engine with the real word lists,
+so it imports `src/engine`, `src/data` and the message contract in `src/app/scoring/protocol`.
 
 Both directions are enforced by ESLint in [`../eslint.config.js`](../eslint.config.js), so a
 violation fails `npm run lint` and therefore fails CI. The boundary cannot quietly erode.
@@ -60,7 +64,7 @@ ordinary lint runs; the test lints them under a virtual path inside `src/` so th
 governing `src/engine` or `src/app/ui` is the configuration that judges them. Legal imports are
 included as controls, so a rule that rejected everything would not pass.
 
-## The seven ports
+## The six ports
 
 These carry the parts expected to move. Ports resolve once when a scoring run is constructed and
 are then closed over, so the inner loops across the full guess dictionary stay monomorphic and no
@@ -73,22 +77,25 @@ interface dispatch happens per iteration. Abstraction stops at the setup boundar
   proving exactness is a policy swap rather than a second parallel scorer.
 - **Ruleset** — normal and hard mode as two objects answering "what is legal from here". The
   player's guess and the benchmark are handed the same instance.
-- **ScoringConstants** — injected rather than imported, so the incentive simulation can sweep
-  constants without editing source.
 - **Storage** — a small port with a localStorage adapter and an in-memory adapter behind a
   versioned repository, which makes graceful degradation a constructor argument.
-- **ShareCodec** — versioned encode and decode, so a future format can ship alongside a decoder for
-  the old one.
+- **ShareCodec** — versioned encode and decode as a pair of functions rather than an interface, so
+  a future format can ship alongside a decoder for the old one.
 - **ScoringClient** — the async facade the UI talks to: a worker in the browser, a direct call in
   tests.
+
+The tunable constants are **not** a port. An earlier plan proposed injecting them so the incentive
+simulation could sweep `C_PAR` and `EPSILON` without editing source; nothing ever needed to, so
+`src/engine/config/constants.ts` is imported directly and sweeping means changing a value and
+rerunning `npm run check-incentives`. That is a port not built rather than a port missing.
 
 ## Four invariants enforced by shape
 
 Each of these is a rule the game must not break, arranged so that breaking it is a type error or an
 impossibility rather than a mistake someone has to avoid making.
 
-- **Realized outcomes never feed skill.** `scoreGuess(candidates, guess, ruleset)` has no parameter
-  for the answer or for the resulting pattern, so a realized outcome physically cannot reach it.
+- **Realized outcomes never feed skill.** `scoreGuess(history, guess)` has no parameter for the
+  answer or for the resulting pattern, so a realized outcome physically cannot reach it.
 - **Never reveal the optimal word.** The search's public return type carries the score, the luck
   figure and whether the move was forced — not the argmin. The UI cannot leak what it is never
   handed, which is also why `app/ui` may not import `engine/search`.
