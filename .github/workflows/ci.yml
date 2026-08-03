@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # .node-version is the single source of truth for the Node major, read
+      # here and by Cloudflare Pages, so CI and the deploy cannot drift apart.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Includes the dependency rule in eslint.config.js. tests/boundaries.test.ts
+      # separately proves that rule still reports on an illegal import.
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: SPA fallback survives the build
+        run: test -f dist/_redirects
