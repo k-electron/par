@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import { keyframes } from '@mui/material/styles';
+import { keyframes, useTheme } from '@mui/material/styles';
 
 import { Tile } from '../../engine/words/pattern';
 import { WORD_LENGTH } from '../state/gameSession';
@@ -11,18 +11,6 @@ const shake = keyframes`
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 `;
-
-/**
- * Tile colours.
- *
- * Increment 11 owns the colorblind-safe palette, so these live in one place
- * rather than being sprinkled through the markup.
- */
-const TILE_STYLES: Record<Tile, { bg: string; border: string; color: string }> = {
-  [Tile.Absent]: { bg: '#3a3a3c', border: '#3a3a3c', color: '#ffffff' },
-  [Tile.Present]: { bg: '#b59f3b', border: '#b59f3b', color: '#ffffff' },
-  [Tile.Correct]: { bg: '#538d4e', border: '#538d4e', color: '#ffffff' },
-};
 
 const TILE_LABELS: Record<Tile, string> = {
   [Tile.Absent]: 'not in the word',
@@ -51,6 +39,13 @@ function describeRow(row: BoardRow): string | undefined {
 }
 
 export function Board({ rows, activeRow, rejectionNonce }: BoardProps) {
+  const { tiles } = useTheme();
+  const tileStyles: Record<Tile, { bg: string; border: string; color: string }> = {
+    [Tile.Absent]: { bg: tiles.absent, border: tiles.absent, color: tiles.text },
+    [Tile.Present]: { bg: tiles.present, border: tiles.present, color: tiles.text },
+    [Tile.Correct]: { bg: tiles.correct, border: tiles.correct, color: tiles.text },
+  };
+
   return (
     <Box
       role="grid"
@@ -87,7 +82,7 @@ export function Board({ rows, activeRow, rejectionNonce }: BoardProps) {
         >
           {row.letters.map((letter, columnIndex) => {
             const tile = row.tiles?.[columnIndex];
-            const style = tile === undefined ? null : TILE_STYLES[tile];
+            const style = tile === undefined ? null : tileStyles[tile];
             return (
               <Box
                 key={columnIndex}
@@ -104,7 +99,8 @@ export function Board({ rows, activeRow, rejectionNonce }: BoardProps) {
                   userSelect: 'none',
                   borderRadius: 0.5,
                   border: '2px solid',
-                  borderColor: style?.border ?? (letter === '' ? '#3a3a3c' : '#565758'),
+                  borderColor:
+                    style?.border ?? (letter === '' ? tiles.emptyBorder : tiles.filledBorder),
                   backgroundColor: style?.bg ?? 'transparent',
                   color: style?.color ?? 'text.primary',
                 }}

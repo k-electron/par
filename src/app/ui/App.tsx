@@ -1,4 +1,6 @@
 import Box from '@mui/material/Box';
+import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider } from '@mui/material/styles';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { answers, guesses as dictionary, starters } from '../../data';
@@ -7,6 +9,7 @@ import { puzzleNumberAt } from '../../engine/daily/calendar';
 import { drawPuzzle } from '../../engine/daily/puzzle';
 import { createWorkerScoringClient, type ScoringClient } from '../scoring/client';
 import { completedDays, summarise } from '../state/stats';
+import { createAppTheme, type AppearancePreferences } from '../theme/theme';
 import {
   Repository,
   type ConfirmedSettings,
@@ -137,6 +140,19 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
     replayPayloadFrom(initialHash ?? (typeof location === 'undefined' ? '' : location.hash)),
   );
 
+  const [appearance, setAppearance] = useState<AppearancePreferences>(() =>
+    store.loadAppearance(),
+  );
+  const activeTheme = useMemo(() => createAppTheme(appearance), [appearance]);
+
+  const changeAppearance = useCallback(
+    (next: AppearancePreferences) => {
+      setAppearance(next);
+      store.saveAppearance(next);
+    },
+    [store],
+  );
+
   const leaveReplay = useCallback(() => {
     setReplayPayload(null);
     if (typeof history !== 'undefined' && typeof location !== 'undefined') {
@@ -144,41 +160,35 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
     }
   }, []);
 
-  if (replayPayload !== null) {
-    return (
-      <Box component="main">
-        <Replay
-          payload={replayPayload}
-          store={store}
-          scoring={scorer}
-          onDismiss={leaveReplay}
-        />
-      </Box>
-    );
-  }
-
   return (
-    <Box component="main">
-      {record === null ? (
-        <SettingsGate
-          puzzleNumber={puzzle.puzzleNumber}
-          initial={store.loadPreferences()}
-          onConfirm={confirm}
-        />
-      ) : (
-        <GameScreen
-          key={puzzle.puzzleNumber}
-          answer={puzzle.answer}
-          puzzleNumber={puzzle.puzzleNumber}
-          settings={record.settings}
-          restoredGuesses={record.guesses}
-          rules={rules(record.settings)}
-          onProgress={persist}
-          onScored={recordScore}
-          scoring={scorer}
-          stats={stats}
-        />
-      )}
-    </Box>
+    <ThemeProvider theme={activeTheme}>
+      <CssBaseline />
+      <Box component="main">
+        {replayPayload !== null ? (
+          <Replay payload={replayPayload} store={store} scoring={scorer} onDismiss={leaveReplay} />
+        ) : record === null ? (
+          <SettingsGate
+            puzzleNumber={puzzle.puzzleNumber}
+            initial={store.loadPreferences()}
+            onConfirm={confirm}
+          />
+        ) : (
+          <GameScreen
+            key={puzzle.puzzleNumber}
+            answer={puzzle.answer}
+            puzzleNumber={puzzle.puzzleNumber}
+            settings={record.settings}
+            restoredGuesses={record.guesses}
+            rules={rules(record.settings)}
+            onProgress={persist}
+            onScored={recordScore}
+            scoring={scorer}
+            stats={stats}
+            appearance={appearance}
+            onAppearanceChange={changeAppearance}
+          />
+        )}
+      </Box>
+    </ThemeProvider>
   );
 }

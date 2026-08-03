@@ -1,16 +1,11 @@
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
+import { useTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 
 import { Tile } from '../../engine/words/pattern';
 
 const ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'] as const;
-
-const KEY_STYLES: Record<Tile, { bg: string; color: string }> = {
-  [Tile.Absent]: { bg: '#3a3a3c', color: '#ffffff' },
-  [Tile.Present]: { bg: '#b59f3b', color: '#ffffff' },
-  [Tile.Correct]: { bg: '#538d4e', color: '#ffffff' },
-};
 
 const KEY_HINTS: Record<Tile, string> = {
   [Tile.Absent]: 'not in the word',
@@ -37,7 +32,16 @@ interface KeyProps {
 }
 
 function Key({ label, ariaLabel, wide, state, disabled, onPress, children }: KeyProps) {
-  const style = state === undefined ? null : KEY_STYLES[state];
+  const { tiles } = useTheme();
+  const style =
+    state === undefined
+      ? null
+      : {
+          bg: { [Tile.Absent]: tiles.absent, [Tile.Present]: tiles.present, [Tile.Correct]: tiles.correct }[
+            state
+          ],
+          color: tiles.text,
+        };
   return (
     <ButtonBase
       aria-label={ariaLabel}
@@ -54,10 +58,10 @@ function Key({ label, ariaLabel, wide, state, disabled, onPress, children }: Key
         fontWeight: 700,
         fontSize: wide === true ? '0.75rem' : '1rem',
         textTransform: 'uppercase',
-        backgroundColor: style?.bg ?? '#818384',
-        color: style?.color ?? '#ffffff',
+        backgroundColor: style?.bg ?? tiles.keyIdle,
+        color: style?.color ?? tiles.text,
         transition: 'background-color 120ms',
-        '&.Mui-disabled': { opacity: 0.5, color: '#ffffff' },
+        '&.Mui-disabled': { opacity: 0.5, color: tiles.text },
       }}
     >
       {children ?? label}
