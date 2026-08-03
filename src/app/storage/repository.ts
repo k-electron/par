@@ -10,7 +10,12 @@
 import type { Storage } from './storage';
 
 const NAMESPACE = 'par';
-export const SCHEMA_VERSION = 1;
+
+/**
+ * Bumped from 1 when day records started carrying their score, so the stats
+ * view need not re-score a year of games on every visit.
+ */
+export const SCHEMA_VERSION = 2;
 
 const PREFERENCES_KEY = `${NAMESPACE}:v${SCHEMA_VERSION}:preferences`;
 const DAY_KEY_PREFIX = `${NAMESPACE}:v${SCHEMA_VERSION}:day:`;
@@ -40,6 +45,21 @@ export interface ConfirmedSettings extends Preferences {
   readonly confirmed: true;
 }
 
+/**
+ * A finished day's score, kept so the stats view is instant.
+ *
+ * Only a summary. The full breakdown is recomputed on demand, because it is
+ * derivable from the guesses and holding a stale copy of a score the engine
+ * would now compute differently is exactly the sort of silent divergence this
+ * project is built to avoid.
+ */
+export interface StoredScore {
+  readonly total: number;
+  readonly skill: number;
+  readonly guessesUsed: number;
+  readonly solved: boolean;
+}
+
 export interface DayRecord {
   readonly puzzleNumber: number;
   readonly settings: ConfirmedSettings;
@@ -47,6 +67,8 @@ export interface DayRecord {
   readonly status: 'playing' | 'won' | 'lost';
   /** Set once the day ends, so history and stats can read it back. */
   readonly completedAt?: number;
+  /** Present once the day has been scored. */
+  readonly score?: StoredScore;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -69,10 +91,26 @@ function readPreferencesFrom(value: unknown): Preferences | null {
   return { hardMode, useHouseStarter };
 }
 
+function readScoreFrom(value: unknown): StoredScore | null {
+  if (!isPlainObject(value)) return null;
+  const { total, skill, guessesUsed, solved } = value;
+  if (
+    typeof total !== 'number' ||
+    typeof skill !== 'number' ||
+    typeof guessesUsed !== 'number' ||
+    typeof solved !== 'boolean' ||
+    !Number.isFinite(total) ||
+    !Number.isFinite(skill)
+  ) {
+    return null;
+  }
+  return { total, skill, guessesUsed, solved };
+}
+
 function readDayRecordFrom(value: unknown): DayRecord | null {
   if (!isPlainObject(value)) return null;
 
-  const { puzzleNumber, settings, guesses, status, completedAt } = value;
+  const { puzzleNumber, settings, guesses, status, completedAt, score } = value;
   if (typeof puzzleNumber !== 'number' || !Number.isSafeInteger(puzzleNumber)) return null;
   if (status !== 'playing' && status !== 'won' && status !== 'lost') return null;
   if (!Array.isArray(guesses) || guesses.some((word) => typeof word !== 'string')) return null;
@@ -81,12 +119,15 @@ function readDayRecordFrom(value: unknown): DayRecord | null {
   if (preferences === null) return null;
   if (!isPlainObject(settings) || settings['confirmed'] !== true) return null;
 
+  const stored = readScoreFrom(score);
+
   return {
     puzzleNumber,
     settings: { ...preferences, confirmed: true },
     guesses: guesses as readonly string[],
     status,
     ...(typeof completedAt === 'number' ? { completedAt } : {}),
+    ...(stored !== null ? { score: stored } : {}),
   };
 }
 
@@ -131,11 +172,47 @@ function neverThrows(storage: Storage): Storage {
   };
 }
 
+/**
+ * Carry data forward from older schema versions.
+ *
+ * Deliberately additive: the old keys are left alone rather than deleted, so
+ * downgrading to a previous build does not lose somebody's history. Records that
+ * no longer parse are skipped instead of guessed at.
+ */
+function migrate(storage: Storage): void {
+  for (let from = SCHEMA_VERSION - 1; from >= 1; from -= 1) {
+    const oldPrefix = `${NAMESPACE}:v${from}:`;
+    const keys = storage.keys().filter((key) => key.startsWith(oldPrefix));
+    if (keys.length === 0) continue;
+
+    for (const key of keys) {
+      const suffix = key.slice(oldPrefix.length);
+      const target = `${NAMESPACE}:v${SCHEMA_VERSION}:${suffix}`;
+      // Never overwrite current data with older data.
+      if (storage.read(target) !== null) continue;
+
+      const raw = storage.read(key);
+      if (raw === null) continue;
+
+      const value = parse(raw);
+      const carried =
+        suffix === 'preferences'
+          ? readPreferencesFrom(value)
+          : suffix.startsWith('day:')
+            ? readDayRecordFrom(value)
+            : null;
+
+      if (carried !== null) storage.write(target, JSON.stringify(carried));
+    }
+  }
+}
+
 export class Repository {
   private readonly storage: Storage;
 
   constructor(storage: Storage) {
     this.storage = neverThrows(storage);
+    migrate(this.storage);
   }
 
   loadPreferences(): Preferences {
