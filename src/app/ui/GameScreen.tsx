@@ -8,7 +8,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { RESULTS } from '../copy/results';
 import type { ScoringClient } from '../scoring/client';
 import type { GameScore } from '../scoring/protocol';
-import type { ConfirmedSettings } from '../storage/repository';
+import type { PlayerStats } from '../state/stats';
+import type { ConfirmedSettings, StoredScore } from '../storage/repository';
 import {
   type GameAction,
   type GameRules,
@@ -25,6 +26,7 @@ import { LockedSettings } from './LockedSettings';
 import { Results } from './Results';
 import { ScoringExplainer } from './ScoringExplainer';
 import { ShareButton } from './ShareButton';
+import { StatsButton, StatsDialog } from './Stats';
 
 export interface GameScreenProps {
   readonly answer: string;
@@ -34,8 +36,11 @@ export interface GameScreenProps {
   readonly restoredGuesses: readonly string[];
   readonly rules: GameRules;
   readonly onProgress?: (guesses: readonly string[], status: GameSession['status']) => void;
+  /** Called once the finished game has a score, so it can be kept with the day. */
+  readonly onScored?: ((score: StoredScore) => void) | undefined;
   /** Absent means no scoring — the board still plays. */
   readonly scoring?: ScoringClient | undefined;
+  readonly stats?: PlayerStats | undefined;
 }
 
 export function GameScreen({
@@ -45,7 +50,9 @@ export function GameScreen({
   restoredGuesses,
   rules,
   onProgress,
+  onScored,
   scoring,
+  stats,
 }: GameScreenProps) {
   const [session, dispatch] = useReducer(
     (state: GameSession, action: GameAction) => reduceGame(state, action, rules),
@@ -107,7 +114,14 @@ export function GameScreen({
         hardMode: settings.hardMode,
       })
       .then((result) => {
-        if (current) setScore(result);
+        if (!current) return;
+        setScore(result);
+        onScored?.({
+          total: result.total,
+          skill: result.skill,
+          guessesUsed: result.guessesUsed,
+          solved: result.solved,
+        });
       })
       .catch(() => {
         // A scoring failure must not take the board down with it. The player
@@ -118,7 +132,9 @@ export function GameScreen({
     return () => {
       current = false;
     };
-  }, [finished, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode]);
+  }, [finished, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode, onScored]);
+
+  const [showingStats, setShowingStats] = useState(false);
 
   return (
     <Stack
@@ -126,20 +142,34 @@ export function GameScreen({
       sx={{ height: '100dvh', px: 1, py: 1.5, maxWidth: 520, mx: 'auto', width: '100%' }}
     >
       <Stack spacing={0.75} sx={{ textAlign: 'center' }}>
-        <Stack spacing={0.25}>
-          <Typography
-            component="h1"
-            variant="h5"
-            sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
-          >
-            PAR
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Puzzle {puzzleNumber}
-          </Typography>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{ flex: '1 1 0' }} />
+          <Stack spacing={0.25}>
+            <Typography
+              component="h1"
+              variant="h5"
+              sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
+            >
+              PAR
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Puzzle {puzzleNumber}
+            </Typography>
+          </Stack>
+          <Box sx={{ flex: '1 1 0', textAlign: 'right' }}>
+            {stats !== undefined && <StatsButton onOpen={() => setShowingStats(true)} />}
+          </Box>
         </Stack>
         <LockedSettings settings={settings} />
       </Stack>
+
+      {stats !== undefined && (
+        <StatsDialog
+          open={showingStats}
+          stats={stats}
+          onClose={() => setShowingStats(false)}
+        />
+      )}
 
       <Box sx={{ flex: '1 1 auto', display: 'flex', alignItems: 'center', minHeight: 0 }}>
         <Board rows={rows} activeRow={activeRow} rejectionNonce={session.notice?.nonce ?? 0} />
