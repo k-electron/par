@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden totals > batch,catch against catch stays put 1`] = `
+{
+  "outcome": 6.84,
+  "skill": 88.235294,
+  "total": 98.075294,
+}
+`;
+
+exports[`golden totals > crane against crane stays put 1`] = `
+{
+  "outcome": 10.84,
+  "skill": 100,
+  "total": 110.84,
+}
+`;
+
+exports[`golden totals > plumb,batch,catch against catch stays put 1`] = `
+{
+  "outcome": 2.84,
+  "skill": 85.79664,
+  "total": 88.63664,
+}
+`;
