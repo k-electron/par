@@ -37,8 +37,9 @@ npm run dev   # start the dev server on http://localhost:5173
 | `npm run test:watch`| Vitest in watch mode                                       |
 | `npm run test:e2e`  | Playwright against a production build                      |
 
-Every one of these runs in CI on each push and pull request, and each commit on `main` is expected
-to leave all of them passing.
+`typecheck`, `lint`, `test` and `build` form the quality gate, and `test:e2e` runs as a second job.
+CI runs both on every pull request and on pushes to `main`; a push to a feature branch with no open
+pull request runs nothing. Each commit on `main` is expected to leave all of them passing.
 
 ## Documentation
 
@@ -88,6 +89,21 @@ the lists, so changing them leaves it stale.
 [`docs/wordlists.md`](docs/wordlists.md) covers the source, the licensing position, why the pool is
 sized as it is, and what the version identifier protects.
 
+## When the puzzle rolls over
+
+The day boundary is anchored to **US Eastern** (`America/New_York`), and puzzle 0 is
+**1 January 2026**. Both are build-time constants in
+[`src/engine/daily/calendar.ts`](src/engine/daily/calendar.ts) and deliberately not settings: if
+players could change the anchor they would get different puzzles on the same day and the whole
+premise of comparing scores collapses.
+
+So the puzzle changes at midnight Eastern — 05:00 UTC in winter, 04:00 in summer — wherever the
+player happens to be. A friend in London gets the same word as a friend in New York, and they roll
+over at the same moment rather than eight hours apart.
+
+To move the anchor, change `PUZZLE_TIME_ZONE`. Be aware that it shifts which puzzle every date maps
+to, so existing share links will point at a different day's board.
+
 ## Recomputing `PAR`
 
 `PAR` is the mean guess count for strong play opening from house starters. It is derived from
@@ -95,7 +111,7 @@ the word lists, so regenerating them leaves it stale and every total mis-centred
 
 ```bash
 npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts
-npm run check-incentives -- --days 150 # confirms the incentives still point the right way
+npm run check-incentives -- --days 120 # confirms the incentives still point the right way
 ```
 
 The first takes a few minutes and prints the guess distribution plus what the house starter
@@ -143,8 +159,9 @@ build environment and the quality gate cannot drift apart. If you ever do need t
 the dashboard instead, the variable is `NODE_VERSION` and it must match that file.
 
 **SPA fallback.** [`public/_redirects`](public/_redirects) maps every path to `index.html` with a
-`200`, and Vite copies it into `dist/` on build. CI asserts it is still there after a build, because
-replay links in a later increment depend on a deep link surviving a cold load.
+`200`, and Vite copies it into `dist/` on build. CI asserts it survives. Replay links do not
+actually need it — they are of the form `/#r=...`, so the path is always `/` — but it costs nothing
+and means a mistyped or future deep path lands on the app rather than a 404.
 
 Once connected, Cloudflare builds `main` on every push and gives each pull request its own preview
 URL, which is how later increments get reviewed against a live deployment.

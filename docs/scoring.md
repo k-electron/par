@@ -187,7 +187,7 @@ bonus and then reverting to a memorised word must be clearly the worst of the
 three, or the bonus is free money.
 
 ```bash
-npm run check-incentives -- --days 150
+npm run check-incentives -- --days 120
 ```
 
 Exits non-zero if the ordering breaks. Worth running after changing the word
@@ -245,6 +245,14 @@ order. `tests/engine/exactness.test.ts` confirms this agrees with full brute
 force on every state small enough to check exhaustively, and with a much wider
 search beyond that.
 
+**Endgames are not searched at all, they are settled by argument.** With one
+candidate left `V = 1`, and with two `V = 1.5`, because a candidate guess is
+always legal and either order finishes in one or two turns. Any bucket of two or
+fewer short-circuits on the same reasoning. This is not an approximation, and it
+is what makes the specification's exact 100 and exact 75 exact rather than
+nearly right — the numbers those checks pin come out of closed-form arithmetic,
+not out of a search that happens to converge.
+
 If a player's guess somehow evaluates better than the search's best, theirs
 becomes the benchmark and the guess scores 100. With only two probes above 200
 candidates the benchmark is genuinely approximate, so this fires in practice —
@@ -253,7 +261,7 @@ and it surfaces as a 100 rather than as a score above it.
 Performance rests on one observation: because guess 1 is never scored, every
 position ever scored has already been filtered to a few hundred candidates. The
 working set is therefore dictionary × *current candidates*, not dictionary × *all
-answers* — roughly 2.6 MB rather than 30 MB, built once per game and reused,
+answers* — roughly 2.6 MB rather than the 39 MB a full guess-by-answer matrix would need, built once per game and reused,
 since a candidate set only ever shrinks.
 
 ## Determinism

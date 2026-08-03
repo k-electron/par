@@ -59,6 +59,18 @@ bits are read on any machine.
    comparison, no reading anything from the environment. A score is a pure
    function of the word lists, the ruleset, the policy, the history and the guess.
 
+   **One deliberate exception, and it is outside scoring.**
+   `src/engine/daily/calendar.ts` calls `Intl.DateTimeFormat` to convert an
+   instant into a civil date in the anchor timezone. It is pinned to an explicit
+   zone, calendar, numbering system and locale, so nothing about the reader's
+   settings reaches the result — but it does depend on the host's timezone
+   database being right about `America/New_York`, which in practice every
+   browser is. Note what this touches and what it does not: it decides *which
+   puzzle it is*, never what a game scores. A score takes its history and its
+   guesses as arguments and never asks what day it is, so even a host with a
+   broken timezone database would produce the right score for the wrong puzzle
+   rather than a wrong score.
+
 3. **Every order that feeds arithmetic is fixed.** Floating-point addition is not
    associative, so a sum's value depends on the order of its terms. The engine
    pins every such order:
