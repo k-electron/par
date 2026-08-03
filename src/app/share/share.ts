@@ -7,7 +7,7 @@
  * whole game one click deeper.
  */
 
-import { PAR, SCORER_VERSION } from '../../engine/config/constants';
+import { MAX_GUESSES, PAR, SCORER_VERSION } from '../../engine/config/constants';
 import { Tile, tilesFromPattern } from '../../engine/words/pattern';
 import { parPhrase } from '../copy/results';
 import type { GameScore } from '../scoring/protocol';
@@ -71,7 +71,7 @@ export function shareText(input: ShareInput): string {
   else if (score.solved && score.guessesUsed <= 3) badges.push('\u26A1 quick round');
   if (score.solved && score.skill >= 97) badges.push('\u2728 clean round');
 
-  const attempts = score.solved ? `${score.guessesUsed}/6` : 'X/6';
+  const attempts = `${score.solved ? score.guessesUsed : 'X'}/${MAX_GUESSES}`;
 
   const lines = [
     `Par ${input.puzzleNumber} ${attempts} \u2014 ${score.total.toFixed(1)}`,
