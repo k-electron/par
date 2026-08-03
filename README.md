@@ -5,15 +5,18 @@ luck of your outcomes. A conventional word game rewards you for how few guesses 
 measures each guess against what was actually knowable when you made it, so a lucky hit earns no
 credit for its luck and a well-judged guess that happened not to land still scores well.
 
-**Status: increment 1.** This repository currently holds the scaffold — the toolchain, the module
-skeleton, the architectural boundary rule and the deployment pipeline. There is no game yet: no
-word lists, no board, no scoring. Those arrive in later increments, on top of a pipeline that is
-already proven to build and deploy.
+**Status: increment 2.** This repository holds the scaffold — toolchain, module skeleton,
+architectural boundary rule and deployment pipeline — plus the three generated word lists. There is
+no board and no scoring yet; those arrive in later increments, on top of a pipeline already proven
+to build and deploy.
 
 ## Requirements
 
-Node, at the version pinned in [`.node-version`](.node-version). Nothing else — no Python, no
-database, no environment variables, and no server runtime. The app is a static bundle.
+Node, at the version pinned in [`.node-version`](.node-version). Nothing else — no database, no
+environment variables, and no server runtime. The app is a static bundle.
+
+Python is needed only to regenerate the word lists, which is a rare, deliberate act. The generated
+lists are committed, so building, testing and running the app never require it.
 
 ## Getting started
 
@@ -48,6 +51,25 @@ The module map, the ports, and the invariants the architecture enforces by shape
 This is enforced by ESLint, not by convention, and `tests/boundaries.test.ts` lints deliberately
 illegal fixtures to prove the rule still reports. If you add a module and the rule refuses it, the
 rule is probably right — read `docs/architecture.md` before working around it.
+
+## Regenerating the word lists
+
+The three lists under [`src/data/`](src/data) are generated from Collins Scrabble Words 2019
+intersected with the `wordfreq` corpus, and are committed. Regenerate only when the lists
+themselves should change:
+
+```bash
+python3 -m pip install --target tools/wordlists/.pydeps -r tools/wordlists/requirements.txt
+PYTHONPATH=tools/wordlists/.pydeps python3 tools/wordlists/build.py
+```
+
+The generator refuses to emit anything unless every property in spec §4 holds, and prints where
+each list bottoms out so tail quality stays a measured fact. Afterwards, run `npm test` to confirm
+the committed lists still satisfy those properties, and **recompute `PAR`** — it is derived from
+the lists, so changing them leaves it stale.
+
+[`docs/wordlists.md`](docs/wordlists.md) covers the source, the licensing position, why the pool is
+sized as it is, and what the version identifier protects.
 
 ## Deploying to Cloudflare Pages
 
