@@ -36,6 +36,45 @@ const UI_GOES_THROUGH_SCORING = {
     'See docs/architecture.md.',
 };
 
+/**
+ * Determinism (docs/determinism.md): ECMA-262 leaves the precision of the
+ * transcendental functions to the implementation, so two browsers may disagree
+ * in the last few bits. In the engine that is not cosmetic — the logarithm ranks
+ * the legal guesses and the search explores the top of that ranking, so a
+ * one-ULP difference can change which guesses are searched and move a score.
+ *
+ * The engine uses its own `log2`, built from arithmetic IEEE-754 rounds
+ * identically everywhere. A comment saying so would erode; this does not.
+ *
+ * tests/determinism-lint.test.ts proves the rule reports.
+ */
+const IMPLEMENTATION_DEFINED_MATH = ['log', 'log2', 'log10', 'log1p', 'exp', 'pow'].map(
+  (property) => ({
+    object: 'Math',
+    property,
+    message:
+      `Math.${property} has implementation-defined precision, so it cannot be used inside ` +
+      'src/engine: it would let two browsers compute different scores from the same game. ' +
+      'Use engine/numeric/log2 instead. See docs/determinism.md.',
+  }),
+);
+
+const EXPONENT_OPERATOR = [
+  {
+    selector: 'BinaryExpression[operator="**"]',
+    message:
+      'The ** operator is Math.pow, whose precision is implementation-defined, so it cannot ' +
+      'be used inside src/engine. Multiply, or use engine/numeric/log2. ' +
+      'See docs/determinism.md.',
+  },
+  {
+    selector: 'AssignmentExpression[operator="**="]',
+    message:
+      'The **= operator is Math.pow, whose precision is implementation-defined, so it cannot ' +
+      'be used inside src/engine. See docs/determinism.md.',
+  },
+];
+
 export default defineConfig([
   globalIgnores([
     'dist/**',
@@ -82,6 +121,8 @@ export default defineConfig([
     files: ['src/engine/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', { patterns: [ENGINE_IS_PURE] }],
+      'no-restricted-properties': ['error', ...IMPLEMENTATION_DEFINED_MATH],
+      'no-restricted-syntax': ['error', ...EXPONENT_OPERATOR],
     },
   },
 
