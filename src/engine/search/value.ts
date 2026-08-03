@@ -80,6 +80,25 @@ interface Frame {
   readonly legal: Int32Array;
 }
 
+/**
+ * The value of an endgame, settled by argument rather than by search.
+ *
+ * A candidate is always legal (see `rules/ruleset.ts`), so with one candidate left
+ * it can be played and wins: `V = 1`. With two, playing either wins outright half
+ * the time and leaves a single candidate otherwise, so `V = 1 + 1/2` — and nothing
+ * beats that, because no guess wins more than half the time from here.
+ *
+ * These are shortcuts for speed, not assumptions the rest of the search rests on.
+ * Delete both call sites and the recursion derives the same two numbers unaided;
+ * they exist because endgames are where the node count concentrates, and ranking
+ * the whole dictionary at each of them to rediscover the same answer cost seconds
+ * per guess. `tests/engine/scoreGuess.test.ts` pins them from the outside anyway:
+ * spec §10's exact 100, 75 and 60 all rest on `V = 3/2` being right.
+ */
+function endgameValue(count: number): number {
+  return count === 1 ? 1 : 1.5;
+}
+
 /** A node's legal set, and the constraints that produced it. */
 interface Legality {
   readonly constraints: Constraints;
@@ -341,6 +360,15 @@ export function createSearcher(
         continue;
       }
 
+      // Settled without recursing, and — the reason the check is here rather than
+      // only inside `valueOfNode` — without building the child's legal set. Most
+      // buckets of a large position are endgames, and narrowing the dictionary for
+      // each of them was costing seconds per guess in hard mode.
+      if (size <= 2) {
+        total += size * endgameValue(size);
+        continue;
+      }
+
       // Guard clause 3.
       const child = childLegality(legality, guess, pattern, depth + 1);
       total +=
@@ -361,6 +389,10 @@ export function createSearcher(
     legality: Legality,
     depth: number,
   ): number {
+    if (count <= 2) {
+      return endgameValue(count);
+    }
+
     for (let member = 0; member < count; member += 1) {
       keyIndices[member] = matrix.answers[locals[offset + member]!]!;
     }
