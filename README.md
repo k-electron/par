@@ -5,10 +5,11 @@ luck of your outcomes. A conventional word game rewards you for how few guesses 
 measures each guess against what was actually knowable when you made it, so a lucky hit earns no
 credit for its luck and a well-judged guess that happened not to land still scores well.
 
-**Status: increment 2.** This repository holds the scaffold — toolchain, module skeleton,
-architectural boundary rule and deployment pipeline — plus the three generated word lists. There is
-no board and no scoring yet; those arrive in later increments, on top of a pipeline already proven
-to build and deploy.
+**Status: increment 7 of 11.** The scoring engine is complete and proven against the
+specification's verification suite, the word lists are generated, and the daily game is playable
+end to end — confirm your settings, play the board, reload without losing anything. Still to come:
+the results view that shows your score, sharing and replay, personal stats, and the accessibility
+pass.
 
 ## Requirements
 
@@ -70,6 +71,28 @@ the lists, so changing them leaves it stale.
 
 [`docs/wordlists.md`](docs/wordlists.md) covers the source, the licensing position, why the pool is
 sized as it is, and what the version identifier protects.
+
+## Recomputing `PAR`
+
+`PAR` is the mean guess count for strong play opening from house starters. It is derived from
+the word lists, so regenerating them leaves it stale and every total mis-centred:
+
+```bash
+npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts
+npm run check-incentives -- --days 150 # confirms the incentives still point the right way
+```
+
+The first takes a few minutes and prints the guess distribution plus what the house starter
+costs against a fixed strong opener. The second exits non-zero if taking the house starter
+stops being the mildly better habit, or if collecting the bonus and then ignoring the clues
+stops being the worst option.
+
+Recomputing `PAR` moves the golden score snapshots, because the outcome term is measured
+against it. That is intended — it forces someone to look at the new numbers. Review the diff,
+then `npx vitest run -u`.
+
+[`docs/scoring.md`](docs/scoring.md) explains the model, what each constant trades, and what
+these runs measured for the shipped lists.
 
 ## Deploying to Cloudflare Pages
 
