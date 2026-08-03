@@ -104,9 +104,17 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     const before = scorer.candidatesAfter(history);
     const candidateCount = before.length;
 
-    // Guess 1 is never skill-scored, and a lone candidate carries weight
-    // log2(1) = 0 so it could not move the average anyway.
-    const scored = index >= 1 && candidateCount >= 2;
+    // Every guess but the first is scored, including one facing a single
+    // candidate. Spec §3 is explicit that such a guess "scores 100 — but its
+    // aggregation weight is log2(1) = 0, so it contributes nothing to the
+    // average either way", and that distinction is visible: skipping it entirely
+    // leaves the last row of most solved games with no score to show, which is
+    // not the same as showing the 100 it earned.
+    //
+    // Weighting it zero rather than filtering it is exactly equivalent
+    // arithmetically, which is why the spec's `|S_i| ≥ 2` filter and this loop
+    // agree on `Skill` while disagreeing on what there is to report.
+    const scored = index >= 1;
     const assessment = scored ? scorer.scoreGuess(history, guess) : null;
     const weight = scored ? log2(candidateCount) : 0;
 

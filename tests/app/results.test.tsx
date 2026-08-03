@@ -73,12 +73,16 @@ describe('the phrasing', () => {
     expect(copy.guessNote(null, false, 1, 3000)).toMatch(/opener/i);
   });
 
-  it('does not call a late unscored guess an opener', () => {
-    // A guess goes unscored for two different reasons. On the sixth row, with
-    // one word left, "Opener, not scored" is simply wrong.
-    const late = copy.guessNote(null, false, 6, 1);
-    expect(late).not.toMatch(/opener/i);
-    expect(late).toMatch(/one word left/i);
+  it('never calls a later guess the opener', () => {
+    // Spec §3 scores a guess facing one candidate 100 with zero weight, so the
+    // sixth row reports a score rather than a blank. Whatever it says, it must
+    // not claim to be the opener.
+    expect(copy.guessNote(100, true, 6, 1)).not.toMatch(/opener/i);
+    expect(copy.guessNote(null, false, 6, 1)).not.toMatch(/opener/i);
+  });
+
+  it('explains a guess that had only one word left to play', () => {
+    expect(copy.guessNote(100, true, 6, 1)).toMatch(/one word left/i);
   });
 });
 
