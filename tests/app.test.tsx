@@ -8,21 +8,48 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import type { ReactNode } from 'react';
+
+import { Repository, type ConfirmedSettings } from '../src/app/storage/repository';
+import { createMemoryStorage } from '../src/app/storage/storage';
 import { theme } from '../src/app/theme/theme';
 import { App } from '../src/app/ui/App';
 import { GameScreen } from '../src/app/ui/GameScreen';
 import { MAX_GUESSES } from '../src/app/state/gameSession';
+import { normalRuleset } from '../src/engine/rules/ruleset';
 
-function renderWithTheme(node: React.ReactNode) {
+function renderWithTheme(node: ReactNode) {
   return render(<ThemeProvider theme={theme}>{node}</ThemeProvider>);
 }
 
 const rules = {
   isAllowedWord: (word: string) => ['crane', 'slate', 'abide', 'speed'].includes(word),
+  ruleset: normalRuleset,
+};
+
+const settings: ConfirmedSettings = {
+  hardMode: false,
+  useHouseStarter: false,
+  confirmed: true,
 };
 
 function renderGame(answer: string) {
-  return renderWithTheme(<GameScreen answer={answer} puzzleNumber={42} rules={rules} />);
+  return renderWithTheme(
+    <GameScreen
+      answer={answer}
+      puzzleNumber={42}
+      settings={settings}
+      restoredGuesses={[]}
+      rules={rules}
+    />,
+  );
+}
+
+/** The app past its settings gate, so the board is on screen. */
+function renderConfirmedApp() {
+  const store = new Repository(createMemoryStorage());
+  const rendered = renderWithTheme(<App repository={store} />);
+  return rendered;
 }
 
 function tile(row: number, column: number): HTMLElement {
@@ -34,17 +61,23 @@ function rowText(row: number): string {
 }
 
 describe('the app', () => {
-  it('renders today\u2019s puzzle inside a main landmark', () => {
-    renderWithTheme(<App />);
+  it('opens on the settings gate', () => {
+    renderConfirmedApp();
+
+    // The gate is a modal, so MUI hides the rest of the app from the
+    // accessibility tree while it is open. That is the intended behaviour:
+    // there is nothing behind it worth reaching yet.
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByRole('grid', { name: 'Guesses' })).not.toBeInTheDocument();
+  });
+
+  it('offers a full six-row board and a letter keyboard once confirmed', async () => {
+    const user = userEvent.setup();
+    renderConfirmedApp();
+    await user.click(screen.getByRole('button', { name: 'Start' }));
 
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('PAR');
-    expect(screen.getByRole('grid', { name: 'Guesses' })).toBeInTheDocument();
-  });
-
-  it('offers a full six-row board and a letter keyboard', () => {
-    renderWithTheme(<App />);
-
     expect(within(screen.getByRole('grid')).getAllByRole('row')).toHaveLength(MAX_GUESSES);
     expect(screen.getByRole('button', { name: 'Submit guess' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Delete letter' })).toBeInTheDocument();
@@ -52,10 +85,10 @@ describe('the app', () => {
   });
 
   it('does not reveal the answer while the game is in play', () => {
-    renderWithTheme(<App />);
+    renderGame('crane');
 
-    // The starter is drawn but unused this increment, and the answer must not
-    // be sitting in the markup for anyone who opens the inspector mid-game.
+    // The answer must not be sitting in the markup for anyone who opens the
+    // inspector mid-game.
     expect(screen.getByRole('grid').textContent).toBe('');
   });
 });

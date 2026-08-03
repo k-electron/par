@@ -2,31 +2,45 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
+import type { ConfirmedSettings } from '../storage/repository';
 import {
+  type GameAction,
   type GameRules,
+  type GameSession,
   MAX_GUESSES,
   boardRows,
-  createSession,
   keyboardState,
   reduceGame,
+  replaySession,
 } from '../state/gameSession';
 import { Board } from './Board';
 import { Keyboard } from './Keyboard';
+import { LockedSettings } from './LockedSettings';
 
 export interface GameScreenProps {
   readonly answer: string;
   readonly puzzleNumber: number;
+  readonly settings: ConfirmedSettings;
+  /** Guesses already played, from storage or the auto-played house starter. */
+  readonly restoredGuesses: readonly string[];
   readonly rules: GameRules;
+  readonly onProgress?: (guesses: readonly string[], status: GameSession['status']) => void;
 }
 
-export function GameScreen({ answer, puzzleNumber, rules }: GameScreenProps) {
+export function GameScreen({
+  answer,
+  puzzleNumber,
+  settings,
+  restoredGuesses,
+  rules,
+  onProgress,
+}: GameScreenProps) {
   const [session, dispatch] = useReducer(
-    (state: ReturnType<typeof createSession>, action: Parameters<typeof reduceGame>[1]) =>
-      reduceGame(state, action, rules),
-    answer,
-    createSession,
+    (state: GameSession, action: GameAction) => reduceGame(state, action, rules),
+    undefined,
+    () => replaySession(answer, rules.ruleset, restoredGuesses),
   );
 
   const rows = useMemo(() => boardRows(session), [session]);
@@ -36,6 +50,15 @@ export function GameScreen({ answer, puzzleNumber, rules }: GameScreenProps) {
   const onLetter = useCallback((letter: string) => dispatch({ type: 'letter', letter }), []);
   const onBackspace = useCallback(() => dispatch({ type: 'backspace' }), []);
   const onSubmit = useCallback(() => dispatch({ type: 'submit' }), []);
+
+  // Persist whenever a guess actually lands, not on every keystroke.
+  const lastSaved = useRef(restoredGuesses.length);
+  useEffect(() => {
+    if (session.guesses.length !== lastSaved.current) {
+      lastSaved.current = session.guesses.length;
+      onProgress?.(session.guesses, session.status);
+    }
+  }, [session.guesses, session.status, onProgress]);
 
   useEffect(() => {
     function handle(event: KeyboardEvent) {
@@ -57,29 +80,31 @@ export function GameScreen({ answer, puzzleNumber, rules }: GameScreenProps) {
     return () => window.removeEventListener('keydown', handle);
   }, [onLetter, onBackspace, onSubmit]);
 
-  // The row being typed into is the one after the last submitted guess.
   const activeRow = finished ? -1 : session.guesses.length;
 
   return (
     <Stack
-      spacing={2}
+      spacing={1.5}
       sx={{ height: '100dvh', px: 1, py: 1.5, maxWidth: 520, mx: 'auto', width: '100%' }}
     >
-      <Stack spacing={0.25} sx={{ textAlign: 'center' }}>
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
-          PAR
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          Puzzle {puzzleNumber}
-        </Typography>
+      <Stack spacing={0.75} sx={{ textAlign: 'center' }}>
+        <Stack spacing={0.25}>
+          <Typography
+            component="h1"
+            variant="h5"
+            sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
+          >
+            PAR
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Puzzle {puzzleNumber}
+          </Typography>
+        </Stack>
+        <LockedSettings settings={settings} />
       </Stack>
 
       <Box sx={{ flex: '1 1 auto', display: 'flex', alignItems: 'center', minHeight: 0 }}>
-        <Board
-          rows={rows}
-          activeRow={activeRow}
-          rejectionNonce={session.notice?.nonce ?? 0}
-        />
+        <Board rows={rows} activeRow={activeRow} rejectionNonce={session.notice?.nonce ?? 0} />
       </Box>
 
       {/* Reserved height so the board does not jump when a notice appears. */}
