@@ -78,10 +78,20 @@ const VALIDATED_BANDS: readonly Band[] = [
  * A deliberately wider ladder, exhaustive once the field is down to fifteen.
  *
  * Spec §3 asks for scores that are "exact where precision is visible — small
- * candidate sets, endgames — and near-exact elsewhere", so this is the policy
- * the validated one is checked against on positions too large for brute force.
- * Agreement between the two is the evidence that the cheap ladder is not
- * costing anything.
+ * candidate sets, endgames — and near-exact elsewhere", and this is one of the
+ * two things the validated ladder is checked against.
+ *
+ * **Be precise about what it does and does not show.** Being exhaustive below
+ * fifteen candidates means every one of the ~13,000 guesses with a full
+ * recursion, which is tractable only on the small fixture lexicon
+ * `tests/engine/exactness.test.ts` uses — and on a fourteen-word lexicon every
+ * position is already in the bottom band. So agreement here is evidence about
+ * the bottom band and nothing else.
+ *
+ * The bands the shipped lists actually use are covered separately, in
+ * `tests/engine/bands.test.ts`, against a wider-but-tractable ladder on real
+ * positions: exact agreement at fifteen candidates or fewer, and a stated
+ * tolerance above that.
  */
 const WIDE_BANDS: readonly Band[] = [
   { above: 200, probes: 24, candidates: 12 },

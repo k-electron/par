@@ -43,15 +43,28 @@ export function daysFromCivil({ year, month, day }: CivilDate): number {
   return era * 146_097 + dayOfEra - 719_468;
 }
 
-const CIVIL_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
-  timeZone: PUZZLE_TIME_ZONE,
-  calendar: 'gregory',
-  numberingSystem: 'latn',
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-  era: 'short',
-});
+let civilDateFormat: Intl.DateTimeFormat | undefined;
+
+/**
+ * Built on first use rather than at module load.
+ *
+ * A runtime without `America/New_York` in its timezone database throws here. At
+ * module scope that would fail the import and the app would never mount at all;
+ * deferred, it fails only when a puzzle is actually being derived, which is a
+ * far better place to be standing when something goes wrong.
+ */
+function formatter(): Intl.DateTimeFormat {
+  civilDateFormat ??= new Intl.DateTimeFormat('en-US', {
+    timeZone: PUZZLE_TIME_ZONE,
+    calendar: 'gregory',
+    numberingSystem: 'latn',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    era: 'short',
+  });
+  return civilDateFormat;
+}
 
 /** The civil date at `instant`, as seen in the anchor zone. */
 export function civilDateAt(instant: Date): CivilDate {
@@ -64,7 +77,7 @@ export function civilDateAt(instant: Date): CivilDate {
   let day = Number.NaN;
   let beforeCommonEra = false;
 
-  for (const part of CIVIL_DATE_FORMAT.formatToParts(instant)) {
+  for (const part of formatter().formatToParts(instant)) {
     if (part.type === 'year') year = Number(part.value);
     else if (part.type === 'month') month = Number(part.value);
     else if (part.type === 'day') day = Number(part.value);

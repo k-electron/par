@@ -124,9 +124,39 @@ bits are read on any machine.
   checks three policies with different branching agree to the bit, which a bug
   would have to survive being handed a different set of guesses to notice.
 
+## Versioning: making a deliberate change visible
+
+Everything above is about a score being the same everywhere at one moment. The
+other half is what happens when a score is *supposed* to change.
+
+Every share link carries two stamps, and spec §5 requires both:
+
+- **`WORD_LIST_VERSION`**, derived from the contents of the three lists. Changes
+  which words a day draws.
+- **`SCORER_VERSION`** in `src/engine/config/constants.ts`. Changes what a given
+  game is worth.
+
+On a mismatch the replay is still shown, with a notice saying the number may not
+be the one the sender saw. Showing it is the point — refusing would lose the
+board and the guesses, which are still perfectly good.
+
+**Bump `SCORER_VERSION` whenever anything that can move a score changes**: the
+search bands or the endgame shortcut, the ranking key or an accumulation order,
+the `log2` kernel, `C_PAR`, `EPSILON`, a regenerated `PAR`, or the aggregation.
+Regenerating the word lists does not need a bump, because that already changes
+the other stamp.
+
+Forgetting is the failure this exists to prevent, and it is a quiet one: every
+link already sitting in a group chat would re-score to a different number with
+nothing to say why. `PAR` has already moved once, from the specification's 3.50
+to the generated 3.71, which is exactly the class of change meant here.
+
 ## Before changing anything in `src/engine`
 
 Ask: does this introduce a transcendental, a source of ambient input, a `Map` or
 `Set` whose iteration order reaches a sum, a hash where an exact key was, or a new
 accumulation whose order is not pinned? If the answer to any of those is yes, the
 guarantee is gone and no test will necessarily tell you.
+
+And: could this change a number anybody has already shared? If so, bump
+`SCORER_VERSION` in the same commit.

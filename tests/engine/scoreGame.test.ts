@@ -261,18 +261,59 @@ describe('the luck figure', () => {
 
 describe('hard mode', () => {
   it('never scores below what was legally achievable', () => {
-    // Spec §10. Hard mode restricts the legal set for the player and for the
-    // benchmark alike, so a forced move is a 100 rather than a penalty.
-    const hard = scorerFor(hardRuleset);
+    // Spec §10, and the substance of it: hard mode restricts the legal set for
+    // the benchmark as well as for the player. Judging a hard-mode guess against
+    // the best word in the *whole* dictionary would penalise a player for a
+    // restriction the rules imposed on them, which philosophy position 12 rules
+    // out — "a player forced into a coin flip by the rules played perfectly".
+    //
+    // Asserting `skill > 0 && skill <= 100` would prove nothing, because that
+    // holds for every score the system can produce in either mode. So this
+    // compares the two benchmarks directly.
+    const game = {
+      guesses: ['batch', 'catch', 'hatch'],
+      answer: 'hatch',
+      tookHouseStarter: false,
+    } as const;
+
+    const hard = scoreGame(game, scorerFor(hardRuleset));
+    const normal = scoreGame(game, scorerFor(normalRuleset));
+
+    // The same guesses, in the mode that removes options, must never be judged
+    // more harshly than in the mode that keeps them all.
+    const hardRows = hard.breakdown.filter((row) => row.skill !== null);
+    const normalRows = normal.breakdown.filter((row) => row.skill !== null);
+    expect(hardRows).toHaveLength(normalRows.length);
+
+    for (const [index, row] of hardRows.entries()) {
+      expect(row.skill!, `turn ${row.turn}`).toBeGreaterThanOrEqual(normalRows[index]!.skill!);
+    }
+    expect(hard.skill).toBeGreaterThanOrEqual(normal.skill);
+  });
+
+  it('scores a coin flip 100 and says it was forced', () => {
+    // Hard mode holds -ATCH green, so every legal guess is another member of
+    // the seven-word family and each one eliminates only itself. Walking down
+    // it leaves HATCH and WATCH alive on the final turn: a pure coin flip that
+    // the rules imposed.
+    //
+    // Philosophy position 12 is explicit that such a player "played perfectly,
+    // and should be told so" — so the 100 is not enough on its own, the
+    // breakdown has to mark it unavoidable rather than earned.
     const score = scoreGame(
-      { guesses: ['batch', 'catch', 'hatch'], answer: 'hatch', tookHouseStarter: false },
-      hard,
+      {
+        guesses: ['batch', 'catch', 'latch', 'match', 'patch', 'hatch'],
+        answer: 'hatch',
+        tookHouseStarter: false,
+      },
+      scorerFor(hardRuleset),
     );
 
-    for (const row of score.breakdown) {
-      if (row.skill !== null) expect(row.skill).toBeGreaterThan(0);
-    }
-    expect(score.skill).toBeLessThanOrEqual(100);
+    const coinFlip = score.breakdown.at(-1)!;
+    expect(coinFlip.guess).toBe('hatch');
+    expect(coinFlip.candidateCount).toBe(2);
+    expect(coinFlip.skill).toBe(100);
+    expect(coinFlip.forced).toBe(true);
   });
 
   it('uses the same formula as normal mode', () => {

@@ -241,9 +241,17 @@ the best few plus the live candidates:
 | 15 or fewer | 12 | 12 |
 
 Applied at every recursion depth, with the two sets deduped preserving rank
-order. `tests/engine/exactness.test.ts` confirms this agrees with full brute
-force on every state small enough to check exhaustively, and with a much wider
-search beyond that.
+order.
+
+Two suites check it, and they cover different things. `exactness.test.ts` runs
+against a fourteen-word fixture, where full brute force is tractable — every
+position there is in the bottom band, so what it proves is that the bottom band
+is exact. `bands.test.ts` runs on the real lists across days chosen so all four
+bands are actually reached, comparing against a wider ladder: **exact agreement
+at fifteen candidates or fewer, and under 1.5 skill points above that.**
+
+That split matches what the specification asks for. Exact where precision is
+visible, near-exact elsewhere — with "near" measured rather than assumed.
 
 **Endgames are not searched at all, they are settled by argument.** With one
 candidate left `V = 1`, and with two `V = 1.5`, because a candidate guess is
