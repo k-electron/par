@@ -1,9 +1,13 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
+import { RESULTS } from '../copy/results';
+import type { ScoringClient } from '../scoring/client';
+import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
 import {
   type GameAction,
@@ -18,6 +22,8 @@ import {
 import { Board } from './Board';
 import { Keyboard } from './Keyboard';
 import { LockedSettings } from './LockedSettings';
+import { Results } from './Results';
+import { ScoringExplainer } from './ScoringExplainer';
 
 export interface GameScreenProps {
   readonly answer: string;
@@ -27,6 +33,8 @@ export interface GameScreenProps {
   readonly restoredGuesses: readonly string[];
   readonly rules: GameRules;
   readonly onProgress?: (guesses: readonly string[], status: GameSession['status']) => void;
+  /** Absent means no scoring — the board still plays. */
+  readonly scoring?: ScoringClient | undefined;
 }
 
 export function GameScreen({
@@ -36,6 +44,7 @@ export function GameScreen({
   restoredGuesses,
   rules,
   onProgress,
+  scoring,
 }: GameScreenProps) {
   const [session, dispatch] = useReducer(
     (state: GameSession, action: GameAction) => reduceGame(state, action, rules),
@@ -82,6 +91,34 @@ export function GameScreen({
 
   const activeRow = finished ? -1 : session.guesses.length;
 
+  const [score, setScore] = useState<GameScore | null>(null);
+  const [explaining, setExplaining] = useState(false);
+
+  useEffect(() => {
+    if (!finished || scoring === undefined) return;
+
+    let current = true;
+    void scoring
+      .score({
+        guesses: session.guesses,
+        answer,
+        tookHouseStarter: settings.useHouseStarter,
+        hardMode: settings.hardMode,
+      })
+      .then((result) => {
+        if (current) setScore(result);
+      })
+      .catch(() => {
+        // A scoring failure must not take the board down with it. The player
+        // still gets their game; the score simply does not appear.
+        if (current) setScore(null);
+      });
+
+    return () => {
+      current = false;
+    };
+  }, [finished, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode]);
+
   return (
     <Stack
       spacing={1.5}
@@ -115,10 +152,9 @@ export function GameScreen({
               {session.notice.message}
             </Alert>
           )}
-          {session.status === 'won' && (
+          {session.status === 'won' && scoring === undefined && (
             <Alert severity="success" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
-              Solved in {session.guesses.length} of {MAX_GUESSES}. Scoring arrives in a later
-              increment.
+              Solved in {session.guesses.length} of {MAX_GUESSES}.
             </Alert>
           )}
           {session.status === 'lost' && (
@@ -129,13 +165,23 @@ export function GameScreen({
         </Box>
       </Box>
 
-      <Keyboard
-        letterStates={letterStates}
-        disabled={finished}
-        onLetter={onLetter}
-        onBackspace={onBackspace}
-        onSubmit={onSubmit}
-      />
+      {finished && scoring !== undefined ? (
+        <Stack spacing={1} sx={{ pb: 1 }}>
+          <Results score={score} settings={settings} />
+          <Button size="small" variant="text" onClick={() => setExplaining(true)}>
+            {RESULTS.explainerLink}
+          </Button>
+          <ScoringExplainer open={explaining} onClose={() => setExplaining(false)} />
+        </Stack>
+      ) : (
+        <Keyboard
+          letterStates={letterStates}
+          disabled={finished}
+          onLetter={onLetter}
+          onBackspace={onBackspace}
+          onSubmit={onSubmit}
+        />
+      )}
     </Stack>
   );
 }
