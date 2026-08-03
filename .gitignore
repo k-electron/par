@@ -3,6 +3,13 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# Word-list generator scratch. The generated lists under src/data are committed;
+# the lexicon download and the vendored Python packages are not.
+tools/wordlists/.cache/
+tools/wordlists/.pydeps/
+tools/wordlists/.venv/
+__pycache__/
+
 .DS_Store
 .vscode/*
 !.vscode/extensions.json

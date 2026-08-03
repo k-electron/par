@@ -1,0 +1,5 @@
+# Pinned because the generator's output must be reproducible: a different
+# frequency corpus reorders the answer list and the starter pool, which changes
+# the word-list version identifier and therefore invalidates existing share
+# links (spec §5).
+wordfreq==3.1.1
