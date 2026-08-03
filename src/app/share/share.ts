@@ -7,7 +7,7 @@
  * whole game one click deeper.
  */
 
-import { PAR } from '../../engine/config/constants';
+import { PAR, SCORER_VERSION } from '../../engine/config/constants';
 import { Tile, tilesFromPattern } from '../../engine/words/pattern';
 import { parPhrase } from '../copy/results';
 import type { GameScore } from '../scoring/protocol';
@@ -38,6 +38,7 @@ export function replayLink(input: ShareInput): string {
     tookHouseStarter: input.tookHouseStarter,
     guessIndices: input.guessIndices,
     wordListVersion: input.wordListVersion,
+    scorerVersion: SCORER_VERSION,
   });
 
   // The fragment, not the query string: it is never sent to a server, and there

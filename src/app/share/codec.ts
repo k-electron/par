@@ -18,12 +18,19 @@
  * day, the two settings and the guesses.
  */
 
-const CODEC_VERSION = 1;
+/**
+ * The payload format. Bumped to 2 when the scorer version was added, so an
+ * older link reports "made by a different version" rather than being misread.
+ * No version 1 decoder exists because no version 1 link was ever distributed.
+ */
+const CODEC_VERSION = 2;
 
 /** Bits per guess index. 14 bits covers 16,384, comfortably over the 12,972. */
 const GUESS_BITS = 14;
 /** Bits for the day number. 20 covers about 2,800 years from the epoch. */
 const DAY_BITS = 20;
+/** Bits for the scorer version. 6 is 63 revisions of the scoring model. */
+const SCORER_BITS = 6;
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
@@ -35,6 +42,11 @@ export interface SharedGame {
   readonly guessIndices: readonly number[];
   /** The word-list version the sender played against. */
   readonly wordListVersion: string;
+  /**
+   * The scorer that produced the sender's number. Compared on replay so a
+   * different scoring model shows a notice instead of a different total.
+   */
+  readonly scorerVersion: number;
 }
 
 export type DecodeFailure =
@@ -178,9 +190,17 @@ export function encodeSharedGame(game: SharedGame): string {
     throw new RangeError(`Puzzle number ${game.puzzleNumber} is outside the encodable range.`);
   }
 
+  if (game.scorerVersion < 0 || game.scorerVersion >= 2 ** SCORER_BITS) {
+    throw new RangeError(
+      `Scorer version ${game.scorerVersion} does not fit in ${SCORER_BITS} bits. ` +
+        'Widen SCORER_BITS and bump CODEC_VERSION.',
+    );
+  }
+
   const writer = new BitWriter();
   writer.write(CODEC_VERSION, 4);
   writer.write(game.puzzleNumber, DAY_BITS);
+  writer.write(game.scorerVersion, SCORER_BITS);
   writer.write(game.hardMode ? 1 : 0, 1);
   writer.write(game.tookHouseStarter ? 1 : 0, 1);
   writer.write(game.guessIndices.length, 3);
@@ -213,6 +233,7 @@ export function decodeSharedGame(text: string): DecodeResult {
   }
 
   const puzzleNumber = reader.read(DAY_BITS);
+  const scorerVersion = reader.read(SCORER_BITS);
   const hardMode = reader.read(1) === 1;
   const tookHouseStarter = reader.read(1) === 1;
   const count = reader.read(3);
@@ -225,6 +246,13 @@ export function decodeSharedGame(text: string): DecodeResult {
 
   return {
     ok: true,
-    game: { puzzleNumber, hardMode, tookHouseStarter, guessIndices, wordListVersion },
+    game: {
+      puzzleNumber,
+      hardMode,
+      tookHouseStarter,
+      guessIndices,
+      wordListVersion,
+      scorerVersion,
+    },
   };
 }

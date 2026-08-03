@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useState } from 'react';
 
 import { guesses as dictionary, answers, starters, WORD_LIST_VERSION } from '../../data';
+import { SCORER_VERSION } from '../../engine/config/constants';
 import { drawPuzzle } from '../../engine/daily/puzzle';
 import { rulesetFor } from '../../engine/rules/ruleset';
 import { boardRows, replaySession } from '../state/gameSession';
@@ -145,7 +146,13 @@ function RevealedReplay({
     );
   }
 
-  const stale = game.wordListVersion !== WORD_LIST_VERSION.slice(0, game.wordListVersion.length);
+  // Spec §5: on either mismatch, show the replay with a clear notice rather
+  // than silently displaying a different number. The word lists change which
+  // words a day draws; the scorer changes what a given game is worth. Both can
+  // move the total, so both are stamped and both are checked.
+  const staleLists =
+    game.wordListVersion !== WORD_LIST_VERSION.slice(0, game.wordListVersion.length);
+  const staleScorer = game.scorerVersion !== SCORER_VERSION;
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, maxWidth: 520, mx: 'auto', width: '100%' }}>
@@ -158,10 +165,11 @@ function RevealedReplay({
         </Typography>
       </Stack>
 
-      {stale && (
+      {(staleLists || staleScorer) && (
         <Alert severity="info" variant="outlined">
-          This was played against a different word list than yours, so the score below may not be
-          the number they saw. Everything else is theirs.
+          {staleLists
+            ? 'This was played against a different word list than yours, so the score below may not be the number they saw. Everything else is theirs.'
+            : 'This was scored by a different version of Par, so the score below may not be the number they saw. The board and the guesses are theirs.'}
         </Alert>
       )}
 
