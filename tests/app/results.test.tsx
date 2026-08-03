@@ -65,12 +65,20 @@ describe('the phrasing', () => {
   it('names a forced move as forced rather than as a triumph', () => {
     // Philosophy position 12: a player boxed into a coin flip played perfectly
     // and should be told so, not handed a silent 100 they appear to have earned.
-    expect(copy.guessNote(100, true)).toMatch(/[Ff]orced/);
-    expect(copy.guessNote(100, false)).not.toMatch(/[Ff]orced/);
+    expect(copy.guessNote(100, true, 3, 8)).toMatch(/[Ff]orced/);
+    expect(copy.guessNote(100, false, 3, 8)).not.toMatch(/[Ff]orced/);
   });
 
   it('reads the opener as unscored rather than as a zero', () => {
-    expect(copy.guessNote(null, false)).toMatch(/not scored/i);
+    expect(copy.guessNote(null, false, 1, 3000)).toMatch(/opener/i);
+  });
+
+  it('does not call a late unscored guess an opener', () => {
+    // A guess goes unscored for two different reasons. On the sixth row, with
+    // one word left, "Opener, not scored" is simply wrong.
+    const late = copy.guessNote(null, false, 6, 1);
+    expect(late).not.toMatch(/opener/i);
+    expect(late).toMatch(/one word left/i);
   });
 });
 
@@ -87,8 +95,10 @@ describe('what the copy must never say', () => {
       [0, 40, 60, 80, 95, 100].flatMap((skill) => [
         copy.headline(skill, true),
         copy.headline(skill, false),
-        copy.guessNote(skill, false),
-        copy.guessNote(skill, true),
+        copy.guessNote(skill, false, 3, 8),
+        copy.guessNote(skill, true, 3, 8),
+        copy.guessNote(null, false, 1, 3000),
+        copy.guessNote(null, false, 6, 1),
       ]),
       [-2, -0.5, 0, 0.5, 2].map((bits) => copy.luckNote(bits)),
     );

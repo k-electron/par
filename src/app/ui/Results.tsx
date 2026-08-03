@@ -133,7 +133,7 @@ export function Results({ score, settings }: ResultsProps) {
                       {row.guess}
                     </Box>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      {guessNote(row.skill, row.forced)}
+                      {guessNote(row.skill, row.forced, row.turn, row.candidateCount)}
                     </Typography>
                   </Stack>
                 </TableCell>

@@ -145,7 +145,20 @@ export function GameScreen({
   return (
     <Stack
       spacing={1.5}
-      sx={{ height: '100dvh', px: 1, py: 1.5, maxWidth: 520, mx: 'auto', width: '100%' }}
+      sx={{
+        // While playing, pin to the viewport so the board and keyboard fit
+        // without scrolling — that is what makes it comfortable one-handed.
+        // Once the results appear the content is legitimately taller than the
+        // screen, so the height has to be released or the board and the
+        // results overlap instead of stacking.
+        minHeight: '100dvh',
+        ...(finished ? {} : { height: '100dvh' }),
+        px: 1,
+        py: 1.5,
+        maxWidth: 520,
+        mx: 'auto',
+        width: '100%',
+      }}
     >
       <Stack spacing={0.75} sx={{ textAlign: 'center' }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -180,7 +193,16 @@ export function GameScreen({
         />
       )}
 
-      <Box sx={{ flex: '1 1 auto', display: 'flex', alignItems: 'center', minHeight: 0 }}>
+      <Box
+        sx={{
+          // Grows to fill the screen while playing; once finished it takes only
+          // the room the board needs so the results can follow it.
+          flex: finished ? '0 0 auto' : '1 1 auto',
+          display: 'flex',
+          alignItems: 'center',
+          minHeight: 0,
+        }}
+      >
         <Board rows={rows} activeRow={activeRow} rejectionNonce={session.notice?.nonce ?? 0} />
       </Box>
 
