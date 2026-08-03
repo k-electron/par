@@ -42,12 +42,18 @@ function filesUsing(name: string): string[] {
 }
 
 describe('the guess-count-to-points conversion', () => {
-  it.each(['C_PAR', 'UNSOLVED_GUESSES'])(
-    'reads %s in exactly one shipped file besides its definition',
-    (name) => {
-      expect(filesUsing(name)).toEqual([CONVERSION]);
-    },
-  );
+  it('reads C_PAR in exactly one shipped file besides its definition', () => {
+    expect(filesUsing('C_PAR')).toEqual([CONVERSION]);
+  });
+
+  it('shares the unsolved floor rather than copying it', () => {
+    // Two places legitimately need it: the conversion, and the sentence that
+    // describes the result beside it. What matters is that they read the same
+    // constant — `parPhrase` used to hardcode a 7, which would have let the
+    // words disagree with the number underneath them the moment the floor moved.
+    expect(filesUsing('UNSOLVED_GUESSES')).toEqual(['src/app/copy/results.ts', CONVERSION]);
+    expect(code('src/app/copy/results.ts')).not.toMatch(/solved \? guessesUsed : 7/);
+  });
 
   it('reads C_PAR inside outcomePoints and nowhere else in that file', () => {
     const source = code(CONVERSION);
