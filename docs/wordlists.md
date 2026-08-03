@@ -35,9 +35,18 @@ union bought almost nothing for four sources and four licensing positions. See
 **Licensing.** Collins Scrabble Words is a copyrighted compilation of HarperCollins, and the
 source file opens with their notice. What is committed here is a derived five-letter subset
 used as a game dictionary, which is the same use every Scrabble-adjacent hobby project makes
-of these lists. This is a private project for a handful of friends and is not distributed as a
-word list product. If that ever changes, switch the source to a permissively licensed lexicon
-and regenerate — the generator takes the source as a single constant.
+of these lists.
+
+State the position plainly rather than comfortably. This repository is public, so the derived
+subset is redistributed and no argument from privacy is available. The claim is narrower than
+permission: a noncommercial game shipping a word list as its dictionary is not competing with
+the compilation as a product, and that is a settled norm in this corner of hobby software. It
+is not a licence, and HarperCollins has not granted one.
+
+If that stops being a trade worth making, switch the source to a permissively licensed lexicon
+and regenerate — the generator takes the source as a single constant. Expect it to move the
+answer list, the starter pool and the version identifier, and to leave `PAR` stale, which moves
+the golden score snapshots with it.
 
 ## Frequency ranking
 
