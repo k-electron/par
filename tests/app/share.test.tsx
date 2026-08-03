@@ -16,6 +16,7 @@ import { createMemoryStorage } from '../../src/app/storage/storage';
 import { theme } from '../../src/app/theme/theme';
 import { App } from '../../src/app/ui/App';
 import { WORD_LIST_VERSION, answers, guesses as dictionary, starters } from '../../src/data';
+import { SCORER_VERSION } from '../../src/engine/config/constants';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
 
 const PUZZLE_NUMBER = 165;
@@ -30,6 +31,7 @@ const game: SharedGame = {
   tookHouseStarter: true,
   guessIndices: PLAYED.map((word) => dictionary.indexOf(word)),
   wordListVersion: WORD_LIST_VERSION,
+  scorerVersion: SCORER_VERSION,
 };
 
 afterEach(cleanup);
@@ -82,7 +84,28 @@ describe('the codec', () => {
   });
 
   it('produces something short enough to survive a chat client', () => {
-    expect(encodeSharedGame(game).length).toBeLessThan(40);
+    expect(encodeSharedGame(game).length).toBeLessThan(48);
+  });
+
+  it('carries the scorer version, not just the word-list version', () => {
+    // Spec §5 requires both. Without the scorer stamp, changing a search band
+    // or a constant would silently re-score every link already sent — the
+    // divergence priority 2 ranks second only to being wrong.
+    const decoded = decodeSharedGame(encodeSharedGame(game));
+    expect(decoded.ok && decoded.game.scorerVersion).toBe(SCORER_VERSION);
+  });
+
+  it('round-trips every scorer version the field can hold', () => {
+    for (const scorerVersion of [0, 1, 31, 63]) {
+      const decoded = decodeSharedGame(encodeSharedGame({ ...game, scorerVersion }));
+      expect(decoded.ok && decoded.game.scorerVersion).toBe(scorerVersion);
+    }
+  });
+
+  it('refuses a scorer version too large to encode rather than truncating it', () => {
+    // Silently wrapping to a version that happens to match would be worse than
+    // failing: it would suppress the very notice the field exists to raise.
+    expect(() => encodeSharedGame({ ...game, scorerVersion: 64 })).toThrow(RangeError);
   });
 });
 
@@ -240,6 +263,50 @@ describe('the spoiler gate', () => {
 
     mountReplay(store);
     expect(screen.queryByText(/will spoil/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
+});
+
+describe('a version mismatch', () => {
+  function mountWith(shared: SharedGame) {
+    const store = new Repository(createMemoryStorage());
+    store.saveDay({
+      puzzleNumber: PUZZLE_NUMBER,
+      settings: { hardMode: false, useHouseStarter: true, confirmed: true },
+      guesses: PLAYED,
+      status: 'won',
+      completedAt: Date.now(),
+    });
+
+    return render(
+      <ThemeProvider theme={theme}>
+        <App
+          repository={store}
+          now={FIXED_NOW}
+          scoring={createDirectScoringClient()}
+          initialHash={`#r=${encodeSharedGame(shared)}`}
+        />
+      </ThemeProvider>,
+    );
+  }
+
+  it('says nothing when both versions agree', () => {
+    mountWith(game);
+    expect(screen.queryByText(/different (word list|version)/i)).not.toBeInTheDocument();
+  });
+
+  it('warns when the scorer differs, and still shows the board', async () => {
+    mountWith({ ...game, scorerVersion: SCORER_VERSION + 1 });
+
+    expect(await screen.findByText(/scored by a different version/i)).toBeInTheDocument();
+    // Spec §5: show the replay with a notice rather than refusing it.
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
+
+  it('warns when the word lists differ', async () => {
+    mountWith({ ...game, wordListVersion: 'ffffff' });
+
+    expect(await screen.findByText(/different word list/i)).toBeInTheDocument();
     expect(screen.getByRole('grid')).toBeInTheDocument();
   });
 });

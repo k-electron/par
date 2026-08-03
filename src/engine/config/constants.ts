@@ -58,3 +58,24 @@ export const UNSOLVED_GUESSES = 7;
 
 /** Guesses allowed in a game. */
 export const MAX_GUESSES = 6;
+
+/**
+ * Identifies the scorer that produced a number, and travels in share links.
+ *
+ * Spec §5 requires payloads to carry this alongside the word-list version so a
+ * replay built by a different scorer is flagged rather than silently showing a
+ * different total. Silent divergence is the failure that priority 2 ranks second
+ * only to being wrong.
+ *
+ * **Bump this whenever anything that can move a score changes.** That includes:
+ *
+ * - the search bands in `search/policy.ts`, or the endgame shortcut
+ * - the ranking key or any accumulation order in `search/value.ts`
+ * - `SERIES_TERMS` or anything else in `numeric/log2.ts`
+ * - `C_PAR`, `EPSILON`, or a regenerated `PAR`
+ * - the aggregation or the outcome term in `score/scoreGame.ts`
+ *
+ * Regenerating the word lists does **not** need a bump: that already changes
+ * `WORD_LIST_VERSION`, which is stamped separately.
+ */
+export const SCORER_VERSION = 1;

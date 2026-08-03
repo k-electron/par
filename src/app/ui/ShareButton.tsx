@@ -24,15 +24,23 @@ export function ShareButton({ puzzleNumber, score, settings, guesses }: ShareBut
     const indices = guesses.map((word) => dictionary.indexOf(word));
     if (indices.some((index) => index < 0)) return null;
 
-    return shareText({
-      puzzleNumber,
-      score,
-      hardMode: settings.hardMode,
-      tookHouseStarter: settings.useHouseStarter,
-      guessIndices: indices,
-      wordListVersion: WORD_LIST_VERSION,
-      origin: typeof location === 'undefined' ? '' : location.origin + location.pathname,
-    });
+    try {
+      return shareText({
+        puzzleNumber,
+        score,
+        hardMode: settings.hardMode,
+        tookHouseStarter: settings.useHouseStarter,
+        guessIndices: indices,
+        wordListVersion: WORD_LIST_VERSION,
+        origin: typeof location === 'undefined' ? '' : location.origin + location.pathname,
+      });
+    } catch {
+      // Encoding rejects a puzzle number outside its range, which a clock set
+      // before the epoch produces. There is no error boundary above this, so an
+      // exception here would blank the page at the moment a game ends — losing
+      // the player their whole round to hide a button. Drop the button instead.
+      return null;
+    }
   }, [puzzleNumber, score, settings, guesses]);
 
   const share = useCallback(async () => {
