@@ -39,7 +39,13 @@ npm run dev   # start the dev server on http://localhost:5173
 
 `typecheck`, `lint`, `test` and `build` form the quality gate, and `test:e2e` runs as a second job.
 CI runs both on every pull request and on pushes to `main`; a push to a feature branch with no open
-pull request runs nothing. Each commit on `main` is expected to leave all of them passing.
+pull request runs nothing.
+
+Both jobs are required checks on `main`, which a repository ruleset protects: changes arrive through
+a pull request, the branch must be up to date with `main` before it merges, and neither job may be
+failing. No approving review is required, so a solo change is still one `gh pr merge --auto` away —
+it simply cannot merge red. That requirement is load-bearing for the deploy rather than a matter of
+taste, for the reason given under [deploying](#deploying-to-cloudflare-pages).
 
 ## Documentation
 
@@ -128,13 +134,21 @@ these runs measured for the shipped lists.
 
 ## Deploying to Cloudflare Pages
 
-The build is fully static, so connecting the repository once is the whole of the setup. In the
-Cloudflare dashboard:
+The build is fully static, so connecting the repository once is the whole of the setup.
 
-1. Go to **Workers & Pages** → **Create application** → **Pages** → **Import an existing Git
-   repository**.
-2. Authorise Cloudflare for the GitHub account and select this repository. It is private, so you
-   may need to grant access to it specifically rather than to all repositories.
+**Why the branch protection matters here.** Cloudflare's Git integration builds and deploys every
+push to `main` independently of GitHub Actions. It runs `npm run build` and ships whatever comes
+out, and because the build only typechecks, a commit with failing tests would deploy perfectly
+happily. The spec rules out the obvious alternative — routing the deploy through CI needs an API
+token, and §11 requires that no deploy credentials live in CI — so the gate sits at the branch
+instead: nothing reaches `main` red, therefore nothing Cloudflare sees is red. Delete that ruleset
+and you have silently removed the only thing between a failing test and production.
+
+In the Cloudflare dashboard:
+
+1. Go to **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
+2. Authorise Cloudflare for the GitHub account, then **Install & Authorize** and **Begin setup**.
+   Public and private repositories both work; you can grant access to all of them or to this one.
 3. In **Set up builds and deployments**, enter exactly:
 
    | Setting                 | Value                                     |
@@ -151,12 +165,18 @@ Cloudflare dashboard:
    in exactly the two values above; if the preset is not offered, choose `None` and type them in.
    The result is identical.
 
+   The project name is also the hostname, and `pages.dev` names are globally unique. If `par` is
+   refused, someone else holds it; pick another and expect the URL to follow.
+
 4. Select **Save and Deploy**.
 
-**Node version.** Do not set one in the dashboard. Cloudflare reads
+**Node version.** Do not set one in the dashboard. Cloudflare's v3 build image reads
 [`.node-version`](.node-version) from the repository root, which is the same file CI reads, so the
-build environment and the quality gate cannot drift apart. If you ever do need to override it from
-the dashboard instead, the variable is `NODE_VERSION` and it must match that file.
+build environment and the quality gate cannot drift apart. Any version is supported and the build
+log names the one it used; if that log shows the image default rather than the pinned version, the
+project is on an older build image and wants moving to v3 under **Settings** → **Build**. If you
+ever do need to override it from the dashboard instead, the variable is `NODE_VERSION` and it must
+match that file.
 
 **SPA fallback.** [`public/_redirects`](public/_redirects) maps every path to `index.html` with a
 `200`, and Vite copies it into `dist/` on build. CI asserts it survives. Replay links do not
@@ -164,7 +184,14 @@ actually need it — they are of the form `/#r=...`, so the path is always `/` �
 and means a mistyped or future deep path lands on the app rather than a 404.
 
 Once connected, Cloudflare builds `main` on every push and gives each pull request its own preview
-URL, which is how later increments get reviewed against a live deployment.
+URL. Since every change now arrives through a pull request, that preview is the ordinary way to see
+a change running before it merges.
+
+**On Pages versus Workers.** Cloudflare froze Pages for new features in 2025 and points new projects
+at Workers static assets instead. Pages is still supported and still the shortest path for a bundle
+with no server code, which is exactly what this is, so there is nothing to gain by moving today. If
+that changes, the migration is a `wrangler.jsonc` with an `assets` block pointing at `dist/`, and
+`_redirects` is honoured either way.
 
 ## Toolchain notes
 
