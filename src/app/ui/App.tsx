@@ -1,26 +1,36 @@
 import Box from '@mui/material/Box';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { answers, guesses as dictionary, starters } from '../../data';
 import { rulesetFor } from '../../engine/rules/ruleset';
 import { puzzleNumberAt } from '../../engine/daily/calendar';
 import { drawPuzzle } from '../../engine/daily/puzzle';
+import { createWorkerScoringClient, type ScoringClient } from '../scoring/client';
 import { Repository, type ConfirmedSettings, type DayRecord } from '../storage/repository';
 import { createBestAvailableStorage } from '../storage/storage';
 import { GameScreen } from './GameScreen';
 import { SettingsGate } from './SettingsGate';
 
 export interface AppProps {
-  /** Overridable so tests can pin a day and a storage backend. */
+  /** Overridable so tests can pin a day, a storage backend and a scorer. */
   readonly repository?: Repository;
   readonly now?: Date;
+  readonly scoring?: ScoringClient;
 }
 
-export function App({ repository, now }: AppProps = {}) {
+export function App({ repository, now, scoring }: AppProps = {}) {
   const store = useMemo(
     () => repository ?? new Repository(createBestAvailableStorage()),
     [repository],
   );
+
+  // One worker for the session, torn down with the app. Built lazily so a test
+  // that supplies its own scorer never spawns one.
+  const [ownScoring] = useState<ScoringClient | null>(() =>
+    scoring === undefined && typeof Worker !== 'undefined' ? createWorkerScoringClient() : null,
+  );
+  useEffect(() => () => ownScoring?.dispose(), [ownScoring]);
+  const scorer = scoring ?? ownScoring ?? undefined;
 
   const puzzle = useMemo(
     () => drawPuzzle(puzzleNumberAt(now ?? new Date()), { answers, starters }),
@@ -92,6 +102,7 @@ export function App({ repository, now }: AppProps = {}) {
           restoredGuesses={record.guesses}
           rules={rules(record.settings)}
           onProgress={persist}
+          scoring={scorer}
         />
       )}
     </Box>
