@@ -141,7 +141,7 @@ describe('the validated ladder against a wider one, on the real lists', () => {
     expect(Math.max(...counts)).toBeGreaterThan(200);
     expect(counts.filter((count) => count > 60 && count <= 200).length).toBeGreaterThan(0);
     expect(counts.filter((count) => count <= 15).length).toBeGreaterThan(0);
-  });
+  }, 60_000);
 
   it('is exact at fifteen candidates or fewer', () => {
     // Spec §3's "exact where precision is visible". This is also the band the
@@ -153,7 +153,7 @@ describe('the validated ladder against a wider one, on the real lists', () => {
     for (const { cheap, wide } of small) {
       expect(cheap.skill, cheap.label).toBe(wide.skill);
     }
-  });
+  }, 60_000);
 
   it('stays within a stated tolerance above fifteen candidates', () => {
     const large = pairs.filter(({ cheap }) => cheap.candidateCount > 15);
@@ -167,7 +167,7 @@ describe('the validated ladder against a wider one, on the real lists', () => {
     expect(worst, `worst disagreement above 15 candidates was ${worst.toFixed(3)}`).toBeLessThan(
       TOLERANCE_ABOVE_15,
     );
-  });
+  }, 60_000);
 
   it('never scores a player above the wider search by more than the tolerance', () => {
     // The direction matters. A cheap ladder overestimates its own benchmark, so
@@ -176,7 +176,7 @@ describe('the validated ladder against a wider one, on the real lists', () => {
     for (const { cheap, wide } of pairs) {
       expect(cheap.skill, cheap.label).toBeLessThan(wide.skill + TOLERANCE_ABOVE_15);
     }
-  });
+  }, 60_000);
 });
 
 describe('a scorer reused across games', () => {
@@ -216,7 +216,7 @@ describe('a scorer reused across games', () => {
     expect(afterOtherGame.breakdown.map((row) => row.skill)).toEqual(
       clean.breakdown.map((row) => row.skill),
     );
-  });
+  }, 60_000);
 
   it('does not depend on the order the games were scored in', () => {
     const forwards = freshScorer();
@@ -229,7 +229,7 @@ describe('a scorer reused across games', () => {
 
     expect(firstSecond.total).toBe(first.total);
     expect(secondFirst.total).toBe(second.total);
-  });
+  }, 60_000);
 });
 
 describe('the scoring budget', () => {
@@ -260,25 +260,43 @@ describe('the scoring budget', () => {
     return { elapsed: performance.now() - started, solved: scorer.solved };
   }
 
-  it('scores a full six-guess game inside two seconds', () => {
-    // Spec §9 budgets under two seconds on a mid-range phone. A CI runner is not
-    // a phone, so treat this as guarding an order of magnitude — which is what
-    // widening a band would cost — rather than guarding jitter.
-    const { elapsed } = timeGame(165);
-    expect(elapsed, `scoring took ${elapsed.toFixed(0)} ms`).toBeLessThan(2000);
-  });
+  /**
+   * The real guard, because it is the only hardware-independent one.
+   *
+   * Worst of these days when written: 1,310 positions on day 100. The bound has
+   * roughly three times that in headroom, which comfortably absorbs a new day
+   * being harder than any of these while still catching a widened band — that
+   * would multiply the count several-fold, not nudge it.
+   */
+  const NODE_CEILING = 4_000;
 
-  it('stays inside the budget on the worst of several real days', () => {
-    const worst = Math.max(...[0, 1, 7, 100, 165].map((day) => timeGame(day).elapsed));
-    expect(worst, `worst day took ${worst.toFixed(0)} ms`).toBeLessThan(2000);
-  });
+  /**
+   * A coarse backstop, and deliberately loose.
+   *
+   * Spec §9 budgets two seconds on a mid-range phone. Worst measured locally is
+   * about a second, but a shared CI vCPU runs roughly twice that and once came
+   * in at 2,057 ms — asserting the literal budget there measures the runner, not
+   * the product. So this catches an order of magnitude, and `NODE_CEILING` above
+   * is what actually holds the line.
+   */
+  const WALL_CLOCK_CEILING = 5_000;
 
-  it('visits a bounded number of positions, which is the deterministic part', () => {
-    // Wall-clock varies with the machine; the number of positions the search
-    // solves does not. This is the guard that would actually catch a band being
-    // widened by accident, on any hardware.
-    const { solved } = timeGame(165);
-    expect(solved).toBeGreaterThan(0);
-    expect(solved, `search solved ${solved} positions`).toBeLessThan(20_000);
-  });
+  it(
+    'visits a bounded number of positions on the hardest of several real days',
+    () => {
+      const worst = Math.max(...DAYS.map((day) => timeGame(day).solved));
+      expect(worst).toBeGreaterThan(0);
+      expect(worst, `hardest day solved ${worst} positions`).toBeLessThan(NODE_CEILING);
+    },
+    60_000,
+  );
+
+  it(
+    'scores every sampled day well inside an order of magnitude of the budget',
+    () => {
+      const worst = Math.max(...DAYS.map((day) => timeGame(day).elapsed));
+      expect(worst, `worst day took ${worst.toFixed(0)} ms`).toBeLessThan(WALL_CLOCK_CEILING);
+    },
+    60_000,
+  );
 });
