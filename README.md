@@ -5,11 +5,9 @@ luck of your outcomes. A conventional word game rewards you for how few guesses 
 measures each guess against what was actually knowable when you made it, so a lucky hit earns no
 credit for its luck and a well-judged guess that happened not to land still scores well.
 
-**Status: increment 7 of 11.** The scoring engine is complete and proven against the
-specification's verification suite, the word lists are generated, and the daily game is playable
-end to end — confirm your settings, play the board, reload without losing anything. Still to come:
-the results view that shows your score, sharing and replay, personal stats, and the accessibility
-pass.
+**Status: complete.** All eleven increments have landed. The scoring engine is proven against the
+specification's verification suite, and the daily loop runs end to end: confirm your settings, play,
+see your round scored, share it, and open somebody else's link to the same total they saw.
 
 ## Requirements
 
@@ -37,9 +35,27 @@ npm run dev   # start the dev server on http://localhost:5173
 | `npm run lint`      | ESLint, including the dependency rule below                |
 | `npm run test`      | Vitest, once                                               |
 | `npm run test:watch`| Vitest in watch mode                                       |
+| `npm run test:e2e`  | Playwright against a production build                      |
 
 Every one of these runs in CI on each push and pull request, and each commit on `main` is expected
 to leave all of them passing.
+
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [`docs/spec.md`](docs/spec.md) | The build specification. Normative. |
+| [`docs/philosophy.md`](docs/philosophy.md) | Why the game is designed this way. Governs judgement calls the spec leaves open. |
+| [`docs/scoring.md`](docs/scoring.md) | The scoring model as implemented, and what each constant trades. |
+| [`docs/determinism.md`](docs/determinism.md) | Why a score is bit-identical everywhere, and what would break it. |
+| [`docs/wordlists.md`](docs/wordlists.md) | Sources, licensing, generation, and the asserted properties. |
+| [`docs/architecture.md`](docs/architecture.md) | The module map, the ports, and the invariants enforced by shape. |
+| [`docs/decisions/`](docs/decisions) | Calls the spec and philosophy left open. |
+| [`CHANGELOG.md`](CHANGELOG.md) | What landed in each increment, and what was verified. |
+
+If you read one beyond the spec, read `docs/determinism.md`. Cross-client determinism is the second
+priority in the specification and the requirement most likely to be broken silently by a reasonable
+looking change.
 
 ## Layout and the dependency rule
 
