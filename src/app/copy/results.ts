@@ -19,11 +19,20 @@
  * celebratory one.
  */
 
+import { UNSOLVED_GUESSES } from '../../engine/config/constants';
+
 const STROKE_WORDS = ['level', 'a stroke', 'two strokes', 'three strokes', 'four strokes'];
 
-/** "1.5 under par", "level par", "half a stroke over". */
+/**
+ * "1.5 strokes under par", "level with par", "a stroke over par".
+ *
+ * The unsolved floor comes from the constant rather than a literal 7, because
+ * this sentence is rendered directly beside the points `outcomePoints` computed
+ * from the same floor. A hardcoded copy would let the words disagree with the
+ * number under them the moment the floor moved.
+ */
 export function parPhrase(guessesUsed: number, par: number, solved: boolean): string {
-  const effective = solved ? guessesUsed : 7;
+  const effective = solved ? guessesUsed : UNSOLVED_GUESSES;
   const difference = par - effective;
   const size = Math.abs(difference);
 
@@ -78,10 +87,10 @@ export function guessNote(
   turn: number,
   candidateCount: number,
 ): string {
-  if (skill === null) {
-    if (turn === 1) return 'Opener, not scored';
-    return candidateCount <= 1 ? 'Only one word left' : 'Not scored';
-  }
+  // Only the opener is unscored now. A guess facing one candidate scores 100
+  // with zero weight, so it reports a score like any other.
+  if (skill === null) return turn === 1 ? 'Opener, not scored' : 'Not scored';
+  if (candidateCount <= 1) return 'Only one word left';
   if (forced) return 'Forced — nothing better existed';
   if (skill >= 99) return 'Best available';
   if (skill >= 90) return 'Near best';
@@ -124,6 +133,8 @@ export const BADGES = {
   unsolved: 'Unsolved',
   /** Celebratory, and cosmetic by design: these must never carry points. */
   holeInOne: 'Hole in one',
-  quickRound: 'Under par in three',
+  // Fires at three guesses or fewer, so it must not name a number — a
+  // two-guess solve badged "in three" reads like a bug.
+  quickRound: 'Quick round',
   cleanRound: 'Clean round',
 } as const;
