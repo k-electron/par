@@ -7,5 +7,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.{ts,tsx}'],
+    // Boundary fixtures are deliberately illegal source. They are never
+    // executed; tests/boundaries.test.ts lints them as text instead.
+    exclude: ['tests/fixtures/**'],
   },
 });
