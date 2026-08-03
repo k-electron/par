@@ -63,9 +63,25 @@ export function headline(skill: number, solved: boolean): string {
   return 'Got there, and that is the main thing.';
 }
 
-/** How a single guess's skill score reads in the breakdown. */
-export function guessNote(skill: number | null, forced: boolean): string {
-  if (skill === null) return 'Opener, not scored';
+/**
+ * How a single guess's skill score reads in the breakdown.
+ *
+ * A guess goes unscored for two different reasons and they must not read the
+ * same. The opener is excluded by design. A later guess is excluded when only
+ * one word was still possible, because its weight is `log2 1 = 0` and it could
+ * not move the average either way — calling that one an opener would be simply
+ * wrong on the sixth row.
+ */
+export function guessNote(
+  skill: number | null,
+  forced: boolean,
+  turn: number,
+  candidateCount: number,
+): string {
+  if (skill === null) {
+    if (turn === 1) return 'Opener, not scored';
+    return candidateCount <= 1 ? 'Only one word left' : 'Not scored';
+  }
   if (forced) return 'Forced — nothing better existed';
   if (skill >= 99) return 'Best available';
   if (skill >= 90) return 'Near best';

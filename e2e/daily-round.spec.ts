@@ -101,6 +101,30 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   await clean.close();
 });
 
+test('the results sit below the board rather than on top of it', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start' }).click();
+
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+    if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
+    await page.keyboard.type(word);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(120);
+  }
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+
+  // While playing, the layout is pinned to the viewport so the board and
+  // keyboard fit without scrolling. The results are legitimately taller than
+  // the screen, so that height has to be released — when it was not, the score
+  // rendered straight over the tiles and neither could be read.
+  const lastTile = await page.getByTestId('tile-5-4').boundingBox();
+  const total = await page.getByText(/played at \d+%/).boundingBox();
+
+  expect(lastTile).not.toBeNull();
+  expect(total).not.toBeNull();
+  expect(total!.y).toBeGreaterThan(lastTile!.y + lastTile!.height);
+});
+
 test('an in-progress game survives a reload exactly', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
