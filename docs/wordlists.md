@@ -84,6 +84,17 @@ starter pool      5000   4500 distinct (90.0%), 500 one-pair
 **The answer list is comfortable.** Its cutoff sits at Zipf 2.90 among words like `heave`,
 `knoll`, `mulch` and `suave`. Nobody loses a day to a word they have never met.
 
+**About 1.2% of answers double as first names.** The Scrabble intersection does the job it was
+picked for — capitalised-only names like WAYNE and DUBAI are absent — but it cannot exclude
+words that are simultaneously a name and a lowercase dictionary entry, and frequency ranking
+mildly favours them because the name usage inflates the count. Thirty-six of the three
+thousand are in this class, roughly one puzzle every three months.
+
+Most are unambiguously real words that happen to also be names: `frank`, `grant`, `mason`,
+`pearl`, `hazel`, `penny`, `terry`, `sandy`, `patty`. A handful read as names first — `sammy`,
+`danny`, `peggy`, `monty`. We ship them. Filtering would mean sourcing and vendoring a names
+list to remove one awkward day a quarter, and most of what it removed would be collateral.
+
 **The starter pool's distinct-letter tail is the weak spot, and it is arithmetic rather than
 a tuning mistake.** Only 5,701 five-distinct-letter Collins words appear in the frequency
 corpus at all. A 5,000-word pool at 90% distinct needs 4,500 of them, so it necessarily reaches
