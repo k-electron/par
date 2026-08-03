@@ -211,14 +211,19 @@ describe('the values behind those scores', () => {
     expect(solver.valueOf(single, NO_CONSTRAINTS)).toBe(1);
   });
 
-  it('derives both base cases rather than hard-coding them', () => {
-    // Nothing in the search special-cases a small candidate set: a one-candidate
-    // position is worth 1 because the candidate wins outright, and a
-    // two-candidate one is worth 3/2 because the candidate wins half the time.
-    // That is what lets the brute-force policy stand as the reference for the
-    // definition instead of only for its interior.
+  it('short-circuits the endgame to the same values the search would find', () => {
+    // The search settles one- and two-candidate positions by argument instead of
+    // by ranking the dictionary, because that is where the node count
+    // concentrates. The shortcut is only sound if it agrees with the recursion,
+    // and every exact figure above depends on it: 100 against 75 is (3/2) / 2,
+    // and the non-splitting 60 is (3/2) / (5/2).
     expect(searcher.valueOf(Int32Array.from([0]), NO_CONSTRAINTS)).toBe(1);
     expect(searcher.valueOf(Int32Array.from([0, 1]), NO_CONSTRAINTS)).toBe(1.5);
+
+    // And it is reached through the recursion too, not only at the root: a
+    // separating probe's cost is 1 + (1·V{batch} + 1·V{catch}) / 2, which is 2
+    // exactly when both children come back as 1.
+    expect(cost('bongo')).toBe(2);
   });
 });
 
