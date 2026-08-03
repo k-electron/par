@@ -1,0 +1,4 @@
+# SPA fallback: every path is served by the client-side app.
+# Replay links carry their payload in the URL fragment, which never reaches the
+# server, so this rule exists purely so a deep link survives a cold load.
+/*  /index.html  200
