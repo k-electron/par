@@ -24,6 +24,7 @@ import { Keyboard } from './Keyboard';
 import { LockedSettings } from './LockedSettings';
 import { Results } from './Results';
 import { ScoringExplainer } from './ScoringExplainer';
+import { ShareButton } from './ShareButton';
 
 export interface GameScreenProps {
   readonly answer: string;
@@ -168,6 +169,14 @@ export function GameScreen({
       {finished && scoring !== undefined ? (
         <Stack spacing={1} sx={{ pb: 1 }}>
           <Results score={score} settings={settings} />
+          {score !== null && (
+            <ShareButton
+              puzzleNumber={puzzleNumber}
+              score={score}
+              settings={settings}
+              guesses={session.guesses}
+            />
+          )}
           <Button size="small" variant="text" onClick={() => setExplaining(true)}>
             {RESULTS.explainerLink}
           </Button>
