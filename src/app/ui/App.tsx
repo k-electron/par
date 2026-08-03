@@ -9,16 +9,25 @@ import { createWorkerScoringClient, type ScoringClient } from '../scoring/client
 import { Repository, type ConfirmedSettings, type DayRecord } from '../storage/repository';
 import { createBestAvailableStorage } from '../storage/storage';
 import { GameScreen } from './GameScreen';
+import { Replay } from './Replay';
 import { SettingsGate } from './SettingsGate';
+
+/** The replay payload in the current URL fragment, if there is one. */
+function replayPayloadFrom(hash: string): string | null {
+  const match = /^#r=(.+)$/.exec(hash);
+  return match?.[1] ?? null;
+}
 
 export interface AppProps {
   /** Overridable so tests can pin a day, a storage backend and a scorer. */
   readonly repository?: Repository;
   readonly now?: Date;
   readonly scoring?: ScoringClient;
+  /** Overridable so tests need not manipulate the real location. */
+  readonly initialHash?: string;
 }
 
-export function App({ repository, now, scoring }: AppProps = {}) {
+export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
   const store = useMemo(
     () => repository ?? new Repository(createBestAvailableStorage()),
     [repository],
@@ -84,6 +93,30 @@ export function App({ repository, now, scoring }: AppProps = {}) {
     },
     [store],
   );
+
+  const [replayPayload, setReplayPayload] = useState<string | null>(() =>
+    replayPayloadFrom(initialHash ?? (typeof location === 'undefined' ? '' : location.hash)),
+  );
+
+  const leaveReplay = useCallback(() => {
+    setReplayPayload(null);
+    if (typeof history !== 'undefined' && typeof location !== 'undefined') {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  }, []);
+
+  if (replayPayload !== null) {
+    return (
+      <Box component="main">
+        <Replay
+          payload={replayPayload}
+          store={store}
+          scoring={scorer}
+          onDismiss={leaveReplay}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box component="main">
