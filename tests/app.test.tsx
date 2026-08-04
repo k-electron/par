@@ -15,6 +15,7 @@ import { createMemoryStorage } from '../src/app/storage/storage';
 import { theme } from '../src/app/theme/theme';
 import { App } from '../src/app/ui/App';
 import { GameScreen } from '../src/app/ui/GameScreen';
+import { INSTANT_REVEAL } from '../src/app/ui/reveal';
 import { MAX_GUESSES } from '../src/app/state/gameSession';
 import { normalRuleset } from '../src/engine/rules/ruleset';
 
@@ -33,6 +34,8 @@ const settings: ConfirmedSettings = {
   confirmed: true,
 };
 
+// These tests are about the rules of the board, not the theatre of the reveal,
+// so they play with it turned off. tests/app/reveal.test.tsx owns the animation.
 function renderGame(answer: string) {
   return renderWithTheme(
     <GameScreen
@@ -41,6 +44,7 @@ function renderGame(answer: string) {
       settings={settings}
       restoredGuesses={[]}
       rules={rules}
+      reveal={INSTANT_REVEAL}
     />,
   );
 }
@@ -48,7 +52,7 @@ function renderGame(answer: string) {
 /** The app past its settings gate, so the board is on screen. */
 function renderConfirmedApp() {
   const store = new Repository(createMemoryStorage());
-  const rendered = renderWithTheme(<App repository={store} />);
+  const rendered = renderWithTheme(<App repository={store} reveal={INSTANT_REVEAL} />);
   return rendered;
 }
 

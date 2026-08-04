@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 import { RESULTS } from '../copy/results';
@@ -23,6 +24,7 @@ import {
 } from '../state/gameSession';
 import { AppearanceMenu } from './AppearanceMenu';
 import { Board } from './Board';
+import { INSTANT_REVEAL, REVEAL, revealDuration, type RevealTiming } from './reveal';
 import { Keyboard } from './Keyboard';
 import { LockedSettings } from './LockedSettings';
 import { Results } from './Results';
@@ -45,6 +47,18 @@ export interface GameScreenProps {
   readonly stats?: PlayerStats | undefined;
   readonly appearance?: AppearancePreferences | undefined;
   readonly onAppearanceChange?: ((preferences: AppearancePreferences) => void) | undefined;
+  /** Overridable so tests can play without waiting on the animation. */
+  readonly reveal?: RevealTiming;
+  /**
+   * Whether the guesses already present at mount should turn over.
+   *
+   * True for the house starter, which is played the instant the day is
+   * confirmed and is the one moment worth making a show of — the blind bet
+   * turning face up. False for a game restored from storage, where the rows were
+   * revealed on an earlier visit and replaying the animation would be a lie
+   * about when they happened.
+   */
+  readonly revealOnMount?: boolean;
 }
 
 export function GameScreen({
@@ -59,6 +73,8 @@ export function GameScreen({
   stats,
   appearance,
   onAppearanceChange,
+  reveal = REVEAL,
+  revealOnMount = false,
 }: GameScreenProps) {
   const [session, dispatch] = useReducer(
     (state: GameSession, action: GameAction) => reduceGame(state, action, rules),
@@ -66,13 +82,65 @@ export function GameScreen({
     () => replaySession(answer, rules.ruleset, restoredGuesses),
   );
 
+  // Somebody who has asked for less motion gets the board's state without the
+  // theatre. The theme already neuters the animation itself; this also collapses
+  // the wait, so nothing is gated behind a flip they will not see.
+  const stillness = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const timing = stillness ? INSTANT_REVEAL : reveal;
+
+  /**
+   * The row turning over, or -1.
+   *
+   * Presentation only, and deliberately not in the reducer: the rules of the
+   * game do not depend on how long an animation takes, and putting a timer in
+   * there would make a pure function answer differently depending on when it was
+   * asked.
+   */
+  const [revealingRow, setRevealingRow] = useState(
+    revealOnMount && restoredGuesses.length > 0 ? restoredGuesses.length - 1 : -1,
+  );
+
   const rows = useMemo(() => boardRows(session), [session]);
-  const letterStates = useMemo(() => keyboardState(session), [session]);
-  const finished = session.status !== 'playing';
+  // Keys hold still while the newest row turns, then catch up with it.
+  const letterStates = useMemo(
+    () => keyboardState(session, revealingRow === -1 ? undefined : revealingRow),
+    [session, revealingRow],
+  );
+
+  const revealing = revealingRow !== -1;
+  // `over` is about the game, `finished` about the screen. The score is computed
+  // from the first, shown on the second, so the worker runs during the flip and
+  // the number is already waiting when the last tile lands.
+  const over = session.status !== 'playing';
+  const finished = over && !revealing;
 
   const onLetter = useCallback((letter: string) => dispatch({ type: 'letter', letter }), []);
   const onBackspace = useCallback(() => dispatch({ type: 'backspace' }), []);
-  const onSubmit = useCallback(() => dispatch({ type: 'submit' }), []);
+  // Letters and backspace stay live through the reveal so no keystroke is
+  // swallowed, but a guess cannot be submitted onto a row still turning over.
+  const onSubmit = useCallback(() => {
+    if (revealing) return;
+    dispatch({ type: 'submit' });
+  }, [revealing]);
+
+  // Turn over each new row as it lands. Keyed on the count rather than on the
+  // array, so a re-render that changes nothing about the guesses cannot replay
+  // an animation the player has already watched.
+  const revealedThrough = useRef(restoredGuesses.length);
+  useEffect(() => {
+    if (session.guesses.length <= revealedThrough.current) return;
+    revealedThrough.current = session.guesses.length;
+    setRevealingRow(session.guesses.length - 1);
+  }, [session.guesses.length]);
+
+  // Depends on the duration rather than the timing object, so a caller passing a
+  // fresh object literal every render cannot restart the clock forever.
+  const settleAfter = revealDuration(timing);
+  useEffect(() => {
+    if (revealingRow === -1) return;
+    const settled = setTimeout(() => setRevealingRow(-1), settleAfter);
+    return () => clearTimeout(settled);
+  }, [revealingRow, settleAfter]);
 
   // Persist whenever a guess actually lands, not on every keystroke.
   const lastSaved = useRef(restoredGuesses.length);
@@ -109,7 +177,7 @@ export function GameScreen({
   const [explaining, setExplaining] = useState(false);
 
   useEffect(() => {
-    if (!finished || scoring === undefined) return;
+    if (!over || scoring === undefined) return;
 
     let current = true;
     void scoring
@@ -138,7 +206,7 @@ export function GameScreen({
     return () => {
       current = false;
     };
-  }, [finished, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode, onScored]);
+  }, [over, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode, onScored]);
 
   const [showingStats, setShowingStats] = useState(false);
 
@@ -203,7 +271,13 @@ export function GameScreen({
           minHeight: 0,
         }}
       >
-        <Board rows={rows} activeRow={activeRow} rejectionNonce={session.notice?.nonce ?? 0} />
+        <Board
+          rows={rows}
+          activeRow={activeRow}
+          rejectionNonce={session.notice?.nonce ?? 0}
+          revealingRow={revealingRow}
+          timing={timing}
+        />
       </Box>
 
       {/* Reserved height so the board does not jump when a notice appears. */}
@@ -214,12 +288,16 @@ export function GameScreen({
               {session.notice.message}
             </Alert>
           )}
-          {session.status === 'won' && scoring === undefined && (
+          {/*
+            Both wait for the row to settle. Naming the answer while its row is
+            still turning over gives away the ending mid-sentence.
+          */}
+          {finished && session.status === 'won' && scoring === undefined && (
             <Alert severity="success" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
               Solved in {session.guesses.length} of {MAX_GUESSES}.
             </Alert>
           )}
-          {session.status === 'lost' && (
+          {finished && session.status === 'lost' && (
             <Alert severity="info" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
               Out of guesses. The answer was {session.answer.toUpperCase()}.
             </Alert>
