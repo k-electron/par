@@ -61,6 +61,7 @@ function scoreWith(solved: boolean, guessesUsed: number, skill: number): GameSco
     guess: 'crane',
     pattern: 0,
     candidateCount: 100,
+    remainingCount: 10,
     skill: index === 0 ? null : skill,
     weight: index === 0 ? 0 : 1,
     luck: 0,

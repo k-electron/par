@@ -51,6 +51,15 @@ export interface GuessBreakdown {
   readonly pattern: number;
   /** Candidates alive *before* this guess. */
   readonly candidateCount: number;
+  /**
+   * Candidates still alive *after* the feedback came back. Display only.
+   *
+   * Already computed here for the luck figure, and kept because the results
+   * table needs it: a row that reports only the count going in describes the
+   * guess before it rather than itself, and the reader has to look down a line
+   * to find out what their guess actually achieved.
+   */
+  readonly remainingCount: number;
   /** `s_i`, or null when the guess is not skill-scored. */
   readonly skill: number | null;
   /** Its share of the skill average, `log2 |S_i|`. Zero when unscored. */
@@ -132,6 +141,7 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
       guess,
       pattern,
       candidateCount,
+      remainingCount: remaining,
       skill: assessment?.skill ?? null,
       weight,
       // Shown for guess 1 too: it is the honest explanation for a fast finish,
