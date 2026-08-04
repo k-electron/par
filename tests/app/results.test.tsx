@@ -13,6 +13,7 @@ import { createDirectScoringClient, scoreDirectly } from '../../src/app/scoring/
 import { theme } from '../../src/app/theme/theme';
 import { App } from '../../src/app/ui/App';
 import { Results } from '../../src/app/ui/Results';
+import { INSTANT_REVEAL } from '../../src/app/ui/reveal';
 import { ScoringExplainer } from '../../src/app/ui/ScoringExplainer';
 import { Repository, type ConfirmedSettings } from '../../src/app/storage/repository';
 import { createMemoryStorage } from '../../src/app/storage/storage';
@@ -32,6 +33,9 @@ function mountApp() {
         repository={new Repository(createMemoryStorage())}
         now={FIXED_NOW}
         scoring={createDirectScoringClient()}
+        // These are about what the results say, not about the wait before they
+        // appear. The reveal has its own file.
+        reveal={INSTANT_REVEAL}
       />
     </ThemeProvider>,
   );

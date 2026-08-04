@@ -20,6 +20,7 @@ import { createBestAvailableStorage } from '../storage/storage';
 import { GameScreen } from './GameScreen';
 import { Replay } from './Replay';
 import { SettingsGate } from './SettingsGate';
+import type { RevealTiming } from './reveal';
 
 /** The replay payload in the current URL fragment, if there is one. */
 function replayPayloadFrom(hash: string): string | null {
@@ -34,9 +35,11 @@ export interface AppProps {
   readonly scoring?: ScoringClient;
   /** Overridable so tests need not manipulate the real location. */
   readonly initialHash?: string;
+  /** Overridable so tests can play without waiting on the tile reveal. */
+  readonly reveal?: RevealTiming;
 }
 
-export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
+export function App({ repository, now, scoring, initialHash, reveal }: AppProps = {}) {
   const store = useMemo(
     () => repository ?? new Repository(createBestAvailableStorage()),
     [repository],
@@ -58,6 +61,17 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
   // Restoring the day's record is what makes the lock survive a reload: the
   // confirmed settings live in the record, not in component state.
   const [record, setRecord] = useState<DayRecord | null>(() => store.loadDay(puzzle.puzzleNumber));
+
+  /**
+   * Whether this day was confirmed in this visit rather than read back from
+   * storage.
+   *
+   * Only then should the guesses already on the board turn over: the house
+   * starter is being played right now and is worth a moment, while a restored
+   * game was revealed on an earlier visit and replaying it would misrepresent
+   * when it happened.
+   */
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   /**
    * Bumped whenever a scored day is written, which is the only way the stored
@@ -90,6 +104,7 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
       };
       store.saveDay(fresh);
       setRecord(fresh);
+      setJustConfirmed(true);
     },
     [puzzle.puzzleNumber, puzzle.starter, store],
   );
@@ -186,6 +201,8 @@ export function App({ repository, now, scoring, initialHash }: AppProps = {}) {
             stats={stats}
             appearance={appearance}
             onAppearanceChange={changeAppearance}
+            {...(reveal !== undefined ? { reveal } : {})}
+            revealOnMount={justConfirmed}
           />
         )}
       </Box>
