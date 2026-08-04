@@ -10,7 +10,17 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import { BADGES, RESULTS, guessNote, headline, luckNote, parPhrase, skillPhrase } from '../copy/results';
+import {
+  BADGES,
+  RESULTS,
+  ROUND,
+  guessNote,
+  headline,
+  luckNote,
+  parPhrase,
+  skillPhrase,
+  type RoundVariant,
+} from '../copy/results';
 import { PAR } from '../../engine/config/constants';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
@@ -18,6 +28,8 @@ import type { ConfirmedSettings } from '../storage/repository';
 export interface ResultsProps {
   readonly score: GameScore | null;
   readonly settings: ConfirmedSettings;
+  /** Whose round this is. Only the second-person phrasing changes. */
+  readonly variant?: RoundVariant;
 }
 
 /** Celebratory badges. Cosmetic by design — they must never carry points. */
@@ -53,13 +65,15 @@ function Figure({ label, value, caption }: { label: string; value: string; capti
   );
 }
 
-export function Results({ score, settings }: ResultsProps) {
+export function Results({ score, settings, variant = 'own' }: ResultsProps) {
+  const words = ROUND[variant];
+
   if (score === null) {
     return (
       <Stack spacing={1} sx={{ alignItems: 'center', py: 3 }} aria-busy="true">
         <CircularProgress size={22} />
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Working out your round&hellip;
+          {words.pending}
         </Typography>
       </Stack>
     );
@@ -69,7 +83,7 @@ export function Results({ score, settings }: ResultsProps) {
     <Stack spacing={1.5} sx={{ width: '100%' }}>
       <Stack spacing={0.5} sx={{ textAlign: 'center' }}>
         <Typography variant="overline" sx={{ color: 'text.secondary' }}>
-          {RESULTS.title}
+          {words.title}
         </Typography>
         <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1 }}>
           {score.total.toFixed(1)}
