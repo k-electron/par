@@ -5,9 +5,12 @@ luck of your outcomes. A conventional word game rewards you for how few guesses 
 measures each guess against what was actually knowable when you made it, so a lucky hit earns no
 credit for its luck and a well-judged guess that happened not to land still scores well.
 
-**Status: complete.** All eleven increments have landed. The scoring engine is proven against the
-specification's verification suite, and the daily loop runs end to end: confirm your settings, play,
-see your round scored, share it, and open somebody else's link to the same total they saw.
+**Play it at [par-e7i.pages.dev](https://par-e7i.pages.dev).**
+
+**Status: complete and deployed.** All eleven increments have landed. The scoring engine is proven
+against the specification's verification suite, and the daily loop runs end to end: confirm your
+settings, play, see your round scored, share it, and open somebody else's link to the same total
+they saw.
 
 ## Requirements
 
@@ -153,7 +156,7 @@ In the Cloudflare dashboard:
 
    | Setting                 | Value                                     |
    | ----------------------- | ----------------------------------------- |
-   | Project name            | `par` (this becomes `par.pages.dev`)      |
+   | Project name            | `par` (see the note on hostnames below)   |
    | Production branch       | `main`                                    |
    | Framework preset        | `React (Vite)` — or `None`, see below     |
    | Build command           | `npm run build`                           |
@@ -165,8 +168,10 @@ In the Cloudflare dashboard:
    in exactly the two values above; if the preset is not offered, choose `None` and type them in.
    The result is identical.
 
-   The project name is also the hostname, and `pages.dev` names are globally unique. If `par` is
-   refused, someone else holds it; pick another and expect the URL to follow.
+   The project name feeds the hostname, but it does not determine it. `pages.dev` subdomains are
+   globally unique, and `par` was already taken, so Cloudflare appended a suffix and this deployment
+   answers on **`par-e7i.pages.dev`**. Read the hostname off the first deployment rather than
+   assuming it matches the project name.
 
 4. Select **Save and Deploy**.
 
