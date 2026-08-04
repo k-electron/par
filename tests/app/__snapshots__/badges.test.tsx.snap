@@ -1,0 +1,1156 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`badge selection > is unchanged across every input that can move it 1`] = `
+"won  1/6 skill=0.1                normal own  
+    results: Own opener | Solved | Hole in one
+    shared : 🎯 hole in one
+won  1/6 skill=0.1                normal house
+    results: House starter | Solved | Hole in one
+    shared : 🏠 house starter · 🎯 hole in one
+won  1/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one
+    shared : ⚙️ hard · 🎯 hole in one
+won  1/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Solved | Hole in one
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one
+won  1/6 skill=50                 normal own  
+    results: Own opener | Solved | Hole in one
+    shared : 🎯 hole in one
+won  1/6 skill=50                 normal house
+    results: House starter | Solved | Hole in one
+    shared : 🏠 house starter · 🎯 hole in one
+won  1/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one
+    shared : ⚙️ hard · 🎯 hole in one
+won  1/6 skill=50                 hard   house
+    results: House starter | Hard mode | Solved | Hole in one
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one
+won  1/6 skill=96.9               normal own  
+    results: Own opener | Solved | Hole in one
+    shared : 🎯 hole in one
+won  1/6 skill=96.9               normal house
+    results: House starter | Solved | Hole in one
+    shared : 🏠 house starter · 🎯 hole in one
+won  1/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one
+    shared : ⚙️ hard · 🎯 hole in one
+won  1/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Solved | Hole in one
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one
+won  1/6 skill=96.99999999999999  normal own  
+    results: Own opener | Solved | Hole in one
+    shared : 🎯 hole in one
+won  1/6 skill=96.99999999999999  normal house
+    results: House starter | Solved | Hole in one
+    shared : 🏠 house starter · 🎯 hole in one
+won  1/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one
+    shared : ⚙️ hard · 🎯 hole in one
+won  1/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Solved | Hole in one
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one
+won  1/6 skill=97                 normal own  
+    results: Own opener | Solved | Hole in one | Clean round
+    shared : 🎯 hole in one · ✨ clean round
+won  1/6 skill=97                 normal house
+    results: House starter | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · 🎯 hole in one · ✨ clean round
+won  1/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one | Clean round
+    shared : ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=97                 hard   house
+    results: House starter | Hard mode | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=97.00000000000001  normal own  
+    results: Own opener | Solved | Hole in one | Clean round
+    shared : 🎯 hole in one · ✨ clean round
+won  1/6 skill=97.00000000000001  normal house
+    results: House starter | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · 🎯 hole in one · ✨ clean round
+won  1/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one | Clean round
+    shared : ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=99                 normal own  
+    results: Own opener | Solved | Hole in one | Clean round
+    shared : 🎯 hole in one · ✨ clean round
+won  1/6 skill=99                 normal house
+    results: House starter | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · 🎯 hole in one · ✨ clean round
+won  1/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one | Clean round
+    shared : ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=99                 hard   house
+    results: House starter | Hard mode | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=100                normal own  
+    results: Own opener | Solved | Hole in one | Clean round
+    shared : 🎯 hole in one · ✨ clean round
+won  1/6 skill=100                normal house
+    results: House starter | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · 🎯 hole in one · ✨ clean round
+won  1/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Solved | Hole in one | Clean round
+    shared : ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  1/6 skill=100                hard   house
+    results: House starter | Hard mode | Solved | Hole in one | Clean round
+    shared : 🏠 house starter · ⚙️ hard · 🎯 hole in one · ✨ clean round
+won  2/6 skill=0.1                normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  2/6 skill=0.1                normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  2/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  2/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  2/6 skill=50                 normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  2/6 skill=50                 normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  2/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  2/6 skill=50                 hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  2/6 skill=96.9               normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  2/6 skill=96.9               normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  2/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  2/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  2/6 skill=96.99999999999999  normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  2/6 skill=96.99999999999999  normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  2/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  2/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  2/6 skill=97                 normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  2/6 skill=97                 normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  2/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=97                 hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=97.00000000000001  normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  2/6 skill=97.00000000000001  normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  2/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=99                 normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  2/6 skill=99                 normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  2/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=99                 hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=100                normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  2/6 skill=100                normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  2/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  2/6 skill=100                hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=0.1                normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  3/6 skill=0.1                normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  3/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  3/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  3/6 skill=50                 normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  3/6 skill=50                 normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  3/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  3/6 skill=50                 hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  3/6 skill=96.9               normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  3/6 skill=96.9               normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  3/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  3/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  3/6 skill=96.99999999999999  normal own  
+    results: Own opener | Solved | Quick round
+    shared : ⚡ quick round
+won  3/6 skill=96.99999999999999  normal house
+    results: House starter | Solved | Quick round
+    shared : 🏠 house starter · ⚡ quick round
+won  3/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Solved | Quick round
+    shared : ⚙️ hard · ⚡ quick round
+won  3/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Solved | Quick round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round
+won  3/6 skill=97                 normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  3/6 skill=97                 normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  3/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=97                 hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=97.00000000000001  normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  3/6 skill=97.00000000000001  normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  3/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=99                 normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  3/6 skill=99                 normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  3/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=99                 hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=100                normal own  
+    results: Own opener | Solved | Quick round | Clean round
+    shared : ⚡ quick round · ✨ clean round
+won  3/6 skill=100                normal house
+    results: House starter | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚡ quick round · ✨ clean round
+won  3/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Solved | Quick round | Clean round
+    shared : ⚙️ hard · ⚡ quick round · ✨ clean round
+won  3/6 skill=100                hard   house
+    results: House starter | Hard mode | Solved | Quick round | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ⚡ quick round · ✨ clean round
+won  4/6 skill=0.1                normal own  
+    results: Own opener | Solved
+    shared : 
+won  4/6 skill=0.1                normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  4/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  4/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  4/6 skill=50                 normal own  
+    results: Own opener | Solved
+    shared : 
+won  4/6 skill=50                 normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  4/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  4/6 skill=50                 hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  4/6 skill=96.9               normal own  
+    results: Own opener | Solved
+    shared : 
+won  4/6 skill=96.9               normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  4/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  4/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  4/6 skill=96.99999999999999  normal own  
+    results: Own opener | Solved
+    shared : 
+won  4/6 skill=96.99999999999999  normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  4/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  4/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  4/6 skill=97                 normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  4/6 skill=97                 normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  4/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  4/6 skill=97                 hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  4/6 skill=97.00000000000001  normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  4/6 skill=97.00000000000001  normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  4/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  4/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  4/6 skill=99                 normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  4/6 skill=99                 normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  4/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  4/6 skill=99                 hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  4/6 skill=100                normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  4/6 skill=100                normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  4/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  4/6 skill=100                hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  5/6 skill=0.1                normal own  
+    results: Own opener | Solved
+    shared : 
+won  5/6 skill=0.1                normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  5/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  5/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  5/6 skill=50                 normal own  
+    results: Own opener | Solved
+    shared : 
+won  5/6 skill=50                 normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  5/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  5/6 skill=50                 hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  5/6 skill=96.9               normal own  
+    results: Own opener | Solved
+    shared : 
+won  5/6 skill=96.9               normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  5/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  5/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  5/6 skill=96.99999999999999  normal own  
+    results: Own opener | Solved
+    shared : 
+won  5/6 skill=96.99999999999999  normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  5/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  5/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  5/6 skill=97                 normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  5/6 skill=97                 normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  5/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  5/6 skill=97                 hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  5/6 skill=97.00000000000001  normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  5/6 skill=97.00000000000001  normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  5/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  5/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  5/6 skill=99                 normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  5/6 skill=99                 normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  5/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  5/6 skill=99                 hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  5/6 skill=100                normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  5/6 skill=100                normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  5/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  5/6 skill=100                hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  6/6 skill=0.1                normal own  
+    results: Own opener | Solved
+    shared : 
+won  6/6 skill=0.1                normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  6/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  6/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  6/6 skill=50                 normal own  
+    results: Own opener | Solved
+    shared : 
+won  6/6 skill=50                 normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  6/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  6/6 skill=50                 hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  6/6 skill=96.9               normal own  
+    results: Own opener | Solved
+    shared : 
+won  6/6 skill=96.9               normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  6/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  6/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  6/6 skill=96.99999999999999  normal own  
+    results: Own opener | Solved
+    shared : 
+won  6/6 skill=96.99999999999999  normal house
+    results: House starter | Solved
+    shared : 🏠 house starter
+won  6/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Solved
+    shared : ⚙️ hard
+won  6/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Solved
+    shared : 🏠 house starter · ⚙️ hard
+won  6/6 skill=97                 normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  6/6 skill=97                 normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  6/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  6/6 skill=97                 hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  6/6 skill=97.00000000000001  normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  6/6 skill=97.00000000000001  normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  6/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  6/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  6/6 skill=99                 normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  6/6 skill=99                 normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  6/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  6/6 skill=99                 hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+won  6/6 skill=100                normal own  
+    results: Own opener | Solved | Clean round
+    shared : ✨ clean round
+won  6/6 skill=100                normal house
+    results: House starter | Solved | Clean round
+    shared : 🏠 house starter · ✨ clean round
+won  6/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Solved | Clean round
+    shared : ⚙️ hard · ✨ clean round
+won  6/6 skill=100                hard   house
+    results: House starter | Hard mode | Solved | Clean round
+    shared : 🏠 house starter · ⚙️ hard · ✨ clean round
+lost 1/6 skill=0.1                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=0.1                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=50                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=50                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=50                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=96.9               normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=96.9               normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=96.99999999999999  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=96.99999999999999  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=97                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=97                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=97                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=97.00000000000001  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=97.00000000000001  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=99                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=99                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=99                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 1/6 skill=100                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 1/6 skill=100                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 1/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 1/6 skill=100                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=0.1                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=0.1                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=50                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=50                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=50                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=96.9               normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=96.9               normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=96.99999999999999  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=96.99999999999999  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=97                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=97                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=97                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=97.00000000000001  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=97.00000000000001  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=99                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=99                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=99                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 2/6 skill=100                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 2/6 skill=100                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 2/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 2/6 skill=100                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=0.1                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=0.1                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=50                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=50                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=50                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=96.9               normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=96.9               normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=96.99999999999999  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=96.99999999999999  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=97                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=97                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=97                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=97.00000000000001  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=97.00000000000001  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=99                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=99                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=99                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 3/6 skill=100                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 3/6 skill=100                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 3/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 3/6 skill=100                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=0.1                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=0.1                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=50                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=50                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=50                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=96.9               normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=96.9               normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=96.99999999999999  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=96.99999999999999  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=97                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=97                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=97                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=97.00000000000001  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=97.00000000000001  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=99                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=99                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=99                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 4/6 skill=100                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 4/6 skill=100                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 4/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 4/6 skill=100                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=0.1                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=0.1                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=50                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=50                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=50                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=96.9               normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=96.9               normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=96.99999999999999  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=96.99999999999999  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=97                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=97                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=97                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=97.00000000000001  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=97.00000000000001  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=99                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=99                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=99                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 5/6 skill=100                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 5/6 skill=100                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 5/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 5/6 skill=100                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=0.1                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=0.1                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=0.1                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=0.1                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=50                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=50                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=50                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=50                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=96.9               normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=96.9               normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=96.9               hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=96.9               hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=96.99999999999999  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=96.99999999999999  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=96.99999999999999  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=96.99999999999999  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=97                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=97                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=97                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=97                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=97.00000000000001  normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=97.00000000000001  normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=97.00000000000001  hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=97.00000000000001  hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=99                 normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=99                 normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=99                 hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=99                 hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard
+lost 6/6 skill=100                normal own  
+    results: Own opener | Unsolved
+    shared : 
+lost 6/6 skill=100                normal house
+    results: House starter | Unsolved
+    shared : 🏠 house starter
+lost 6/6 skill=100                hard   own  
+    results: Own opener | Hard mode | Unsolved
+    shared : ⚙️ hard
+lost 6/6 skill=100                hard   house
+    results: House starter | Hard mode | Unsolved
+    shared : 🏠 house starter · ⚙️ hard"
+`;

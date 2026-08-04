@@ -96,7 +96,12 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
         </Typography>
       </Stack>
 
-      <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        data-testid="badges"
+        sx={{ flexWrap: 'wrap', justifyContent: 'center' }}
+      >
         {badgesFor(score, settings).map((badge) => (
           <Chip key={badge} size="small" label={badge} variant="outlined" />
         ))}
