@@ -61,7 +61,7 @@ taste, for the reason given under [deploying](#deploying-to-cloudflare-pages).
 | [`docs/wordlists.md`](docs/wordlists.md) | Sources, licensing, generation, and the asserted properties. |
 | [`docs/architecture.md`](docs/architecture.md) | The module map, the ports, and the invariants enforced by shape. |
 | [`docs/decisions/`](docs/decisions) | Calls the spec and philosophy left open. |
-| [`CHANGELOG.md`](CHANGELOG.md) | What landed in each increment, and what was verified. |
+| [`CHANGELOG.md`](CHANGELOG.md) | What landed and what was verified — by increment up to launch, by pull request after it. |
 
 If you read one beyond the spec, read `docs/determinism.md`. Cross-client determinism is the second
 priority in the specification and the requirement most likely to be broken silently by a reasonable

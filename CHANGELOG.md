@@ -1,6 +1,86 @@
 # Changelog
 
-A per-increment record of what landed and what was verified.
+What landed and what was verified, newest first. Increments 1 to 11 built the game; what came after
+landed as pull requests against a live site.
+
+## After launch — 4 August 2026
+
+The site went up on Cloudflare Pages at [par-e7i.pages.dev](https://par-e7i.pages.dev). Everything
+here landed afterwards, each behind a pull request and a green quality gate.
+
+### Added
+
+- **Forwarding a round somebody sent you**
+  ([#4](https://github.com/k-electron/par/pull/4)). The replay view now carries the share control in
+  the slot it occupies on your own results. It re-encodes from the guesses and flags already in the
+  payload, so the text and the link come out byte for byte identical to the sender's — the same
+  round handed on, not a retelling that drifts each hop. Withheld on a version mismatch, since
+  re-encoding stamps this build's word list and scorer over a board the notice above it says cannot
+  be trusted.
+- **A branch ruleset on `main`** ([#2](https://github.com/k-electron/par/pull/2)). Both CI jobs are
+  required and pinned to the GitHub Actions app, and the branch must be up to date before it merges.
+  Cloudflare builds the merged commit, so without that last part a pull request could be green
+  against an older `main` and still deploy a tree nothing had tested.
+
+### Changed
+
+- **The guess-by-guess table reports its own guess**
+  ([#7](https://github.com/k-electron/par/pull/7)). The number column showed the pool a guess was
+  handed, which is a fact about the guess before it — following a round meant reading every number a
+  line late, and the last guess's effect appeared nowhere at all. It now leads with what the guess
+  left behind, with the count it started from as the caption underneath.
+- **The badge rules have one home** ([#5](https://github.com/k-electron/par/pull/5)). The three
+  celebratory conditions were written out in full in both the results view and the shared text.
+  `CLEAN_ROUND_SKILL` and `QUICK_ROUND_GUESSES` replace the bare literals, one predicate decides, and
+  each surface renders through an exhaustive record so a fourth badge cannot compile until both have
+  worded it. Widening the redundancy audit to `src/app/copy/` found a third copy of the threshold in
+  `headline()`, where a round could have been badged clean while the sentence above it declined to
+  say so.
+- **`CODE_A` is exported rather than retyped** ([#5](https://github.com/k-electron/par/pull/5)). It
+  was a private 97 in `letters.ts`, written out bare three times in `gameSession.ts` and twice in the
+  search memo key in `constraints.ts`.
+
+### Fixed
+
+- **The replay board sat 83px left of centre**
+  ([#3](https://github.com/k-electron/par/pull/3)). `Board` and `Keyboard` centre themselves with
+  `mx: 'auto'`, and MUI's `Stack` resets every direct child's margin at a specificity that outranks
+  the child's own class. `GameScreen` escaped it by accident, having a wrapper `Box` in the way;
+  `Replay` did not. The theme now defaults `Stack` to `useFlexGap`, so spacing uses `gap` and child
+  margins survive. The keyboard carried the same defect at 2px — invisible, and still wrong.
+- **A replay captioned somebody else's board "Your round"**
+  ([#4](https://github.com/k-electron/par/pull/4)), four lines below a header saying it was somebody
+  else's. Every second-person phrase now bends with whose round is on screen.
+- **Two README claims that had stopped being true**
+  ([#2](https://github.com/k-electron/par/pull/2)): the repository is public rather than private, and
+  the word-list licensing paragraph no longer rests its argument on the project being unpublished.
+
+### Verified
+
+- **No past share link changed.** The app was rebuilt at `f08e738`, served beside current `main`, and
+  the same real link opened in both: identical total, board, badges, per-guess skill and luck, and
+  summary figures. Diffing the entire rendered page found exactly three differences, all of them
+  changes that were asked for.
+- Forwarding a round produces text byte-identical to the sender's, asserted in a component test and
+  again end to end against a production build.
+- The badge refactor is neutral, established by a characterisation snapshot committed *before* any
+  source change and proven first to fail against two deliberate regressions.
+- `SCORER_VERSION` stays at 1 throughout. Nothing on its documented bump list changed, and bumping it
+  would make every existing link report itself as scored by a different version of Par.
+
+### Notes
+
+The deploy is Cloudflare Pages' native Git integration, which builds `main` independently of GitHub
+Actions and would ship a commit whose tests failed. Spec §11 forecloses the obvious alternative —
+deploying from CI needs an API token that same section forbids — so the gate sits on the branch
+instead. Recorded in [decision 0002](docs/decisions/0002-red-ci-blocks-the-merge.md), because it
+departs from §11's "red CI blocks nothing automatically".
+
+The 768-row snapshot that proved the badge refactor neutral was deleted once it had
+([#6](https://github.com/k-electron/par/pull/6)). Its job was one refactor. As a standing test it was
+1156 rows of which about eight carried information, and the realistic response to a failing diff that
+size is to accept it wholesale — which is worse than no test, because it reads as coverage. Eight
+named rules and one property replaced it.
 
 ## Increment 11 — Appearance, accessibility, and end to end
 
