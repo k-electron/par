@@ -13,7 +13,7 @@
 import { MAX_GUESSES } from '../../engine/config/constants';
 import type { Constraints } from '../../engine/rules/constraints';
 import type { Ruleset } from '../../engine/rules/ruleset';
-import { WORD_LENGTH } from '../../engine/words/letters';
+import { CODE_A, WORD_LENGTH } from '../../engine/words/letters';
 import { Tile, WIN_PATTERN, computePattern, tilesFromPattern } from '../../engine/words/pattern';
 
 // Re-exported, not redeclared. The board used to carry its own copies of both,
@@ -117,15 +117,15 @@ function hardModeComplaint(session: GameSession, ruleset: Ruleset): string {
 
   for (let position = 0; position < WORD_LENGTH; position += 1) {
     const required = greens[position]!;
-    if (required >= 0 && draft.charCodeAt(position) - 97 !== required) {
-      const letter = String.fromCharCode(97 + required).toUpperCase();
+    if (required >= 0 && draft.charCodeAt(position) - CODE_A !== required) {
+      const letter = String.fromCharCode(CODE_A + required).toUpperCase();
       return `${ORDINALS[position]} letter must be ${letter}`;
     }
   }
 
   for (let index = 0; index < requiredLetters.length; index += 1) {
     const code = requiredLetters[index]!;
-    const letter = String.fromCharCode(97 + code);
+    const letter = String.fromCharCode(CODE_A + code);
     const needed = requiredCounts[index]!;
     const present = [...draft].filter((character) => character === letter).length;
     if (present < needed) {

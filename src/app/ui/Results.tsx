@@ -11,13 +11,13 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
 import {
-  BADGES,
   RESULTS,
   ROUND,
   guessNote,
   headline,
   luckNote,
   parPhrase,
+  resultsBadges,
   skillPhrase,
   type RoundVariant,
 } from '../copy/results';
@@ -30,21 +30,6 @@ export interface ResultsProps {
   readonly settings: ConfirmedSettings;
   /** Whose round this is. Only the second-person phrasing changes. */
   readonly variant?: RoundVariant;
-}
-
-/** Celebratory badges. Cosmetic by design — they must never carry points. */
-function badgesFor(score: GameScore, settings: ConfirmedSettings): string[] {
-  const badges: string[] = [
-    settings.useHouseStarter ? BADGES.houseStarter : BADGES.ownOpener,
-    ...(settings.hardMode ? [BADGES.hardMode] : []),
-    score.solved ? BADGES.solved : BADGES.unsolved,
-  ];
-
-  if (score.solved && score.guessesUsed === 1) badges.push(BADGES.holeInOne);
-  else if (score.solved && score.guessesUsed <= 3) badges.push(BADGES.quickRound);
-  if (score.solved && score.skill >= 97) badges.push(BADGES.cleanRound);
-
-  return badges;
 }
 
 function Figure({ label, value, caption }: { label: string; value: string; caption?: string }) {
@@ -96,8 +81,13 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
         </Typography>
       </Stack>
 
-      <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-        {badgesFor(score, settings).map((badge) => (
+      <Stack
+        direction="row"
+        spacing={0.5}
+        data-testid="badges"
+        sx={{ flexWrap: 'wrap', justifyContent: 'center' }}
+      >
+        {resultsBadges(score, settings).map((badge) => (
           <Chip key={badge} size="small" label={badge} variant="outlined" />
         ))}
       </Stack>
