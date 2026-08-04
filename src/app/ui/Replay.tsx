@@ -182,10 +182,7 @@ function RevealedReplay({
 
       <Board rows={boardRows(rebuilt.session)} activeRow={-1} rejectionNonce={0} />
 
-      <Results
-        score={score}
-        settings={settings}
-      />
+      <Results variant="replay" score={score} settings={settings} />
 
       {/*
         Forwarding a round you were sent. Re-encoded from the same guesses and

@@ -415,6 +415,16 @@ describe('the replay itself', () => {
     expect(await navigator.clipboard.readText()).toBe(expected);
   });
 
+  it('never calls somebody else\u2019s board yours', async () => {
+    mountRevealed();
+    await screen.findByText(/played at \d+%/);
+
+    // The header already says whose round this is. A "Your round" caption under
+    // it contradicts that on the same screen.
+    expect(screen.getByText(/their round/i)).toBeInTheDocument();
+    expect(screen.queryByText(/your round/i)).not.toBeInTheDocument();
+  });
+
   it('says whose round it is copying', async () => {
     const user = userEvent.setup();
     mountRevealed();

@@ -5,7 +5,7 @@ import TextField from '@mui/material/TextField';
 import { useCallback, useMemo, useState } from 'react';
 
 import { WORD_LIST_VERSION, guesses as dictionary } from '../../data';
-import { SHARE, type ShareVariant } from '../copy/results';
+import { SHARE, type RoundVariant } from '../copy/results';
 import { shareText } from '../share/share';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
@@ -19,7 +19,7 @@ export interface ShareButtonProps {
    * Whose round this is. Only the wording changes — the text produced is
    * identical either way, which is what makes forwarding lossless.
    */
-  readonly variant?: ShareVariant;
+  readonly variant?: RoundVariant;
 }
 
 export function ShareButton({
