@@ -11,16 +11,14 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
 import {
-  BADGES,
   RESULTS,
   ROUND,
-  celebratoryBadges,
   guessNote,
   headline,
   luckNote,
   parPhrase,
+  resultsBadges,
   skillPhrase,
-  type CelebratoryBadge,
   type RoundVariant,
 } from '../copy/results';
 import { PAR } from '../../engine/config/constants';
@@ -32,28 +30,6 @@ export interface ResultsProps {
   readonly settings: ConfirmedSettings;
   /** Whose round this is. Only the second-person phrasing changes. */
   readonly variant?: RoundVariant;
-}
-
-/** How this surface words the celebratory badges. Exhaustive by type. */
-const CELEBRATORY: Record<CelebratoryBadge, string> = {
-  holeInOne: BADGES.holeInOne,
-  quickRound: BADGES.quickRound,
-  cleanRound: BADGES.cleanRound,
-};
-
-/**
- * Factual badges then celebratory ones. All cosmetic — they never carry points.
- *
- * The factual set is this surface's own: unlike the shared text, there is no
- * attempt line here carrying solved-or-not, so the badge has to say it.
- */
-function badgesFor(score: GameScore, settings: ConfirmedSettings): string[] {
-  return [
-    settings.useHouseStarter ? BADGES.houseStarter : BADGES.ownOpener,
-    ...(settings.hardMode ? [BADGES.hardMode] : []),
-    score.solved ? BADGES.solved : BADGES.unsolved,
-    ...celebratoryBadges(score).map((badge) => CELEBRATORY[badge]),
-  ];
 }
 
 function Figure({ label, value, caption }: { label: string; value: string; caption?: string }) {
@@ -111,7 +87,7 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
         data-testid="badges"
         sx={{ flexWrap: 'wrap', justifyContent: 'center' }}
       >
-        {badgesFor(score, settings).map((badge) => (
+        {resultsBadges(score, settings).map((badge) => (
           <Chip key={badge} size="small" label={badge} variant="outlined" />
         ))}
       </Stack>

@@ -192,6 +192,28 @@ export function celebratoryBadges(score: {
   return earned;
 }
 
+/**
+ * Every badge the results view shows, in the order it shows them.
+ *
+ * Factual first, then celebratory. The factual set is this surface's own: unlike
+ * the shared text there is no attempt line here carrying solved-or-not, so a
+ * badge has to say it.
+ *
+ * A plain function rather than something inside the component, so the full
+ * cross-product of inputs can be checked without mounting the view 768 times.
+ */
+export function resultsBadges(
+  score: { readonly solved: boolean; readonly guessesUsed: number; readonly skill: number },
+  settings: { readonly hardMode: boolean; readonly useHouseStarter: boolean },
+): string[] {
+  return [
+    settings.useHouseStarter ? BADGES.houseStarter : BADGES.ownOpener,
+    ...(settings.hardMode ? [BADGES.hardMode] : []),
+    score.solved ? BADGES.solved : BADGES.unsolved,
+    ...celebratoryBadges(score).map((badge) => RESULTS_CELEBRATORY[badge]),
+  ];
+}
+
 export const BADGES = {
   houseStarter: 'House starter',
   ownOpener: 'Own opener',
@@ -205,3 +227,10 @@ export const BADGES = {
   quickRound: 'Quick round',
   cleanRound: 'Clean round',
 } as const;
+
+/** How the results view words the celebratory badges. Exhaustive by type. */
+const RESULTS_CELEBRATORY: Record<CelebratoryBadge, string> = {
+  holeInOne: BADGES.holeInOne,
+  quickRound: BADGES.quickRound,
+  cleanRound: BADGES.cleanRound,
+};

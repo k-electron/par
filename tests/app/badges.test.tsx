@@ -22,6 +22,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { resultsBadges } from '../../src/app/copy/results';
 import { shareText } from '../../src/app/share/share';
 import { theme } from '../../src/app/theme/theme';
 import { Results } from '../../src/app/ui/Results';
@@ -54,15 +55,16 @@ function scoreWith(solved: boolean, guessesUsed: number, skill: number): GameSco
   return { skill, outcome: 0, starterBonus: 0, total: skill, guessesUsed, solved, breakdown };
 }
 
-/** The badge chips the results view renders, in the order it renders them. */
-function resultsBadges(score: GameScore, hardMode: boolean, useHouseStarter: boolean): string {
-  cleanup();
-  render(
-    <ThemeProvider theme={theme}>
-      <Results score={score} settings={{ hardMode, useHouseStarter, confirmed: true }} />
-    </ThemeProvider>,
-  );
-  return [...screen.getByTestId('badges').children].map((chip) => chip.textContent).join(' | ');
+/**
+ * The badges the results view will render, in order.
+ *
+ * Read from the function the component renders from rather than from the DOM.
+ * Mounting the whole view 768 times took six seconds on CI and blew the default
+ * timeout; the separate test below keeps the component honest about using it, so
+ * nothing is given up by not mounting it here.
+ */
+function viewBadges(score: GameScore, hardMode: boolean, useHouseStarter: boolean): string {
+  return resultsBadges(score, { hardMode, useHouseStarter }).join(' | ');
 }
 
 /** The badge line of the shared text, which sits third by construction. */
@@ -99,7 +101,7 @@ describe('badge selection', () => {
 
               rows.push(
                 `${key}\n` +
-                  `    results: ${resultsBadges(score, hardMode, useHouseStarter)}\n` +
+                  `    results: ${viewBadges(score, hardMode, useHouseStarter)}\n` +
                   `    shared : ${sharedBadges(score, hardMode, useHouseStarter)}`,
               );
             }
@@ -111,4 +113,34 @@ describe('badge selection', () => {
     expect(rows.length).toBe(2 * MAX_GUESSES * SKILLS.length * 2 * 2);
     expect(rows.join('\n')).toMatchSnapshot();
   });
+
+  /**
+   * The enumeration above reads the function rather than the rendered view, so
+   * this is what stops the component drifting away from it — dropping a badge,
+   * reordering the chips, or wording one differently on its own.
+   *
+   * A handful of cases is enough: the mapping is exhaustive by type and covered
+   * above, and what is in question here is only whether the view uses it.
+   */
+  it.each([
+    [true, 1, 100, true, true],
+    [true, 3, 100, false, false],
+    [true, 4, 97, true, false],
+    [true, 5, 50, false, true],
+    [false, 6, 96.9, true, true],
+    [false, 6, 100, false, false],
+  ] as const)(
+    'the view renders exactly those badges (solved=%s guesses=%s skill=%s)',
+    (solved, guessesUsed, skill, hardMode, useHouseStarter) => {
+      const score = scoreWith(solved, guessesUsed, skill);
+      render(
+        <ThemeProvider theme={theme}>
+          <Results score={score} settings={{ hardMode, useHouseStarter, confirmed: true }} />
+        </ThemeProvider>,
+      );
+
+      const chips = [...screen.getByTestId('badges').children].map((chip) => chip.textContent);
+      expect(chips).toEqual(resultsBadges(score, { hardMode, useHouseStarter }));
+    },
+  );
 });
