@@ -17,12 +17,13 @@ import {
   headline,
   luckNote,
   parPhrase,
-  poolNote,
+  poolFigure,
   resultsBadges,
   skillPhrase,
   type RoundVariant,
 } from '../copy/results';
 import { PAR } from '../../engine/config/constants';
+import { WIN_PATTERN } from '../../engine/words/pattern';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
 
@@ -127,7 +128,14 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {score.breakdown.map((row) => (
+            {score.breakdown.map((row) => {
+              const pool = poolFigure(
+                row.candidateCount,
+                row.remainingCount,
+                row.pattern === WIN_PATTERN,
+              );
+
+              return (
               <TableRow key={row.turn}>
                 <TableCell sx={{ px: 0.5 }}>
                   <Stack spacing={0}>
@@ -150,9 +158,9 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
                     something.
                   */}
                   <Stack spacing={0} sx={{ alignItems: 'flex-end' }}>
-                    <Box component="span">{row.remainingCount}</Box>
+                    <Box component="span">{pool.value}</Box>
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      {poolNote(row.candidateCount, row.remainingCount)}
+                      {pool.note}
                     </Typography>
                   </Stack>
                 </TableCell>
@@ -171,7 +179,8 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
                   </Stack>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </Stack>

@@ -115,17 +115,29 @@ export function luckNote(bits: number): string {
 }
 
 /**
- * The small print under the words-left figure: what the pool was before it.
+ * The words-left cell: what the guess left behind, and where it started.
  *
- * The row's headline number is what the guess left behind, and that only means
- * something next to where it started — 253 is a fine cut from 3000 and a poor
- * one from 260.
+ * The headline is the pool after the feedback, which only means something next
+ * to where it began — 253 is a fine cut from 3000 and a poor one from 260.
+ *
+ * The winning guess is the exception and gets no count. One word technically
+ * remains after it, but printing "1" invites the reader to wonder what they
+ * should do about it when the game is already over.
+ *
+ * A guess that *lost* the game keeps its number, which is not the same case at
+ * all: "1, from 2" says a word was still standing when the turns ran out, and
+ * that is the story of the round rather than noise at the end of it.
  */
-export function poolNote(before: number, after: number): string {
-  // Only when the guess split nothing, where "from 3000" beside a headline of
-  // 3000 reads like a rendering fault rather than a fact about the guess.
-  if (after >= before) return 'nothing ruled out';
-  return `from ${before}`;
+export function poolFigure(
+  before: number,
+  after: number,
+  won: boolean,
+): { value: string; note: string } {
+  if (won) return { value: '\u2014', note: 'solved' };
+  // "from 3000" beside a headline of 3000 reads like a rendering fault rather
+  // than a fact about the guess.
+  if (after >= before) return { value: String(after), note: 'nothing ruled out' };
+  return { value: String(after), note: `from ${before}` };
 }
 
 export const RESULTS = {

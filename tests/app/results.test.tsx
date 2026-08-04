@@ -166,18 +166,66 @@ describe('the rendered results', () => {
     renderResults();
 
     const table = screen.getByRole('table', { name: /guess by guess/i });
-    const rows = within(table).getAllByRole('row').slice(1);
+    // The winning guess is the exception, covered on its own below.
+    const rows = within(table).getAllByRole('row').slice(1, -1);
 
     rows.forEach((row, index) => {
       const entry = score.breakdown[index]!;
       const cell = within(row).getAllByRole('cell')[1]!;
 
-      expect(cell, `row ${index + 1}`).toHaveTextContent(String(entry.remainingCount));
       // The count going in is context, not the headline.
       expect(cell.textContent, `row ${index + 1}`).toMatch(
         new RegExp(`^${entry.remainingCount}(from ${entry.candidateCount}|nothing ruled out)`),
       );
     });
+  });
+
+  /**
+   * One word does technically remain after a correct guess — the answer. But
+   * printing "1" invites the reader to wonder what they are meant to do about
+   * it when the game is already over.
+   */
+  it('gives the winning guess no count to puzzle over', () => {
+    renderResults();
+
+    const table = screen.getByRole('table', { name: /guess by guess/i });
+    const last = within(table).getAllByRole('row').at(-1)!;
+    const cell = within(last).getAllByRole('cell')[1]!;
+
+    expect(last).toHaveTextContent(PUZZLE.answer);
+    expect(cell).toHaveTextContent(/solved/i);
+    expect(cell.textContent).not.toMatch(/\d/);
+  });
+
+  /**
+   * The opposite case, and not the same one. A guess that ran the player out of
+   * turns leaves a real count behind — "1, from 2" says a word was still
+   * standing when the game ended, which is the story of the round rather than
+   * noise at the end of it.
+   */
+  it('keeps the count on a guess that lost the game', () => {
+    const lost = scoreDirectly({
+      guesses: [PUZZLE.starter, 'crane', 'moist', 'pluck', 'begun', 'dwarf'],
+      answer: PUZZLE.answer,
+      tookHouseStarter: true,
+      hardMode: false,
+    });
+    expect(lost.solved, 'fixture must be an unsolved game').toBe(false);
+
+    render(
+      <ThemeProvider theme={theme}>
+        <Results score={lost} settings={settings} />
+      </ThemeProvider>,
+    );
+
+    const table = screen.getByRole('table', { name: /guess by guess/i });
+    const last = within(table).getAllByRole('row').at(-1)!;
+    const cell = within(last).getAllByRole('cell')[1]!;
+
+    expect(cell).not.toHaveTextContent(/solved/i);
+    expect(cell.textContent).toMatch(
+      new RegExp(`^${lost.breakdown.at(-1)!.remainingCount}from `),
+    );
   });
 
   it('narrows the pool monotonically down the table', () => {
