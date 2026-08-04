@@ -5,6 +5,7 @@ import TextField from '@mui/material/TextField';
 import { useCallback, useMemo, useState } from 'react';
 
 import { WORD_LIST_VERSION, guesses as dictionary } from '../../data';
+import { SHARE, type ShareVariant } from '../copy/results';
 import { shareText } from '../share/share';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
@@ -14,9 +15,21 @@ export interface ShareButtonProps {
   readonly score: GameScore;
   readonly settings: ConfirmedSettings;
   readonly guesses: readonly string[];
+  /**
+   * Whose round this is. Only the wording changes — the text produced is
+   * identical either way, which is what makes forwarding lossless.
+   */
+  readonly variant?: ShareVariant;
 }
 
-export function ShareButton({ puzzleNumber, score, settings, guesses }: ShareButtonProps) {
+export function ShareButton({
+  puzzleNumber,
+  score,
+  settings,
+  guesses,
+  variant = 'own',
+}: ShareButtonProps) {
+  const words = SHARE[variant];
   const [copied, setCopied] = useState(false);
   const [fallback, setFallback] = useState<string | null>(null);
 
@@ -64,7 +77,7 @@ export function ShareButton({ puzzleNumber, score, settings, guesses }: ShareBut
   return (
     <Stack spacing={1}>
       <Button variant="contained" onClick={() => void share()}>
-        Share
+        {words.action}
       </Button>
 
       {fallback !== null && (
@@ -81,7 +94,7 @@ export function ShareButton({ puzzleNumber, score, settings, guesses }: ShareBut
         open={copied}
         autoHideDuration={2500}
         onClose={() => setCopied(false)}
-        message="Copied. The link shows your game, not the answer."
+        message={words.copied}
       />
     </Stack>
   );

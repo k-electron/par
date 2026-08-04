@@ -125,6 +125,27 @@ export const RESULTS = {
   explainerLink: 'How is this scored?',
 } as const;
 
+/**
+ * The share control, in its two settings.
+ *
+ * `own` is a player sharing the round they just played. `replay` is somebody
+ * forwarding a round they were sent, which is the same artefact but not their
+ * game — so the confirmation cannot say "your game" without lying about whose
+ * it is.
+ */
+export const SHARE = {
+  own: {
+    action: 'Share',
+    copied: 'Copied. The link shows your game, not the answer.',
+  },
+  replay: {
+    action: 'Copy this round',
+    copied: 'Copied. The link shows their game, not the answer.',
+  },
+} as const;
+
+export type ShareVariant = keyof typeof SHARE;
+
 export const BADGES = {
   houseStarter: 'House starter',
   ownOpener: 'Own opener',

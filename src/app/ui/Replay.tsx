@@ -16,6 +16,7 @@ import { decodeSharedGame, type SharedGame } from '../share/codec';
 import { Board } from './Board';
 import { Results } from './Results';
 import { ScoringExplainer } from './ScoringExplainer';
+import { ShareButton } from './ShareButton';
 
 export interface ReplayProps {
   /** The fragment payload, without the `r=` prefix. */
@@ -154,6 +155,12 @@ function RevealedReplay({
     game.wordListVersion !== WORD_LIST_VERSION.slice(0, game.wordListVersion.length);
   const staleScorer = game.scorerVersion !== SCORER_VERSION;
 
+  const settings = {
+    hardMode: game.hardMode,
+    useHouseStarter: game.tookHouseStarter,
+    confirmed: true,
+  } as const;
+
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, maxWidth: 520, mx: 'auto', width: '100%' }}>
       <Stack spacing={0.25} sx={{ textAlign: 'center' }}>
@@ -177,12 +184,29 @@ function RevealedReplay({
 
       <Results
         score={score}
-        settings={{
-          hardMode: game.hardMode,
-          useHouseStarter: game.tookHouseStarter,
-          confirmed: true,
-        }}
+        settings={settings}
       />
+
+      {/*
+        Forwarding a round you were sent. Re-encoded from the same guesses and
+        flags, so the text and the link come out identical to the sender's —
+        it is the same round, not a copy of it.
+
+        Withheld on a version mismatch. Re-encoding stamps *this* build's word
+        list and scorer, which would hand the next reader a link that looks
+        current while carrying a board the notice above says cannot be trusted.
+        Spec §5 wants that mismatch flagged, and forwarding it would launder it
+        away.
+      */}
+      {score !== null && !staleLists && !staleScorer && (
+        <ShareButton
+          variant="replay"
+          puzzleNumber={game.puzzleNumber}
+          score={score}
+          settings={settings}
+          guesses={rebuilt.words}
+        />
+      )}
 
       <Button size="small" variant="text" onClick={() => setExplaining(true)}>
         How is this scored?
