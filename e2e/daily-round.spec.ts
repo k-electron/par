@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * The specification's end-to-end check, in one test:
@@ -26,6 +26,27 @@ async function boardRows(page: Page): Promise<string[]> {
     rows.push(letters.join(''));
   }
   return rows;
+}
+
+/**
+ * Both the board and the keyboard are narrower than the column they sit in and
+ * centre themselves with `mx: 'auto'`. MUI's Stack spaces its children with
+ * margins unless told otherwise, and the reset that comes with that,
+ * `& > :not(style):not(style) { margin: 0 }`, outranks a child's own margin on
+ * specificity. So anything centring itself that way is silently shoved to the
+ * left edge the moment it becomes a direct Stack child — which is what happened
+ * to the replay board, 83px off centre. Layout that only breaks in one of two
+ * places that render the same component is exactly what a unit test cannot see.
+ */
+async function expectHorizontallyCentred(page: Page, target: Locator, label: string) {
+  const box = await target.boundingBox();
+  expect(box, `${label} should be rendered`).not.toBeNull();
+
+  const viewport = page.viewportSize();
+  expect(viewport, 'viewport size should be known').not.toBeNull();
+
+  const offset = box!.x + box!.width / 2 - viewport!.width / 2;
+  expect(Math.abs(offset), `${label} is ${offset.toFixed(1)}px off centre`).toBeLessThanOrEqual(1);
 }
 
 async function readTotal(page: Page): Promise<string> {
@@ -97,6 +118,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   await expect(recipient.getByRole('grid')).toBeVisible();
   expect(await boardRows(recipient)).toEqual(senderRows);
   expect(await readTotal(recipient)).toBe(senderTotal);
+  await expectHorizontallyCentred(recipient, recipient.getByRole('grid'), 'the replayed board');
 
   await clean.close();
 });
@@ -123,6 +145,15 @@ test('the results sit below the board rather than on top of it', async ({ page }
   expect(lastTile).not.toBeNull();
   expect(total).not.toBeNull();
   expect(total!.y).toBeGreaterThan(lastTile!.y + lastTile!.height);
+});
+
+test('the board and the keyboard sit centred in the column', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start' }).click();
+
+  await expect(page.getByRole('grid')).toBeVisible();
+  await expectHorizontallyCentred(page, page.getByRole('grid'), 'the board');
+  await expectHorizontallyCentred(page, page.getByTestId('keyboard'), 'the keyboard');
 });
 
 test('an in-progress game survives a reload exactly', async ({ page }) => {

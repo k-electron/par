@@ -78,6 +78,7 @@ export function Keyboard({
 }: KeyboardProps) {
   return (
     <Box
+      data-testid="keyboard"
       sx={{
         display: 'flex',
         flexDirection: 'column',
