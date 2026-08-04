@@ -45,6 +45,9 @@ const LOGIC_SOURCES = ALL_SOURCES.filter(
     file.startsWith('src/app/share/') ||
     file.startsWith('src/app/scoring/') ||
     file.startsWith('src/app/storage/') ||
+    // Named "copy" but it decides things: which badges a round earned, which
+    // phrase a guess count takes. Thresholds live here, so it is scanned.
+    file.startsWith('src/app/copy/') ||
     file.startsWith('src/worker/'),
 );
 
@@ -149,6 +152,19 @@ const CANONICAL: readonly {
     value: 242,
     home: 'src/engine/words/pattern.ts',
   },
+  {
+    name: 'CLEAN_ROUND_SKILL',
+    value: 97,
+    home: 'src/engine/config/constants.ts',
+    allowed: {
+      'src/engine/words/letters.ts':
+        'CODE_A is the char code of the letter a, which is ninety-seven by accident of ASCII.',
+    },
+  },
+  // QUICK_ROUND_GUESSES is deliberately absent. Its value is 3, which EPSILON
+  // also is, and a bare 3 appears legitimately all over the logic layers as an
+  // index, a length and a bit width. Scanning for it would report dozens of
+  // innocent lines, and an audit that cries wolf is one people stop reading.
 ];
 
 describe('canonical values are not retyped', () => {

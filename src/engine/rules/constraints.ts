@@ -20,7 +20,7 @@
  * legal set by filtering its parent's rather than rescanning the dictionary.
  */
 
-import { ALPHABET_SIZE, WORD_LENGTH, encodeWord } from '../words/letters';
+import { ALPHABET_SIZE, CODE_A, WORD_LENGTH, encodeWord } from '../words/letters';
 import { PATTERN_PLACE_VALUES, Tile } from '../words/pattern';
 import type { Observation } from '../words/filter';
 
@@ -169,11 +169,11 @@ export function constraintKey(constraints: Constraints): string {
   let key = '';
   for (let position = 0; position < WORD_LENGTH; position += 1) {
     const letter = constraints.greens[position]!;
-    key += letter < 0 ? '.' : String.fromCharCode(97 + letter);
+    key += letter < 0 ? '.' : String.fromCharCode(CODE_A + letter);
   }
   key += '/';
   for (let index = 0; index < constraints.requiredLetters.length; index += 1) {
-    key += String.fromCharCode(97 + constraints.requiredLetters[index]!);
+    key += String.fromCharCode(CODE_A + constraints.requiredLetters[index]!);
     key += String(constraints.requiredCounts[index]!);
   }
   return key;

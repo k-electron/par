@@ -19,7 +19,11 @@
  * celebratory one.
  */
 
-import { UNSOLVED_GUESSES } from '../../engine/config/constants';
+import {
+  CLEAN_ROUND_SKILL,
+  QUICK_ROUND_GUESSES,
+  UNSOLVED_GUESSES,
+} from '../../engine/config/constants';
 
 const STROKE_WORDS = ['level', 'a stroke', 'two strokes', 'three strokes', 'four strokes'];
 
@@ -65,7 +69,10 @@ export function headline(skill: number, solved: boolean): string {
       ? 'The words did not fall your way. You read the position well.'
       : 'A tough one. It happens to everybody.';
   }
-  if (skill >= 97) return 'Just about flawless.';
+  // Shares the badge's threshold on purpose: the prose and the chip should agree
+  // about what counts as clean, or a round gets badged while the sentence above
+  // it declines to say so.
+  if (skill >= CLEAN_ROUND_SKILL) return 'Just about flawless.';
   if (skill >= 90) return 'Sharp all the way through.';
   if (skill >= 75) return 'Solid work.';
   if (skill >= 55) return 'Got there. A couple of turns had more on offer.';
@@ -149,6 +156,41 @@ export const SHARE: Record<RoundVariant, { action: string; copied: string }> = {
     copied: 'Copied. The link shows their game, not the answer.',
   },
 };
+
+/**
+ * The celebratory badges a finished round has earned.
+ *
+ * **The only place these rules live.** Two surfaces show them — the results view
+ * and the shared text — and they used to test the same three conditions
+ * independently, which meant tuning a threshold in one place left the screen
+ * disagreeing with the text a player pastes to friends. Same class of divergence
+ * as a score that differs between machines, just cheaper to notice.
+ *
+ * Returns keys rather than words because the two surfaces phrase them
+ * differently on purpose: "Clean round" reads as a chip, "✨ clean round" reads
+ * in a message. Both render from an exhaustive `Record`, so adding a fourth
+ * badge fails to compile until each surface has decided how to show it.
+ *
+ * The factual badges — starter choice, hard mode, solved or not — are
+ * deliberately *not* here. The shared text omits two of them because its first
+ * line already carries them, and unifying that would add noise to everything
+ * anyone pastes.
+ */
+export type CelebratoryBadge = 'holeInOne' | 'quickRound' | 'cleanRound';
+
+export function celebratoryBadges(score: {
+  readonly solved: boolean;
+  readonly guessesUsed: number;
+  readonly skill: number;
+}): CelebratoryBadge[] {
+  if (!score.solved) return [];
+
+  const earned: CelebratoryBadge[] = [];
+  if (score.guessesUsed === 1) earned.push('holeInOne');
+  else if (score.guessesUsed <= QUICK_ROUND_GUESSES) earned.push('quickRound');
+  if (score.skill >= CLEAN_ROUND_SKILL) earned.push('cleanRound');
+  return earned;
+}
 
 export const BADGES = {
   houseStarter: 'House starter',

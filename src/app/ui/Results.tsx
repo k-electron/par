@@ -14,11 +14,13 @@ import {
   BADGES,
   RESULTS,
   ROUND,
+  celebratoryBadges,
   guessNote,
   headline,
   luckNote,
   parPhrase,
   skillPhrase,
+  type CelebratoryBadge,
   type RoundVariant,
 } from '../copy/results';
 import { PAR } from '../../engine/config/constants';
@@ -32,19 +34,26 @@ export interface ResultsProps {
   readonly variant?: RoundVariant;
 }
 
-/** Celebratory badges. Cosmetic by design — they must never carry points. */
+/** How this surface words the celebratory badges. Exhaustive by type. */
+const CELEBRATORY: Record<CelebratoryBadge, string> = {
+  holeInOne: BADGES.holeInOne,
+  quickRound: BADGES.quickRound,
+  cleanRound: BADGES.cleanRound,
+};
+
+/**
+ * Factual badges then celebratory ones. All cosmetic — they never carry points.
+ *
+ * The factual set is this surface's own: unlike the shared text, there is no
+ * attempt line here carrying solved-or-not, so the badge has to say it.
+ */
 function badgesFor(score: GameScore, settings: ConfirmedSettings): string[] {
-  const badges: string[] = [
+  return [
     settings.useHouseStarter ? BADGES.houseStarter : BADGES.ownOpener,
     ...(settings.hardMode ? [BADGES.hardMode] : []),
     score.solved ? BADGES.solved : BADGES.unsolved,
+    ...celebratoryBadges(score).map((badge) => CELEBRATORY[badge]),
   ];
-
-  if (score.solved && score.guessesUsed === 1) badges.push(BADGES.holeInOne);
-  else if (score.solved && score.guessesUsed <= 3) badges.push(BADGES.quickRound);
-  if (score.solved && score.skill >= 97) badges.push(BADGES.cleanRound);
-
-  return badges;
 }
 
 function Figure({ label, value, caption }: { label: string; value: string; caption?: string }) {
