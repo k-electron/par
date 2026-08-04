@@ -9,7 +9,7 @@
 
 import { MAX_GUESSES, PAR, SCORER_VERSION } from '../../engine/config/constants';
 import { Tile, tilesFromPattern } from '../../engine/words/pattern';
-import { parPhrase } from '../copy/results';
+import { celebratoryBadges, parPhrase, type CelebratoryBadge } from '../copy/results';
 import type { GameScore } from '../scoring/protocol';
 import { encodeSharedGame } from './codec';
 
@@ -17,6 +17,13 @@ const TILE_EMOJI: Record<Tile, string> = {
   [Tile.Absent]: '\u2B1C',
   [Tile.Present]: '\u{1F7E8}',
   [Tile.Correct]: '\u{1F7E9}',
+};
+
+/** How this surface words the celebratory badges. Exhaustive by type. */
+const CELEBRATORY: Record<CelebratoryBadge, string> = {
+  holeInOne: '\u{1F3AF} hole in one',
+  quickRound: '\u26A1 quick round',
+  cleanRound: '\u2728 clean round',
 };
 
 export interface ShareInput {
@@ -64,12 +71,14 @@ export function shareText(input: ShareInput): string {
     )
     .join('\n');
 
+  // Solved-or-not is carried by the attempt line below, so no badge repeats it,
+  // and the absence of the starter badge already says the opener was their own.
+  // The shared text is read at a glance in a chat window; the results screen can
+  // afford to spell both out and does.
   const badges: string[] = [];
   if (input.tookHouseStarter) badges.push('\u{1F3E0} house starter');
   if (input.hardMode) badges.push('\u2699\uFE0F hard');
-  if (score.solved && score.guessesUsed === 1) badges.push('\u{1F3AF} hole in one');
-  else if (score.solved && score.guessesUsed <= 3) badges.push('\u26A1 quick round');
-  if (score.solved && score.skill >= 97) badges.push('\u2728 clean round');
+  badges.push(...celebratoryBadges(score).map((badge) => CELEBRATORY[badge]));
 
   const attempts = `${score.solved ? score.guessesUsed : 'X'}/${MAX_GUESSES}`;
 

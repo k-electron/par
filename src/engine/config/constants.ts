@@ -56,6 +56,35 @@ export const PAR = GENERATED_PAR;
 /** An unsolved game is priced as this many guesses. */
 export const UNSOLVED_GUESSES = 7;
 
+/**
+ * The skill percentage at which a solved round is badged clean.
+ *
+ * **This knob trades how often the badge appears against what it means.** It is
+ * cosmetic — no badge carries points, spec §7 — so the only cost of getting it
+ * wrong is the word losing its force. Set it too low and a clean round becomes
+ * the default, which says nothing; too high and it becomes unreachable, which
+ * says nothing either.
+ *
+ * 97 sits just above what an attentive player reaches by not wasting a turn,
+ * and below the 100 that only fully optimal play earns — so it rewards playing
+ * well without demanding perfection. Note that it is deliberately achievable on
+ * a slow day: a five-guess solve at 100% is clean, because the badge grades
+ * decisions and the outcome term already prices the guess count.
+ *
+ * Compare with `>=`, on the unrounded percentage. Skill is a computed float, and
+ * a threshold written as `> 96.99` would award the badge at 96.99999999999999.
+ */
+export const CLEAN_ROUND_SKILL = 97;
+
+/**
+ * The guess count at or under which a solved round is badged quick.
+ *
+ * Cosmetic, like every badge. Sits just under `PAR` so the badge marks beating
+ * the baseline rather than merely matching it, and the copy deliberately never
+ * names the number — a two-guess solve badged "in three" reads like a bug.
+ */
+export const QUICK_ROUND_GUESSES = 3;
+
 /** Guesses allowed in a game. */
 export const MAX_GUESSES = 6;
 

@@ -15,7 +15,8 @@
 export const WORD_LENGTH = 5;
 export const ALPHABET_SIZE = 26;
 
-const CODE_A = 97;
+/** Char code of `a`, the base every letter index is measured from. */
+export const CODE_A = 97;
 
 /** Letter code in 0..25, or -1 if the character is not a lowercase a-z. */
 function letterCodeOf(word: string, index: number): number {
