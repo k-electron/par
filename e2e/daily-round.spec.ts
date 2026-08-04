@@ -49,6 +49,24 @@ async function expectHorizontallyCentred(page: Page, target: Locator, label: str
   expect(Math.abs(offset), `${label} is ${offset.toFixed(1)}px off centre`).toBeLessThanOrEqual(1);
 }
 
+/**
+ * Wait for the tile reveal to finish.
+ *
+ * A guess cannot be submitted onto a row that is still turning over, so playing
+ * a round means waiting between guesses. This waits on the board saying it has
+ * settled rather than on a sleep long enough to probably cover it — the sleeps
+ * this replaced were guesses at the animation's length, and would have needed
+ * revisiting every time it changed.
+ */
+async function revealed(page: Page): Promise<void> {
+  const turning = page.locator('[data-revealing="true"]');
+  // Presence first, then absence. Waiting only for absence passes instantly on
+  // a reveal that has not begun yet, which let the next guess be typed into a
+  // board that was about to stop accepting it.
+  await expect(turning).toHaveCount(1, { timeout: 5_000 });
+  await expect(turning).toHaveCount(0, { timeout: 10_000 });
+}
+
 async function readTotal(page: Page): Promise<string> {
   // The headline figure sits directly above the "played at N%" line.
   await expect(page.getByText(/played at \d+%/)).toBeVisible();
@@ -70,8 +88,10 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   await page.getByRole('button', { name: 'Start' }).click();
   await expect(gate).toHaveCount(0);
 
-  // The starter is played for the player, so row one is filled in.
+  // The starter is played for the player, so row one is filled in — and turns
+  // over, which is the first thing the player sees happen.
   await expect(page.getByTestId('tile-0-0')).not.toHaveText('');
+  await revealed(page);
 
   // 2. Play until the game ends, guessing real words.
   const words = ['crane', 'moist', 'pluck', 'begun', 'dwarf'];
@@ -79,9 +99,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
     if (await page.getByText(/played at \d+%/).isVisible()) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
-    // An unknown word is refused without costing a turn; these are all real, so
-    // the only reason to wait is the reveal.
-    await page.waitForTimeout(120);
+    await revealed(page);
   }
 
   await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
@@ -136,11 +154,12 @@ test('the results sit below the board rather than on top of it', async ({ page }
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
 
+  await revealed(page);
   for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
     if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
-    await page.waitForTimeout(120);
+    await revealed(page);
   }
   await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
 
@@ -161,6 +180,9 @@ test('the board and the keyboard sit centred in the column', async ({ page }) =>
   await page.getByRole('button', { name: 'Start' }).click();
 
   await expect(page.getByRole('grid')).toBeVisible();
+  // Measured with the tiles at rest, so a rotation mid-flip cannot be mistaken
+  // for a layout problem.
+  await revealed(page);
   await expectHorizontallyCentred(page, page.getByRole('grid'), 'the board');
   await expectHorizontallyCentred(page, page.getByTestId('keyboard'), 'the keyboard');
 });
@@ -169,9 +191,10 @@ test('an in-progress game survives a reload exactly', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
 
+  await revealed(page);
   await page.keyboard.type('crane');
   await page.keyboard.press('Enter');
-  await page.waitForTimeout(150);
+  await revealed(page);
 
   const before = await boardRows(page);
 
@@ -196,6 +219,7 @@ test('the board is comfortable on a phone', async ({ page, isMobile }) => {
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
+  await revealed(page);
 
   // Everything needed to play has to be reachable without scrolling, or
   // one-handed play on a phone is not really possible.

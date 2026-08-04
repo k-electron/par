@@ -19,6 +19,7 @@ import { createMemoryStorage } from '../../src/app/storage/storage';
 import { theme } from '../../src/app/theme/theme';
 import { StatsPanel } from '../../src/app/ui/Stats';
 import { App } from '../../src/app/ui/App';
+import { INSTANT_REVEAL } from '../../src/app/ui/reveal';
 import { createDirectScoringClient } from '../../src/app/scoring/direct';
 import { answers, starters } from '../../src/data';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
@@ -258,7 +259,12 @@ describe('stats in the app', () => {
 
     render(
       <ThemeProvider theme={theme}>
-        <App repository={store} now={FIXED_NOW} scoring={createDirectScoringClient()} />
+        <App
+          repository={store}
+          now={FIXED_NOW}
+          scoring={createDirectScoringClient()}
+          reveal={INSTANT_REVEAL}
+        />
       </ThemeProvider>,
     );
 

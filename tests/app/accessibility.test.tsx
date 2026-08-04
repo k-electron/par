@@ -15,6 +15,7 @@ import { Repository } from '../../src/app/storage/repository';
 import { createMemoryStorage } from '../../src/app/storage/storage';
 import { DEFAULT_APPEARANCE, createAppTheme, tileColours } from '../../src/app/theme/theme';
 import { App } from '../../src/app/ui/App';
+import { INSTANT_REVEAL } from '../../src/app/ui/reveal';
 import { answers, starters } from '../../src/data';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
 
@@ -22,8 +23,15 @@ const FIXED_NOW = new Date('2026-06-15T16:00:00Z');
 const PUZZLE = drawPuzzle(165, { answers, starters });
 
 function mount(store = new Repository(createMemoryStorage())) {
+  // Instant reveal: these tests are about what a screen reader and a keyboard
+  // get, not about the tile animation, which has its own file.
   const rendered = render(
-    <App repository={store} now={FIXED_NOW} scoring={createDirectScoringClient()} />,
+    <App
+      repository={store}
+      now={FIXED_NOW}
+      scoring={createDirectScoringClient()}
+      reveal={INSTANT_REVEAL}
+    />,
   );
   return { ...rendered, store };
 }

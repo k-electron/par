@@ -124,6 +124,12 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
               animationDuration: '0.01ms !important',
               animationIterationCount: '1 !important',
               transitionDuration: '0.01ms !important',
+              // Delay matters as much as duration. The staggered tile reveal
+              // spaces its tiles by delay, so zeroing only the duration would
+              // leave six instantaneous flips spread over a second and a half —
+              // still motion, just jerkier.
+              animationDelay: '0ms !important',
+              transitionDelay: '0ms !important',
             },
           },
         },

@@ -218,11 +218,21 @@ export function reduceGame(
  *
  * Best-known, not latest: once a letter has shown green it stays green even if
  * a later guess puts it somewhere it does not belong.
+ *
+ * `throughGuess` caps how many guesses are taken into account, which lets the
+ * keyboard hold still while the newest row is turning over — a key that changed
+ * colour before its tile did would give the answer away early. The default is
+ * every guess played, so nothing that does not care about the reveal has to say
+ * so.
  */
-export function keyboardState(session: GameSession): ReadonlyMap<string, Tile> {
+export function keyboardState(
+  session: GameSession,
+  throughGuess = session.guesses.length,
+): ReadonlyMap<string, Tile> {
   const best = new Map<string, Tile>();
+  const considered = Math.max(0, Math.min(throughGuess, session.guesses.length));
 
-  for (let index = 0; index < session.guesses.length; index += 1) {
+  for (let index = 0; index < considered; index += 1) {
     const guess = session.guesses[index]!;
     const tiles = tilesFromPattern(session.patterns[index]!);
     for (let position = 0; position < guess.length; position += 1) {
