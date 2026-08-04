@@ -309,6 +309,26 @@ describe('a version mismatch', () => {
     expect(await screen.findByText(/different word list/i)).toBeInTheDocument();
     expect(screen.getByRole('grid')).toBeInTheDocument();
   });
+
+  /**
+   * Forwarding re-encodes with *this* build's stamps. On a mismatch that would
+   * hand the next reader a link that looks current while carrying a board the
+   * notice says cannot be trusted — laundering away the very flag spec §5 asks
+   * for. Showing the round is right; passing it on as sound is not.
+   */
+  it('will not forward a round whose scorer it cannot vouch for', async () => {
+    mountWith({ ...game, scorerVersion: SCORER_VERSION + 1 });
+
+    expect(await screen.findByText(/scored by a different version/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /copy this round/i })).not.toBeInTheDocument();
+  });
+
+  it('will not forward a round built from different word lists', async () => {
+    mountWith({ ...game, wordListVersion: 'ffffff' });
+
+    expect(await screen.findByText(/different word list/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /copy this round/i })).not.toBeInTheDocument();
+  });
 });
 
 describe('the replay itself', () => {
@@ -366,6 +386,53 @@ describe('the replay itself', () => {
     const table = await screen.findByRole('table', { name: /guess by guess/i });
     expect(table).toHaveTextContent(/not scored/i);
     expect(table).toHaveTextContent(/broke|ran/);
+  });
+
+  it('lets the recipient forward the round unchanged', async () => {
+    const user = userEvent.setup();
+    mountRevealed();
+
+    await user.click(await screen.findByRole('button', { name: /copy this round/i }));
+
+    // The same round, not a retelling of it. Re-encoding the sender's guesses
+    // and flags has to reproduce their text byte for byte, or a round would
+    // drift every time somebody passed it on.
+    const expected = shareText({
+      puzzleNumber: PUZZLE_NUMBER,
+      score: scoreDirectly({
+        guesses: PLAYED,
+        answer: PUZZLE.answer,
+        tookHouseStarter: true,
+        hardMode: false,
+      }),
+      hardMode: false,
+      tookHouseStarter: true,
+      guessIndices: game.guessIndices,
+      wordListVersion: WORD_LIST_VERSION,
+      origin: location.origin + location.pathname,
+    });
+
+    expect(await navigator.clipboard.readText()).toBe(expected);
+  });
+
+  it('never calls somebody else\u2019s board yours', async () => {
+    mountRevealed();
+    await screen.findByText(/played at \d+%/);
+
+    // The header already says whose round this is. A "Your round" caption under
+    // it contradicts that on the same screen.
+    expect(screen.getByText(/their round/i)).toBeInTheDocument();
+    expect(screen.queryByText(/your round/i)).not.toBeInTheDocument();
+  });
+
+  it('says whose round it is copying', async () => {
+    const user = userEvent.setup();
+    mountRevealed();
+
+    await user.click(await screen.findByRole('button', { name: /copy this round/i }));
+
+    // "your game" would be a lie on somebody else's board.
+    expect(await screen.findByText(/shows their game/i)).toBeInTheDocument();
   });
 
   it('offers a way out to the recipient\u2019s own game', async () => {

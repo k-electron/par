@@ -107,6 +107,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   // 4. Open it in a genuinely clean profile — no storage, no history, nothing
   //    that could make the score come out right by remembering it.
   const clean = await page.context().browser()!.newContext();
+  await clean.grantPermissions(['clipboard-read', 'clipboard-write']);
   const recipient = await clean.newPage();
   await recipient.goto(link);
 
@@ -119,6 +120,14 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   expect(await boardRows(recipient)).toEqual(senderRows);
   expect(await readTotal(recipient)).toBe(senderTotal);
   await expectHorizontallyCentred(recipient, recipient.getByRole('grid'), 'the replayed board');
+
+  // 6. Forwarding it hands on the sender's round, not a retelling of it. The
+  //    recipient re-encodes from the same guesses and flags, so the text has to
+  //    come out byte for byte identical or a round would drift each time it was
+  //    passed along.
+  await recipient.getByRole('button', { name: /copy this round/i }).click();
+  const forwarded = await recipient.evaluate(() => navigator.clipboard.readText());
+  expect(forwarded).toBe(shared);
 
   await clean.close();
 });

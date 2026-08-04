@@ -108,7 +108,6 @@ export function luckNote(bits: number): string {
 }
 
 export const RESULTS = {
-  title: 'Your round',
   totalLabel: 'Total',
   skillLabel: 'Skill',
   parLabel: 'Par',
@@ -124,6 +123,32 @@ export const RESULTS = {
   },
   explainerLink: 'How is this scored?',
 } as const;
+
+/**
+ * Whose round is on screen.
+ *
+ * The results view serves two places: the game you just played, and a round
+ * somebody sent you. Every second-person phrase has to bend with it, or the
+ * replay ends up captioning another player's board "Your round" directly under
+ * a header that says it is somebody else's.
+ */
+export type RoundVariant = 'own' | 'replay';
+
+export const ROUND: Record<RoundVariant, { title: string; pending: string }> = {
+  own: { title: 'Your round', pending: 'Working out your round\u2026' },
+  replay: { title: 'Their round', pending: 'Working out their round\u2026' },
+};
+
+export const SHARE: Record<RoundVariant, { action: string; copied: string }> = {
+  own: {
+    action: 'Share',
+    copied: 'Copied. The link shows your game, not the answer.',
+  },
+  replay: {
+    action: 'Copy this round',
+    copied: 'Copied. The link shows their game, not the answer.',
+  },
+};
 
 export const BADGES = {
   houseStarter: 'House starter',
