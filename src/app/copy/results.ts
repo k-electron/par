@@ -114,6 +114,20 @@ export function luckNote(bits: number): string {
   return 'broke as expected';
 }
 
+/**
+ * The small print under the words-left figure: what the pool was before it.
+ *
+ * The row's headline number is what the guess left behind, and that only means
+ * something next to where it started — 253 is a fine cut from 3000 and a poor
+ * one from 260.
+ */
+export function poolNote(before: number, after: number): string {
+  // Only when the guess split nothing, where "from 3000" beside a headline of
+  // 3000 reads like a rendering fault rather than a fact about the guess.
+  if (after >= before) return 'nothing ruled out';
+  return `from ${before}`;
+}
+
 export const RESULTS = {
   totalLabel: 'Total',
   skillLabel: 'Skill',
@@ -124,7 +138,14 @@ export const RESULTS = {
   /** Column headers for the per-guess table. */
   columns: {
     turn: '#',
-    candidates: 'In play',
+    /**
+     * Reads as the result of the guess on its own row.
+     *
+     * It used to be "In play" and showed the count going *in*, which described
+     * the position the previous guess had left rather than what this one did
+     * with it. Following a round meant reading each number a line late.
+     */
+    candidates: 'Words left',
     skill: 'Skill',
     luck: 'Luck',
   },

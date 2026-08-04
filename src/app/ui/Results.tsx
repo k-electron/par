@@ -17,6 +17,7 @@ import {
   headline,
   luckNote,
   parPhrase,
+  poolNote,
   resultsBadges,
   skillPhrase,
   type RoundVariant,
@@ -142,7 +143,18 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
                   </Stack>
                 </TableCell>
                 <TableCell sx={{ px: 0.5 }} align="right">
-                  {row.candidateCount}
+                  {/*
+                    The count the guess left behind, not the one it started
+                    from, so the row describes its own guess. The caption keeps
+                    the starting point, which is what makes the figure mean
+                    something.
+                  */}
+                  <Stack spacing={0} sx={{ alignItems: 'flex-end' }}>
+                    <Box component="span">{row.remainingCount}</Box>
+                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                      {poolNote(row.candidateCount, row.remainingCount)}
+                    </Typography>
+                  </Stack>
                 </TableCell>
                 <TableCell sx={{ px: 0.5 }} align="right">
                   {row.skill === null ? '\u2014' : `${row.skill.toFixed(0)}%`}

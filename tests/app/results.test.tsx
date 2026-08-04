@@ -156,6 +156,40 @@ describe('the rendered results', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(score.breakdown.length + 1);
   });
 
+  /**
+   * The column used to report the pool a guess was handed, which describes the
+   * previous guess rather than the one on the row. Following a round meant
+   * reading every number a line late, and the last row's effect was not shown
+   * anywhere at all.
+   */
+  it('reports what each guess left behind, not what it was handed', () => {
+    renderResults();
+
+    const table = screen.getByRole('table', { name: /guess by guess/i });
+    const rows = within(table).getAllByRole('row').slice(1);
+
+    rows.forEach((row, index) => {
+      const entry = score.breakdown[index]!;
+      const cell = within(row).getAllByRole('cell')[1]!;
+
+      expect(cell, `row ${index + 1}`).toHaveTextContent(String(entry.remainingCount));
+      // The count going in is context, not the headline.
+      expect(cell.textContent, `row ${index + 1}`).toMatch(
+        new RegExp(`^${entry.remainingCount}(from ${entry.candidateCount}|nothing ruled out)`),
+      );
+    });
+  });
+
+  it('narrows the pool monotonically down the table', () => {
+    // Each row's starting pool is the previous row's remainder. If the two ever
+    // disagreed, one of the numbers on screen would be describing another turn.
+    for (let index = 1; index < score.breakdown.length; index += 1) {
+      expect(score.breakdown[index]!.candidateCount).toBe(
+        score.breakdown[index - 1]!.remainingCount,
+      );
+    }
+  });
+
   it('shows the opener with no skill score', () => {
     renderResults();
 
