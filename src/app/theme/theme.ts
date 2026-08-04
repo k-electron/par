@@ -106,6 +106,15 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
       ].join(','),
     },
     components: {
+      // Stack spaces its children with margins unless told otherwise, and the
+      // reset that comes with that — `& > :not(style):not(style) { margin: 0 }`
+      // — outranks a child's own `mx: 'auto'` on specificity. Anything that
+      // centres itself that way is silently left-aligned the moment it becomes
+      // a direct Stack child, which is what happened to the replay board.
+      // Spacing with `gap` leaves child margins alone.
+      MuiStack: {
+        defaultProps: { useFlexGap: true },
+      },
       MuiCssBaseline: {
         styleOverrides: {
           // Respect a reduced-motion preference globally rather than per
