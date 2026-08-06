@@ -55,7 +55,7 @@ const rules = { isAllowedWord: (word: string) => dictionary.includes(word), rule
  * A window only a little longer than that work would pass or fail on how busy
  * the machine was.
  */
-const SLOW: RevealTiming = { stagger: 150, flip: 150 };
+const SLOW: RevealTiming = { stagger: 200, flip: 200 };
 
 /**
  * Every wait in this file is sized off the reveal itself.
@@ -66,18 +66,40 @@ const SLOW: RevealTiming = { stagger: 150, flip: 150 };
  */
 const PATIENCE = { timeout: revealDuration(SLOW) + 2_000 };
 
-function mountApp(store = new Repository(createMemoryStorage())) {
+function mountApp(
+  store = new Repository(createMemoryStorage()),
+  scoring = createDirectScoringClient(),
+) {
   render(
     <ThemeProvider theme={theme}>
-      <App
-        repository={store}
-        now={FIXED_NOW}
-        scoring={createDirectScoringClient()}
-        reveal={SLOW}
-      />
+      <App repository={store} now={FIXED_NOW} scoring={scoring} reveal={SLOW} />
     </ThemeProvider>,
   );
   return store;
+}
+
+/**
+ * Mount with the score for a finished round already computed.
+ *
+ * These tests score on the calling thread, where the app uses a worker, and a
+ * real round costs the engine a couple of seconds on a slow machine. Left until
+ * the game ends, that work blocks inside the reveal and eats the window an
+ * assertion needs — which passed locally and failed on CI, the worst way for a
+ * test to be wrong.
+ *
+ * The client caches, so warming it here makes the call the app makes during the
+ * flip a map lookup. The real scorer, the real numbers, none of the cost where it
+ * would distort what is being measured.
+ */
+async function mountScored(played: readonly string[]) {
+  const scoring = createDirectScoringClient();
+  await scoring.score({
+    guesses: played,
+    answer: PUZZLE.answer,
+    tookHouseStarter: true,
+    hardMode: false,
+  });
+  return mountApp(new Repository(createMemoryStorage()), scoring);
 }
 
 const revealingRow = () => document.querySelector('[data-revealing="true"]');
@@ -90,7 +112,7 @@ afterEach(cleanup);
 describe('a row turning over', () => {
   it('holds the score back until the last tile has landed', async () => {
     const user = userEvent.setup();
-    mountApp();
+    await mountScored([PUZZLE.starter, PUZZLE.answer]);
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
     await settled();
@@ -111,7 +133,7 @@ describe('a row turning over', () => {
    */
   it('tells a screen reader everything before the animation finishes', async () => {
     const user = userEvent.setup();
-    mountApp();
+    await mountScored([PUZZLE.starter, PUZZLE.answer]);
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
     await settled();
