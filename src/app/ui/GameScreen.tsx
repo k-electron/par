@@ -99,6 +99,26 @@ export function GameScreen({
   const [revealingRow, setRevealingRow] = useState(
     revealOnMount && restoredGuesses.length > 0 ? restoredGuesses.length - 1 : -1,
   );
+  const [turnedThrough, setTurnedThrough] = useState(restoredGuesses.length);
+
+  /**
+   * Start the reveal during render, not in an effect.
+   *
+   * Not a style preference. A tile's own style *is* its final colour, and the
+   * animation is what conceals it until the flip reaches halfway — so a row must
+   * never be painted before its animation is attached. An effect runs after the
+   * browser has had the chance to paint, which left the whole row showing its
+   * answer for a frame or two before turning over. It reproduced on every run,
+   * 15 to 28ms in, and was visible whenever a paint happened to land there.
+   *
+   * Adjusting state during render is React's documented answer to this: the
+   * component re-runs immediately and the first commit already has the animation,
+   * so there is no window rather than a narrower one.
+   */
+  if (session.guesses.length > turnedThrough) {
+    setTurnedThrough(session.guesses.length);
+    setRevealingRow(session.guesses.length - 1);
+  }
 
   const rows = useMemo(() => boardRows(session), [session]);
   // Keys hold still while the newest row turns, then catch up with it.
@@ -122,16 +142,6 @@ export function GameScreen({
     if (revealing) return;
     dispatch({ type: 'submit' });
   }, [revealing]);
-
-  // Turn over each new row as it lands. Keyed on the count rather than on the
-  // array, so a re-render that changes nothing about the guesses cannot replay
-  // an animation the player has already watched.
-  const revealedThrough = useRef(restoredGuesses.length);
-  useEffect(() => {
-    if (session.guesses.length <= revealedThrough.current) return;
-    revealedThrough.current = session.guesses.length;
-    setRevealingRow(session.guesses.length - 1);
-  }, [session.guesses.length]);
 
   // Depends on the duration rather than the timing object, so a caller passing a
   // fresh object literal every render cannot restart the clock forever.
