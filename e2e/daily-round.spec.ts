@@ -175,6 +175,69 @@ test('the results sit below the board rather than on top of it', async ({ page }
   expect(total!.y).toBeGreaterThan(lastTile!.y + lastTile!.height);
 });
 
+/**
+ * A tile's own style is its final colour, and the reveal animation is what
+ * conceals it until the flip reaches halfway. So a row must never reach the
+ * screen before its animation is attached.
+ *
+ * It used to. Starting the reveal from an effect meant the browser could paint
+ * between the guess landing and the animation arriving, and the whole row showed
+ * its answer for a frame or two first. It reproduced on every run, 15 to 28ms in,
+ * and was visible whenever a paint happened to land in that window.
+ *
+ * jsdom cannot see this — it has no paint and no animations — so it has to be
+ * checked in a real browser, by sampling the tile that should stay face down
+ * longest and looking for a colour it has no business having yet.
+ */
+test('never shows a row its answer before the flip starts', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await revealed(page);
+
+  await page.evaluate(() => {
+    const samples: { t: number; bg: string; state: string | null }[] = [];
+    (window as unknown as { __samples: typeof samples }).__samples = samples;
+    const started = performance.now();
+    const tick = () => {
+      const tile = document.querySelector('[data-testid="tile-1-4"]');
+      if (tile !== null) {
+        samples.push({
+          t: performance.now() - started,
+          bg: getComputedStyle(tile).backgroundColor,
+          state: tile.getAttribute('data-state'),
+        });
+      }
+      if (performance.now() - started < 400) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+
+  await page.keyboard.type('crane');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(500);
+
+  const samples = await page.evaluate(
+    () => (window as unknown as { __samples: { t: number; bg: string; state: string | null }[] }).__samples,
+  );
+  expect(samples.length, 'sampler never ran').toBeGreaterThan(5);
+
+  // The last column carries the longest delay, so anything other than a
+  // transparent background this early is the answer arriving ahead of the flip.
+  const early = samples.filter(
+    (sample) =>
+      sample.t < 400 &&
+      sample.state !== null &&
+      sample.state !== 'empty' &&
+      sample.state !== 'filled' &&
+      sample.bg !== 'rgba(0, 0, 0, 0)',
+  );
+
+  expect(
+    early,
+    `last tile was coloured ${early.length} frame(s) early, first at ${early[0]?.t.toFixed(0)}ms`,
+  ).toEqual([]);
+});
+
 test('the board and the keyboard sit centred in the column', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();

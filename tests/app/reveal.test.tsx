@@ -47,8 +47,24 @@ const rules = { isAllowedWord: (word: string) => dictionary.includes(word), rule
 /**
  * Long enough that an assertion can run while a row is still turning, short
  * enough that a file of these tests stays quick.
+ *
+ * The headroom is deliberate. These tests score on the main thread, where the
+ * shipped app uses a worker, and a real two-guess win takes about 150ms of
+ * blocking work — which lands inside the reveal window, because the settle timer
+ * now starts during the render that lands the guess rather than an effect later.
+ * A window only a little longer than that work would pass or fail on how busy
+ * the machine was.
  */
-const SLOW: RevealTiming = { stagger: 80, flip: 80 };
+const SLOW: RevealTiming = { stagger: 150, flip: 150 };
+
+/**
+ * Every wait in this file is sized off the reveal itself.
+ *
+ * Testing library defaults to a second, which is shorter than a deliberately slow
+ * reveal — so the defaults would time out on a working animation and the timing
+ * above could not be tuned without silently breaking six tests.
+ */
+const PATIENCE = { timeout: revealDuration(SLOW) + 2_000 };
 
 function mountApp(store = new Repository(createMemoryStorage())) {
   render(
@@ -65,7 +81,7 @@ function mountApp(store = new Repository(createMemoryStorage())) {
 }
 
 const revealingRow = () => document.querySelector('[data-revealing="true"]');
-const settled = () => waitFor(() => expect(revealingRow()).toBeNull());
+const settled = () => waitFor(() => expect(revealingRow()).toBeNull(), PATIENCE);
 const boardRow = (index: number) =>
   within(screen.getByRole('grid')).getAllByRole('row')[index]!;
 
@@ -84,7 +100,7 @@ describe('a row turning over', () => {
     expect(revealingRow()).not.toBeNull();
     expect(screen.queryByText(/played at \d+%/)).not.toBeInTheDocument();
 
-    expect(await screen.findByText(/played at \d+%/)).toBeInTheDocument();
+    expect(await screen.findByText(/played at \d+%/, {}, PATIENCE)).toBeInTheDocument();
     expect(revealingRow()).toBeNull();
   });
 
@@ -130,7 +146,7 @@ describe('a row turning over', () => {
     await user.keyboard(`${probe}{Enter}`);
     expect(key().getAttribute('aria-label'), 'key moved before its tile did').toBe(plain);
 
-    await waitFor(() => expect(key().getAttribute('aria-label')).not.toBe(plain));
+    await waitFor(() => expect(key().getAttribute('aria-label')).not.toBe(plain), PATIENCE);
   });
 
   it('refuses a second guess mid-flip but still takes the letters', async () => {
@@ -150,7 +166,10 @@ describe('a row turning over', () => {
 
     await settled();
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(boardRow(2).getAttribute('aria-label')).toMatch(/word|correct/));
+    await waitFor(
+      () => expect(boardRow(2).getAttribute('aria-label')).toMatch(/word|correct/),
+      PATIENCE,
+    );
   });
 
   it('names the answer only once the losing row has finished', async () => {
@@ -171,7 +190,7 @@ describe('a row turning over', () => {
     await user.keyboard('skimp{Enter}');
     expect(screen.queryByText(/the answer was/i)).not.toBeInTheDocument();
 
-    expect(await screen.findByText(/the answer was/i)).toBeInTheDocument();
+    expect(await screen.findByText(/the answer was/i, {}, PATIENCE)).toBeInTheDocument();
   });
 });
 
