@@ -47,25 +47,63 @@ const rules = { isAllowedWord: (word: string) => dictionary.includes(word), rule
 /**
  * Long enough that an assertion can run while a row is still turning, short
  * enough that a file of these tests stays quick.
+ *
+ * The headroom is deliberate. These tests score on the main thread, where the
+ * shipped app uses a worker, and a real two-guess win takes about 150ms of
+ * blocking work — which lands inside the reveal window, because the settle timer
+ * now starts during the render that lands the guess rather than an effect later.
+ * A window only a little longer than that work would pass or fail on how busy
+ * the machine was.
  */
-const SLOW: RevealTiming = { stagger: 80, flip: 80 };
+const SLOW: RevealTiming = { stagger: 200, flip: 200 };
 
-function mountApp(store = new Repository(createMemoryStorage())) {
+/**
+ * Every wait in this file is sized off the reveal itself.
+ *
+ * Testing library defaults to a second, which is shorter than a deliberately slow
+ * reveal — so the defaults would time out on a working animation and the timing
+ * above could not be tuned without silently breaking six tests.
+ */
+const PATIENCE = { timeout: revealDuration(SLOW) + 2_000 };
+
+function mountApp(
+  store = new Repository(createMemoryStorage()),
+  scoring = createDirectScoringClient(),
+) {
   render(
     <ThemeProvider theme={theme}>
-      <App
-        repository={store}
-        now={FIXED_NOW}
-        scoring={createDirectScoringClient()}
-        reveal={SLOW}
-      />
+      <App repository={store} now={FIXED_NOW} scoring={scoring} reveal={SLOW} />
     </ThemeProvider>,
   );
   return store;
 }
 
+/**
+ * Mount with the score for a finished round already computed.
+ *
+ * These tests score on the calling thread, where the app uses a worker, and a
+ * real round costs the engine a couple of seconds on a slow machine. Left until
+ * the game ends, that work blocks inside the reveal and eats the window an
+ * assertion needs — which passed locally and failed on CI, the worst way for a
+ * test to be wrong.
+ *
+ * The client caches, so warming it here makes the call the app makes during the
+ * flip a map lookup. The real scorer, the real numbers, none of the cost where it
+ * would distort what is being measured.
+ */
+async function mountScored(played: readonly string[]) {
+  const scoring = createDirectScoringClient();
+  await scoring.score({
+    guesses: played,
+    answer: PUZZLE.answer,
+    tookHouseStarter: true,
+    hardMode: false,
+  });
+  return mountApp(new Repository(createMemoryStorage()), scoring);
+}
+
 const revealingRow = () => document.querySelector('[data-revealing="true"]');
-const settled = () => waitFor(() => expect(revealingRow()).toBeNull());
+const settled = () => waitFor(() => expect(revealingRow()).toBeNull(), PATIENCE);
 const boardRow = (index: number) =>
   within(screen.getByRole('grid')).getAllByRole('row')[index]!;
 
@@ -74,7 +112,7 @@ afterEach(cleanup);
 describe('a row turning over', () => {
   it('holds the score back until the last tile has landed', async () => {
     const user = userEvent.setup();
-    mountApp();
+    await mountScored([PUZZLE.starter, PUZZLE.answer]);
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
     await settled();
@@ -84,7 +122,7 @@ describe('a row turning over', () => {
     expect(revealingRow()).not.toBeNull();
     expect(screen.queryByText(/played at \d+%/)).not.toBeInTheDocument();
 
-    expect(await screen.findByText(/played at \d+%/)).toBeInTheDocument();
+    expect(await screen.findByText(/played at \d+%/, {}, PATIENCE)).toBeInTheDocument();
     expect(revealingRow()).toBeNull();
   });
 
@@ -95,7 +133,7 @@ describe('a row turning over', () => {
    */
   it('tells a screen reader everything before the animation finishes', async () => {
     const user = userEvent.setup();
-    mountApp();
+    await mountScored([PUZZLE.starter, PUZZLE.answer]);
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
     await settled();
@@ -130,7 +168,7 @@ describe('a row turning over', () => {
     await user.keyboard(`${probe}{Enter}`);
     expect(key().getAttribute('aria-label'), 'key moved before its tile did').toBe(plain);
 
-    await waitFor(() => expect(key().getAttribute('aria-label')).not.toBe(plain));
+    await waitFor(() => expect(key().getAttribute('aria-label')).not.toBe(plain), PATIENCE);
   });
 
   it('refuses a second guess mid-flip but still takes the letters', async () => {
@@ -150,7 +188,10 @@ describe('a row turning over', () => {
 
     await settled();
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(boardRow(2).getAttribute('aria-label')).toMatch(/word|correct/));
+    await waitFor(
+      () => expect(boardRow(2).getAttribute('aria-label')).toMatch(/word|correct/),
+      PATIENCE,
+    );
   });
 
   it('names the answer only once the losing row has finished', async () => {
@@ -171,7 +212,7 @@ describe('a row turning over', () => {
     await user.keyboard('skimp{Enter}');
     expect(screen.queryByText(/the answer was/i)).not.toBeInTheDocument();
 
-    expect(await screen.findByText(/the answer was/i)).toBeInTheDocument();
+    expect(await screen.findByText(/the answer was/i, {}, PATIENCE)).toBeInTheDocument();
   });
 });
 
