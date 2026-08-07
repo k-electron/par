@@ -15,6 +15,34 @@ Three parts, deliberately separate, because they answer different questions.
 **bonus** asks whether you took the shared bet. Keeping them apart is what lets
 luck live in exactly one place.
 
+The whole path, from a finished board to a number:
+
+```mermaid
+flowchart TD
+    Game["A finished game:<br>guesses, answer,<br>house starter taken?"]
+    Game --> Position["Next guess i<br>S_i = answers consistent<br>with what came before"]
+    Position --> IsFirst{"First guess?"}
+    IsFirst -- yes --> Unscored["No skill score<br>w_i = 0"]
+    IsFirst -- no --> Scored["s_i grades it against<br>the best play here<br>w_i = log2 size of S_i"]
+    Unscored --> Luck["Luck in bits:<br>realized minus expected"]
+    Scored --> Luck
+    Luck --> Done{"Solved, or out<br>of guesses?"}
+    Done -- no --> Position
+    Done -- yes --> Skill["Skill = mean of s_i weighted by w_i<br>100 if none qualified"]
+    Skill --> Outcome["Outcome = C_PAR ×<br>(PAR − min(n, 7))<br>unsolved counts as 7"]
+    Outcome --> Took{"Took the<br>house starter?"}
+    Took -- yes --> WithBonus["Bonus = EPSILON"]
+    Took -- no --> NoBonus["Bonus = 0"]
+    WithBonus --> Total["Total =<br>Skill + Outcome + Bonus"]
+    NoBonus --> Total
+```
+
+Two things are easier to read off the shape than off the formula. The first
+guess reaches the total **only** through the outcome term, because its branch
+produces no skill score to contribute. And luck is measured on every pass round
+the loop, yet no edge carries it into the total — it exists for the results
+table and nothing else.
+
 ## Skill
 
 Every guess from the second onward is graded against the best play available in
@@ -43,6 +71,24 @@ that cannot be told the outcome cannot let the outcome change a score.
 **It never names the best word.** The return type carries a score, a luck figure
 and a forced flag. The argmin exists inside the search and is never returned, so
 no UI can leak what it was never handed.
+
+Those three constraints leave a function of the position and nothing else:
+
+```mermaid
+flowchart TD
+    Call["scoreGuess: history, guess<br>No answer. No pattern."]
+    Call --> Alive["S_i = answers still alive<br>constraints from the history"]
+    Alive --> Legal{"Guess known and legal,<br>position still live?"}
+    Legal -- no --> Throw["Throw: a caller bug,<br>not a score"]
+    Legal -- yes --> Search["best = V of S_i<br>played = Q of the guess"]
+    Search --> Splits{"Guess splits<br>the candidates?"}
+    Splits -- no --> Wasted["cost = 1 + best<br>a wasted turn, then<br>this position again"]
+    Splits -- yes --> Played["cost = played"]
+    Wasted --> Bench["benchmark = the smaller<br>of cost and best"]
+    Played --> Bench
+    Bench --> Ratio["s_i = 100 ×<br>benchmark / cost"]
+    Ratio --> Give["Return s_i, size of S_i,<br>forced, expected bits<br>Never the best word"]
+```
 
 Guesses are averaged weighted by `log2 |S_i|`:
 
@@ -242,6 +288,30 @@ the best few plus the live candidates:
 
 Applied at every recursion depth, with the two sets deduped preserving rank
 order.
+
+`V` and `Q` are one recursion seen from two sides. The table above governs only
+the middle of it; most of the rest is the places a node is settled instead of
+searched:
+
+```mermaid
+flowchart TD
+    Value["V of S: the best<br>this position allows"]
+    Value --> Tiny{"Two or fewer<br>candidates?"}
+    Tiny -- yes --> Endgame["Settled by argument:<br>V = 1 with one left,<br>3/2 with two"]
+    Tiny -- no --> Memo{"Position already<br>solved?"}
+    Memo -- yes --> Recall["Return the<br>memoised value"]
+    Memo -- no --> Rank["Rank legal guesses by<br>one-step expected information"]
+    Rank --> Budget["Take the band's probes and<br>candidates, deduped in rank order"]
+    Budget --> Cost["Q of g in S, for each"]
+    Cost --> Split["Partition S by g's feedback"]
+    Split --> Blind{"One bucket holds all,<br>and it is not the win?"}
+    Blind -- yes --> Never["Infinite: never selectable,<br>so every child set is<br>smaller than its parent"]
+    Blind -- no --> Buckets["Walk the non-empty buckets,<br>ascending, skipping the win<br>Hard mode narrows each child"]
+    Buckets -- "three or more" --> Value
+    Buckets -- "two or fewer" --> Endgame
+    Buckets --> Sum["Q = 1 + the weighted child<br>total, divided once by<br>the size of S"]
+    Sum --> Best["V = the lowest Q searched"]
+```
 
 Two suites check it, and they cover different things. `exactness.test.ts` runs
 against a fourteen-word fixture, where full brute force is tractable — every
