@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
-import { RESULTS } from '../copy/results';
+import { OUTCOME, RESULTS } from '../copy/results';
 import type { ScoringClient } from '../scoring/client';
 import type { GameScore } from '../scoring/protocol';
 import type { PlayerStats } from '../state/stats';
@@ -24,6 +24,7 @@ import {
 } from '../state/gameSession';
 import { AppearanceMenu } from './AppearanceMenu';
 import { Board } from './Board';
+import { DefinitionLink } from './DefinitionLink';
 import { INSTANT_REVEAL, REVEAL, revealDuration, type RevealTiming } from './reveal';
 import { Keyboard } from './Keyboard';
 import { LockedSettings } from './LockedSettings';
@@ -304,12 +305,12 @@ export function GameScreen({
           */}
           {finished && session.status === 'won' && scoring === undefined && (
             <Alert severity="success" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
-              Solved in {session.guesses.length} of {MAX_GUESSES}.
+              {OUTCOME.own.solved(session.guesses.length, MAX_GUESSES)}
             </Alert>
           )}
           {finished && session.status === 'lost' && (
             <Alert severity="info" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
-              Out of guesses. The answer was {session.answer.toUpperCase()}.
+              {OUTCOME.own.lost(session.answer)}
             </Alert>
           )}
         </Box>
@@ -326,6 +327,7 @@ export function GameScreen({
               guesses={session.guesses}
             />
           )}
+          <DefinitionLink word={answer} />
           <Button size="small" variant="text" onClick={() => setExplaining(true)}>
             {RESULTS.explainerLink}
           </Button>
