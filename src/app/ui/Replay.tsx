@@ -5,7 +5,8 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useState } from 'react';
 
 import { guesses as dictionary, answers, starters, WORD_LIST_VERSION } from '../../data';
-import { SCORER_VERSION } from '../../engine/config/constants';
+import { MAX_GUESSES, SCORER_VERSION } from '../../engine/config/constants';
+import { OUTCOME, RESULTS } from '../copy/results';
 import { drawPuzzle } from '../../engine/daily/puzzle';
 import { rulesetFor } from '../../engine/rules/ruleset';
 import { boardRows, replaySession } from '../state/gameSession';
@@ -14,6 +15,7 @@ import type { GameScore } from '../scoring/protocol';
 import type { Repository } from '../storage/repository';
 import { decodeSharedGame, type SharedGame } from '../share/codec';
 import { Board } from './Board';
+import { DefinitionLink } from './DefinitionLink';
 import { Results } from './Results';
 import { ScoringExplainer } from './ScoringExplainer';
 import { ShareButton } from './ShareButton';
@@ -182,6 +184,24 @@ function RevealedReplay({
 
       <Board rows={boardRows(rebuilt.session)} activeRow={-1} rejectionNonce={0} />
 
+      {/*
+        The outcome, which this screen used to leave out entirely. A round the
+        sender lost showed six wrong guesses and never said what the word was,
+        so the one board where the answer is not already on it was the one board
+        that withheld it. Whoever is reading has come through the spoiler gate;
+        they should see what the player saw.
+      */}
+      {rebuilt.session.status === 'lost' && (
+        <Alert severity="info" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
+          {OUTCOME.replay.lost(rebuilt.puzzle.answer)}
+        </Alert>
+      )}
+      {rebuilt.session.status === 'won' && scoring === undefined && (
+        <Alert severity="success" variant="outlined" sx={{ py: 0, justifyContent: 'center' }}>
+          {OUTCOME.replay.solved(rebuilt.words.length, MAX_GUESSES)}
+        </Alert>
+      )}
+
       <Results variant="replay" score={score} settings={settings} />
 
       {/*
@@ -205,8 +225,10 @@ function RevealedReplay({
         />
       )}
 
+      <DefinitionLink word={rebuilt.puzzle.answer} variant="replay" />
+
       <Button size="small" variant="text" onClick={() => setExplaining(true)}>
-        How is this scored?
+        {RESULTS.explainerLink}
       </Button>
       <ScoringExplainer open={explaining} onClose={() => setExplaining(false)} />
 
