@@ -27,6 +27,20 @@ npm ci        # install exactly what the lockfile specifies
 npm run dev   # start the dev server on http://localhost:5173
 ```
 
+Playing, typing and the reveal all work under `npm run dev`, but the end-of-round
+**score does not**. Scoring is heavy numeric work in a Web Worker, and served
+unbundled by the dev server it is slow enough to hang on "Working out your round…"
+rather than settle. Only the score is affected. To see a round score at usable
+speed, run a production build:
+
+```bash
+npm run build
+npm run preview   # serves the built dist/ on http://localhost:4173
+```
+
+This is also why the end-to-end tests run against a production build rather than the
+dev server.
+
 ## Scripts
 
 | Script              | What it does                                              |
