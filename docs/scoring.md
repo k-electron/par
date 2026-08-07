@@ -24,11 +24,12 @@ flowchart TD
     Position --> IsFirst{"First guess?"}
     IsFirst -- yes --> Unscored["No skill score<br>w_i = 0"]
     IsFirst -- no --> Scored["s_i grades it against<br>the best play here<br>w_i = log2 size of S_i"]
-    Unscored --> Luck["Luck in bits:<br>realized minus expected"]
-    Scored --> Luck
+    Unscored --> Feedback["The pattern from the answer<br>The answer's only use"]
+    Scored --> Feedback
+    Feedback --> Luck["Luck in bits:<br>realized minus expected"]
     Luck --> Done{"Solved, or out<br>of guesses?"}
     Done -- no --> Position
-    Done -- yes --> Skill["Skill = mean of s_i weighted by w_i<br>100 if none qualified"]
+    Done -- yes --> Skill["Skill = mean of s_i weighted by w_i<br>100 if none qualified,<br>and clamped to 100"]
     Skill --> Outcome["Outcome = C_PAR ×<br>(PAR − min(n, 7))<br>unsolved counts as 7"]
     Outcome --> Took{"Took the<br>house starter?"}
     Took -- yes --> WithBonus["Bonus = EPSILON"]
@@ -42,6 +43,12 @@ guess reaches the total **only** through the outcome term, because its branch
 produces no skill score to contribute. And luck is measured on every pass round
 the loop, yet no edge carries it into the total — it exists for the results
 table and nothing else.
+
+Between them the three diagrams here carry every branch that can move a score.
+What they leave out is the pattern-matrix cache, which is a performance concern
+that cannot change a number, and the argument-validation guards the code holds
+against states it argues cannot arise — a game with no guesses, a search that
+found no splitting guess, a candidate count that is not a count.
 
 ## Skill
 
@@ -77,9 +84,14 @@ Those three constraints leave a function of the position and nothing else:
 ```mermaid
 flowchart TD
     Call["scoreGuess: history, guess<br>No answer. No pattern."]
-    Call --> Alive["S_i = answers still alive<br>constraints from the history"]
-    Alive --> Legal{"Guess known and legal,<br>position still live?"}
-    Legal -- no --> Throw["Throw: a caller bug,<br>not a score"]
+    Call --> Known{"In the guess<br>dictionary?"}
+    Known -- no --> Throw["Throw: a caller bug,<br>not a score"]
+    Known -- yes --> Alive["S_i = answers still alive"]
+    Alive --> Live{"Any candidates<br>left?"}
+    Live -- no --> Throw
+    Live -- yes --> Cons["Accumulate the<br>history's constraints"]
+    Cons --> Legal{"Legal under<br>this ruleset?"}
+    Legal -- no --> Throw
     Legal -- yes --> Search["best = V of S_i<br>played = Q of the guess"]
     Search --> Splits{"Guess splits<br>the candidates?"}
     Splits -- no --> Wasted["cost = 1 + best<br>a wasted turn, then<br>this position again"]
@@ -87,7 +99,8 @@ flowchart TD
     Wasted --> Bench["benchmark = the smaller<br>of cost and best"]
     Played --> Bench
     Bench --> Ratio["s_i = 100 ×<br>benchmark / cost"]
-    Ratio --> Give["Return s_i, size of S_i,<br>forced, expected bits<br>Never the best word"]
+    Ratio --> Forced["forced = s_i is 100, with<br>two or fewer candidates<br>or one legal guess"]
+    Forced --> Give["Return s_i, size of S_i,<br>forced, expected bits<br>Never the best word"]
 ```
 
 Guesses are averaged weighted by `log2 |S_i|`:
@@ -289,28 +302,32 @@ the best few plus the live candidates:
 Applied at every recursion depth, with the two sets deduped preserving rank
 order.
 
-`V` and `Q` are one recursion seen from two sides. The table above governs only
-the middle of it; most of the rest is the places a node is settled instead of
-searched:
+`V` and `Q` are one recursion seen from two sides — the search reaches `Q`
+through the selection below, while a player's own guess is handed to it
+directly. The table above governs only the middle of it; most of the rest is
+the places a node is settled instead of searched:
 
 ```mermaid
 flowchart TD
     Value["V of S: the best<br>this position allows"]
     Value --> Tiny{"Two or fewer<br>candidates?"}
     Tiny -- yes --> Endgame["Settled by argument:<br>V = 1 with one left,<br>3/2 with two"]
-    Tiny -- no --> Memo{"Position already<br>solved?"}
-    Memo -- yes --> Recall["Return the<br>memoised value"]
-    Memo -- no --> Rank["Rank legal guesses by<br>one-step expected information"]
+    Tiny -- no --> Memo{"Already in<br>the memo?"}
+    Memo -- yes --> Recall["Return the<br>stored value"]
+    Memo -- no --> Cycle{"Already in progress<br>higher up the stack?"}
+    Cycle -- yes --> Guard["Infinite. A cycle guard<br>that should be unreachable"]
+    Cycle -- no --> Rank["Rank legal guesses by<br>one-step expected information"]
     Rank --> Budget["Take the band's probes and<br>candidates, deduped in rank order"]
     Budget --> Cost["Q of g in S, for each"]
     Cost --> Split["Partition S by g's feedback"]
     Split --> Blind{"One bucket holds all,<br>and it is not the win?"}
     Blind -- yes --> Never["Infinite: never selectable,<br>so every child set is<br>smaller than its parent"]
-    Blind -- no --> Buckets["Walk the non-empty buckets,<br>ascending, skipping the win<br>Hard mode narrows each child"]
-    Buckets -- "three or more" --> Value
+    Blind -- no --> Buckets["Walk the non-empty buckets,<br>ascending, skipping the win"]
     Buckets -- "two or fewer" --> Endgame
+    Buckets -- "three or more" --> Narrow["Hard mode narrows<br>this child's legal set"]
+    Narrow --> Value
     Buckets --> Sum["Q = 1 + the weighted child<br>total, divided once by<br>the size of S"]
-    Sum --> Best["V = the lowest Q searched"]
+    Sum --> Best["V = the lowest Q searched,<br>then stored in the memo"]
 ```
 
 Two suites check it, and they cover different things. `exactness.test.ts` runs
