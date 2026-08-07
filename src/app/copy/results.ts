@@ -191,6 +191,54 @@ export const SHARE: Record<RoundVariant, { action: string; copied: string }> = {
 };
 
 /**
+ * The offer to go and look the word up.
+ *
+ * Deliberately does not name the word. It is on screen either way by the time
+ * this shows, so repeating it in the label only makes the line longer — and a
+ * generic label is the one that still reads correctly on a round somebody sent
+ * you weeks ago.
+ */
+export const DEFINITION: Record<RoundVariant, string> = {
+  own: "What does today's word mean?",
+  // A replay of puzzle 100 opened in August is not today's word.
+  replay: 'What does this word mean?',
+};
+
+/**
+ * Where that link goes.
+ *
+ * The sentence lives here with the rest of the phrasing rather than in the
+ * component, because it is the part somebody would want to reword, and keeping
+ * it next to the label stops the two describing different things.
+ */
+export function definitionSearch(word: string): string {
+  const question = `what does ${word.toLowerCase()} mean?`;
+  return `https://www.google.com/search?q=${encodeURIComponent(question)}`;
+}
+
+/**
+ * How a finished round is summed up in a line, once its last row has settled.
+ *
+ * The unsolved case is the one that carries the answer, and it is the reason
+ * these are here rather than inline: the replay used to show no outcome at all,
+ * so a round somebody lost never named the word. Same sentence, bent for whose
+ * round it is.
+ */
+export const OUTCOME: Record<
+  RoundVariant,
+  { solved: (used: number, allowed: number) => string; lost: (answer: string) => string }
+> = {
+  own: {
+    solved: (used, allowed) => `Solved in ${used} of ${allowed}.`,
+    lost: (answer) => `Out of guesses. The answer was ${answer.toUpperCase()}.`,
+  },
+  replay: {
+    solved: (used, allowed) => `Solved in ${used} of ${allowed}.`,
+    lost: (answer) => `They ran out of guesses. The answer was ${answer.toUpperCase()}.`,
+  },
+};
+
+/**
  * The celebratory badges a finished round has earned.
  *
  * **The only place these rules live.** Two surfaces show them — the results view
