@@ -20,6 +20,7 @@ import { createMemoryStorage } from '../../src/app/storage/storage';
 import { answers, starters } from '../../src/data';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
 import { PAR } from '../../src/engine/config/constants';
+import { WIN_PATTERN } from '../../src/engine/words/pattern';
 
 const FIXED_NOW = new Date('2026-06-15T16:00:00Z');
 const PUZZLE = drawPuzzle(165, { answers, starters });
@@ -90,6 +91,98 @@ describe('the phrasing', () => {
   });
 });
 
+/**
+ * The light reports the share of the standing uncertainty a guess cleared, which
+ * is what lets one measure answer for the size of the cut, its proportion, and
+ * how far into the round it happened.
+ */
+describe('the progress light', () => {
+  const level = (before: number, after: number) => copy.progressLevel(before, after, false);
+
+  it('rates a cut against how much there was left to find out', () => {
+    // Both halve the field. Against the uncertainty each faced, the first is a
+    // twelfth of the way home and the second is the whole of it.
+    expect(level(3000, 1500)).toBe('slight');
+    expect(level(2, 1)).toBe('major');
+  });
+
+  it('gives a big count of words no credit on its own', () => {
+    // A hundred words struck off a wide field is barely a step.
+    expect(level(3000, 2900)).toBe('slight');
+    // The same hundred, when a hundred and one was all there was, finishes it.
+    expect(level(101, 1)).toBe('major');
+  });
+
+  it('bands at a half and a quarter of the uncertainty', () => {
+    // 100 -> 10 removes exactly half: log2(10) is half of log2(100).
+    expect(level(100, 10)).toBe('major');
+    expect(level(100, 11)).toBe('minor');
+    // 10000 -> 1000 removes a quarter: log2(1000) is three quarters of log2(10000).
+    expect(level(10000, 1000)).toBe('minor');
+    expect(level(10000, 1100)).toBe('slight');
+  });
+
+  it('never separates a cut of nothing from a small one', () => {
+    // A word still possible always eliminates itself when it fails, so a row
+    // that singled out "ruled nothing out" would prove the guess was never a
+    // possible answer. Both ends of the band read the same.
+    expect(level(9, 9)).toBe(level(9, 8));
+    expect(copy.PROGRESS[level(9, 9)]).toMatch(/little or nothing/);
+  });
+
+  it('shows no light where there was no uncertainty to remove', () => {
+    // Such a row weighs log2 1 = 0 in the skill average, so it cannot move the
+    // score either way. A red mark would be the only judgement on it.
+    expect(level(1, 1)).toBe('none');
+    expect(copy.progressLevel(1, 1, true)).toBe('solved');
+  });
+
+  it('reads the winning guess as solved, whatever the field was', () => {
+    expect(copy.progressLevel(3000, 1, true)).toBe('solved');
+    expect(copy.progressLevel(2, 1, true)).toBe('solved');
+  });
+
+  it('only ever improves as a cut deepens', () => {
+    const order: Record<copy.ProgressLevel, number> = {
+      none: 0,
+      slight: 1,
+      minor: 2,
+      major: 3,
+      solved: 4,
+    };
+
+    for (const before of [3000, 400, 60, 9, 2]) {
+      let previous = 0;
+      for (let after = before; after >= 1; after -= 1) {
+        const rank = order[level(before, after)];
+        expect(rank, `${after} of ${before}`).toBeGreaterThanOrEqual(previous);
+        previous = rank;
+      }
+    }
+  });
+
+  it('says nothing in digits, whatever it is handed', () => {
+    for (const before of [3000, 253, 60, 9, 2, 1]) {
+      for (let after = 1; after <= before; after += 1) {
+        for (const won of [true, false]) {
+          const phrase = copy.PROGRESS[copy.progressLevel(before, after, won)];
+          expect(phrase, `${after} of ${before}`).not.toMatch(/\d/);
+        }
+      }
+    }
+  });
+
+  it('decides by whole numbers, so two machines cannot word a round differently', () => {
+    // The bands are `after² <= before` and `after⁴ <= before³`, which stay whole
+    // numbers well inside exact integer range. The largest either side reaches:
+    expect(3000 ** 4).toBeLessThan(Number.MAX_SAFE_INTEGER);
+    expect(3000 ** 3).toBeLessThan(Number.MAX_SAFE_INTEGER);
+    // And the boundary itself lands where the integers say, not near it.
+    expect(level(2500, 50)).toBe('major');
+    expect(level(2499, 50)).toBe('minor');
+  });
+});
+
 describe('what the copy must never say', () => {
   const everything = Object.values(copy)
     .flatMap((value) => {
@@ -109,6 +202,10 @@ describe('what the copy must never say', () => {
         copy.guessNote(null, false, 6, 1),
       ]),
       [-2, -0.5, 0, 0.5, 2].map((bits) => copy.luckNote(bits)),
+      // Every light, including the one that reports the least progress. How far
+      // a guess got is partly the feedback's doing, so none of them may read as
+      // a verdict on the player.
+      Object.values(copy.PROGRESS),
     );
 
   it('never scolds', () => {
@@ -133,6 +230,23 @@ describe('the rendered results', () => {
     answer: PUZZLE.answer,
     tookHouseStarter: true,
     hardMode: false,
+  });
+
+  /**
+   * A round that ran out of turns, and one that narrows to a single word with
+   * two turns still to play — the position that weighs nothing in the skill
+   * average, and the only one where the light is deliberately left unlit.
+   */
+  const lostScore = scoreDirectly({
+    guesses: [PUZZLE.starter, 'crane', 'moist', 'adapt', 'wharf', 'zilch'],
+    answer: PUZZLE.answer,
+    tookHouseStarter: true,
+    hardMode: false,
+  });
+
+  it('has an unsolved fixture that reaches a single-word field', () => {
+    expect(lostScore.solved).toBe(false);
+    expect(lostScore.breakdown.some((row) => row.candidateCount <= 1)).toBe(true);
   });
 
   function renderResults() {
@@ -160,76 +274,99 @@ describe('the rendered results', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(score.breakdown.length + 1);
   });
 
-  /**
-   * The column used to report the pool a guess was handed, which describes the
-   * previous guess rather than the one on the row. Following a round meant
-   * reading every number a line late, and the last row's effect was not shown
-   * anywhere at all.
-   */
-  it('reports what each guess left behind, not what it was handed', () => {
+  /** Each row lights for its own guess, which is the point of the column. */
+  it('lights each row for the guess on it', () => {
     renderResults();
 
     const table = screen.getByRole('table', { name: /guess by guess/i });
-    // The winning guess is the exception, covered on its own below.
-    const rows = within(table).getAllByRole('row').slice(1, -1);
+    const rows = within(table).getAllByRole('row').slice(1);
 
     rows.forEach((row, index) => {
       const entry = score.breakdown[index]!;
       const cell = within(row).getAllByRole('cell')[1]!;
-
-      // The count going in is context, not the headline.
-      expect(cell.textContent, `row ${index + 1}`).toMatch(
-        new RegExp(`^${entry.remainingCount}(from ${entry.candidateCount}|nothing ruled out)`),
+      const expected = copy.progressLevel(
+        entry.candidateCount,
+        entry.remainingCount,
+        entry.pattern === WIN_PATTERN,
       );
+
+      expect(cell.textContent, `row ${index + 1}`).toBe(copy.PROGRESS[expected]);
     });
   });
 
-  /**
-   * One word does technically remain after a correct guess — the answer. But
-   * printing "1" invites the reader to wonder what they are meant to do about
-   * it when the game is already over.
-   */
-  it('gives the winning guess no count to puzzle over', () => {
+  it('reads the winning guess as solved', () => {
     renderResults();
 
     const table = screen.getByRole('table', { name: /guess by guess/i });
     const last = within(table).getAllByRole('row').at(-1)!;
-    const cell = within(last).getAllByRole('cell')[1]!;
 
     expect(last).toHaveTextContent(PUZZLE.answer);
-    expect(cell).toHaveTextContent(/solved/i);
-    expect(cell.textContent).not.toMatch(/\d/);
+    expect(within(last).getAllByRole('cell')[1]).toHaveTextContent(/solved/i);
   });
 
   /**
-   * The opposite case, and not the same one. A guess that ran the player out of
-   * turns leaves a real count behind — "1, from 2" says a word was still
-   * standing when the game ended, which is the story of the round rather than
-   * noise at the end of it.
+   * The column must not count the answer pool. Every row used to carry two exact
+   * figures, and the first row's caption was the answer list's exact size on
+   * every round ever played — between them an exact count of its words
+   * consistent with a guess and a pattern sitting on screen beside them. A digit
+   * anywhere in this column is that back, so the assertion is deliberately
+   * blunt. Decision 0003 has the argument.
    */
-  it('keeps the count on a guess that lost the game', () => {
-    const lost = scoreDirectly({
-      guesses: [PUZZLE.starter, 'crane', 'moist', 'pluck', 'begun', 'dwarf'],
-      answer: PUZZLE.answer,
-      tookHouseStarter: true,
-      hardMode: false,
-    });
-    expect(lost.solved, 'fixture must be an unsolved game').toBe(false);
+  it('never counts the answer pool, on a round won or lost', () => {
+    for (const finished of [score, lostScore]) {
+      cleanup();
+      render(
+        <ThemeProvider theme={theme}>
+          <Results score={finished} settings={settings} />
+        </ThemeProvider>,
+      );
 
+      const table = screen.getByRole('table', { name: /guess by guess/i });
+      const rows = within(table).getAllByRole('row').slice(1);
+
+      rows.forEach((row, index) => {
+        const cell = within(row).getAllByRole('cell')[1]!;
+        expect(cell.textContent, `row ${index + 1} of ${rows.length}`).not.toMatch(/\d/);
+      });
+    }
+  });
+
+  it('lights every row of a lost round, and calls none of them solved', () => {
     render(
       <ThemeProvider theme={theme}>
-        <Results score={lost} settings={settings} />
+        <Results score={lostScore} settings={settings} />
       </ThemeProvider>,
     );
 
     const table = screen.getByRole('table', { name: /guess by guess/i });
-    const last = within(table).getAllByRole('row').at(-1)!;
-    const cell = within(last).getAllByRole('cell')[1]!;
+    const rows = within(table).getAllByRole('row').slice(1);
 
-    expect(cell).not.toHaveTextContent(/solved/i);
-    expect(cell.textContent).toMatch(
-      new RegExp(`^${lost.breakdown.at(-1)!.remainingCount}from `),
+    rows.forEach((row, index) => {
+      const entry = lostScore.breakdown[index]!;
+      const cell = within(row).getAllByRole('cell')[1]!;
+
+      expect(cell).not.toHaveTextContent(/solved/i);
+      expect(cell.textContent, `row ${index + 1}`).toBe(
+        copy.PROGRESS[copy.progressLevel(entry.candidateCount, entry.remainingCount, false)],
+      );
+    });
+  });
+
+  it('leaves the light unlit where nothing was left to clear', () => {
+    // A one-word position weighs nothing in the skill average, so a red mark
+    // there would be the only judgement on a row the score does not count.
+    const unlit = lostScore.breakdown.findIndex((row) => row.candidateCount <= 1);
+    expect(unlit, 'fixture must reach a single-word field').toBeGreaterThan(-1);
+
+    render(
+      <ThemeProvider theme={theme}>
+        <Results score={lostScore} settings={settings} />
+      </ThemeProvider>,
     );
+
+    const table = screen.getByRole('table', { name: /guess by guess/i });
+    const row = within(table).getAllByRole('row')[unlit + 1]!;
+    expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(/nothing left to cut/i);
   });
 
   it('narrows the pool monotonically down the table', () => {

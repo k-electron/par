@@ -4,10 +4,11 @@
  */
 
 import { ThemeProvider } from '@mui/material/styles';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { PROGRESS, progressLevel } from '../../src/app/copy/results';
 import { decodeSharedGame, encodeSharedGame, type SharedGame } from '../../src/app/share/codec';
 import { replayLink, shareText } from '../../src/app/share/share';
 import { createDirectScoringClient, scoreDirectly } from '../../src/app/scoring/direct';
@@ -18,6 +19,7 @@ import { App } from '../../src/app/ui/App';
 import { WORD_LIST_VERSION, answers, guesses as dictionary, starters } from '../../src/data';
 import { SCORER_VERSION } from '../../src/engine/config/constants';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
+import { WIN_PATTERN } from '../../src/engine/words/pattern';
 
 const PUZZLE_NUMBER = 165;
 const PUZZLE = drawPuzzle(PUZZLE_NUMBER, { answers, starters });
@@ -386,6 +388,97 @@ describe('the replay itself', () => {
     const table = await screen.findByRole('table', { name: /guess by guess/i });
     expect(table).toHaveTextContent(/not scored/i);
     expect(table).toHaveTextContent(/broke|ran/);
+  });
+
+  /**
+   * A link minted before the progress light existed, byte for byte.
+   *
+   * It carries only the puzzle, the flags, the guess indices and the two version
+   * stamps, so everything shown is recomputed on the reader's machine — which is
+   * the whole reason a display change reaches old links at all. Frozen as a
+   * literal rather than re-encoded here, because re-encoding would prove the
+   * codec agrees with itself rather than that a link already in somebody's chat
+   * history still opens.
+   *
+   * Minted at `e4e1210`: puzzle 165, house starter, ICONS CRANE MOIST SHAPE.
+   */
+  const LINK_FROM_BEFORE = 'fc6668dzIV7rfcBRhLcYLhRQ';
+  const PLAYED_THEN = ['icons', 'crane', 'moist', 'shape'];
+
+  function mountOldLink() {
+    const store = new Repository(createMemoryStorage());
+    // Past the spoiler gate: this reader has finished that day themselves.
+    store.saveDay({
+      puzzleNumber: PUZZLE_NUMBER,
+      settings: { hardMode: false, useHouseStarter: true, confirmed: true },
+      guesses: PLAYED,
+      status: 'won',
+      completedAt: Date.now(),
+    });
+
+    return render(
+      <ThemeProvider theme={theme}>
+        <App
+          repository={store}
+          now={FIXED_NOW}
+          scoring={createDirectScoringClient()}
+          initialHash={`#r=${LINK_FROM_BEFORE}`}
+        />
+      </ThemeProvider>,
+    );
+  }
+
+  it('opens a link minted before the progress light, with no version notice', async () => {
+    mountOldLink();
+
+    // A bump to SCORER_VERSION would put a notice here and tell every reader
+    // their old links were scored by a different Par. A display change must not.
+    expect(screen.queryByText(/different (word list|version)/i)).not.toBeInTheDocument();
+
+    for (const [row, word] of PLAYED_THEN.entries()) {
+      const shown = [0, 1, 2, 3, 4]
+        .map((column) => screen.getByTestId(`tile-${row}-${column}`).textContent)
+        .join('');
+      expect(shown).toBe(word);
+    }
+
+    expect(
+      await screen.findByText(
+        scoreDirectly({
+          guesses: PLAYED_THEN,
+          answer: PUZZLE.answer,
+          tookHouseStarter: true,
+          hardMode: false,
+        }).total.toFixed(1),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('lights an old link with the calculation it was never sent', async () => {
+    mountOldLink();
+
+    const table = await screen.findByRole('table', { name: /guess by guess/i });
+    const rows = within(table).getAllByRole('row').slice(1);
+    const recomputed = scoreDirectly({
+      guesses: PLAYED_THEN,
+      answer: PUZZLE.answer,
+      tookHouseStarter: true,
+      hardMode: false,
+    });
+
+    expect(rows).toHaveLength(PLAYED_THEN.length);
+    rows.forEach((row, index) => {
+      const entry = recomputed.breakdown[index]!;
+      const cell = within(row).getAllByRole('cell')[1]!;
+
+      expect(cell.textContent, `row ${index + 1}`).toBe(
+        PROGRESS[progressLevel(entry.candidateCount, entry.remainingCount, entry.pattern === WIN_PATTERN)],
+      );
+      // And still no count of the answer pool, on a round scored months ago.
+      expect(cell.textContent, `row ${index + 1}`).not.toMatch(/\d/);
+    });
+
+    expect(table).toHaveTextContent(/solved/i);
   });
 
   it('lets the recipient forward the round unchanged', async () => {

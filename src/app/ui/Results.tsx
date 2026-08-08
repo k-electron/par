@@ -11,15 +11,17 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
 import {
+  PROGRESS,
   RESULTS,
   ROUND,
   guessNote,
   headline,
   luckNote,
   parPhrase,
-  poolFigure,
+  progressLevel,
   resultsBadges,
   skillPhrase,
+  type ProgressLevel,
   type RoundVariant,
 } from '../copy/results';
 import { PAR } from '../../engine/config/constants';
@@ -32,6 +34,57 @@ export interface ResultsProps {
   readonly settings: ConfirmedSettings;
   /** Whose round this is. Only the second-person phrasing changes. */
   readonly variant?: RoundVariant;
+}
+
+/**
+ * The colour of each light, read off the theme rather than written here.
+ *
+ * Exhaustive by type on purpose: a fourth level cannot compile until this view
+ * has decided how to show it, the same guarantee the badges get.
+ *
+ * `null` is a light deliberately not lit. A field already down to one word had
+ * no uncertainty to remove, and such a row weighs nothing in the skill average
+ * either — so a red mark would be the only judgement on screen for a guess the
+ * score declines to count.
+ */
+const PROGRESS_COLOUR: Record<ProgressLevel, string | null> = {
+  solved: 'success.main',
+  major: 'success.main',
+  minor: 'warning.main',
+  slight: 'error.main',
+  none: null,
+};
+
+/**
+ * A light and the words for it.
+ *
+ * Never colour alone. Roughly one man in twelve cannot separate red from green,
+ * which is why the board ships a high-contrast palette at all — a signal carried
+ * only in hue would undo that. The phrase beneath is the signal; the colour makes
+ * it quick to read down the column.
+ */
+function ProgressLight({ level }: { level: ProgressLevel }) {
+  const colour = PROGRESS_COLOUR[level];
+
+  return (
+    <Stack spacing={0} sx={{ alignItems: 'flex-end' }}>
+      <Box
+        aria-hidden
+        sx={{
+          width: 10,
+          height: 10,
+          my: 0.375,
+          borderRadius: '50%',
+          bgcolor: colour ?? 'transparent',
+          border: colour === null ? '1px solid' : undefined,
+          borderColor: colour === null ? 'divider' : undefined,
+        }}
+      />
+      <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+        {PROGRESS[level]}
+      </Typography>
+    </Stack>
+  );
 }
 
 function Figure({ label, value, caption }: { label: string; value: string; caption?: string }) {
@@ -117,7 +170,7 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
             <TableRow>
               <TableCell sx={{ px: 0.5 }}>{RESULTS.columns.turn}</TableCell>
               <TableCell sx={{ px: 0.5 }} align="right">
-                {RESULTS.columns.candidates}
+                {RESULTS.columns.progress}
               </TableCell>
               <TableCell sx={{ px: 0.5 }} align="right">
                 {RESULTS.columns.skill}
@@ -129,7 +182,7 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
           </TableHead>
           <TableBody>
             {score.breakdown.map((row) => {
-              const pool = poolFigure(
+              const progress = progressLevel(
                 row.candidateCount,
                 row.remainingCount,
                 row.pattern === WIN_PATTERN,
@@ -152,17 +205,12 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
                 </TableCell>
                 <TableCell sx={{ px: 0.5 }} align="right">
                   {/*
-                    The count the guess left behind, not the one it started
-                    from, so the row describes its own guess. The caption keeps
-                    the starting point, which is what makes the figure mean
-                    something.
+                    How far this guess got, in bands rather than in words. The
+                    row still describes its own guess; it simply says so without
+                    handing over the size of the answer pool. `progressLevel`
+                    has the argument.
                   */}
-                  <Stack spacing={0} sx={{ alignItems: 'flex-end' }}>
-                    <Box component="span">{pool.value}</Box>
-                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      {pool.note}
-                    </Typography>
-                  </Stack>
+                  <ProgressLight level={progress} />
                 </TableCell>
                 <TableCell sx={{ px: 0.5 }} align="right">
                   {row.skill === null ? '\u2014' : `${row.skill.toFixed(0)}%`}

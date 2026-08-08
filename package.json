@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "compute-par": "tsx tools/par/compute-par.ts",
-    "check-incentives": "tsx tools/par/incentives.ts"
+    "check-incentives": "tsx tools/par/incentives.ts",
+    "check-lights": "tsx tools/par/lights.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
