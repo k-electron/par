@@ -37,7 +37,8 @@ here landed afterwards, each behind a pull request and a green quality gate.
   comparisons rather than logarithms, so two friends on the same replay link cannot be shown
   different words, and every light carries a phrase because roughly one man in twelve cannot separate
   red from green. A field already down to a single word gets no light at all, since there was no
-  uncertainty to remove and the scorer prices such a guess at nothing. `Words left` became
+  uncertainty to remove and such a row weighs nothing in the skill average either, so a red mark would
+  be the only judgement on screen for a guess the score declines to count. `Words left` became
   `Progress`, #7's principle — a row describes its own guess — is untouched, and
   [decision 0003](docs/decisions/0003-the-progress-light.md) has the argument, including what the
   light still gives away and why that is accepted.
@@ -90,7 +91,7 @@ here landed afterwards, each behind a pull request and a green quality gate.
   and reports that 41 of 102 red rows had ruled nothing out, so red is a 40% hint where the old count
   was a proof. Of the 55 endgame red rows it judges against the whole dictionary, none asked for 90%
   or more of the best information available, so red does not land on a guess that read the position
-  well; the 88 rows the scorer prices at nothing get no light rather than a red one; and the light
+  well; the 88 rows that weigh nothing in the skill average get no light rather than a red one; and the light
   correlates with the luck figure at 0.53, so it is not that column in another hat. It exits non-zero
   if the light stops discriminating or if red hardens into a proof, both being claims about the word
   lists rather than the code.

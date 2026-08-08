@@ -43,8 +43,9 @@ export interface ResultsProps {
  * has decided how to show it, the same guarantee the badges get.
  *
  * `null` is a light deliberately not lit. A field already down to one word had
- * no uncertainty to remove, and marking that red would be a verdict on a guess
- * the scorer itself prices at nothing.
+ * no uncertainty to remove, and such a row weighs nothing in the skill average
+ * either — so a red mark would be the only judgement on screen for a guess the
+ * score declines to count.
  */
 const PROGRESS_COLOUR: Record<ProgressLevel, string | null> = {
   solved: 'success.main',

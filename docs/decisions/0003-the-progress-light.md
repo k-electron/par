@@ -60,11 +60,12 @@ is the round's own progress:
 
 **Two states beyond the three colours.** The winning guess reads `solved`. A guess that faced a
 field already down to a single word gets **no light at all**: there was no uncertainty to remove, so
-there is no progress to report. That is the same fact `scoreGuess` uses to score such a guess 100
-with weight `log2 1 = 0`, and it matters for tone — lighting it red would read as a verdict on a
-guess the scorer itself prices at nothing. It is not a rare case: `npm run check-lights -- --days 150`
-puts it at 88 rows of 728, so it is the difference between a table that regularly scolds a blameless
-row and one that never does.
+there is no progress to report. The aggregation arrives at the same place by another route — such a
+row weighs `log2 1 = 0`, so whatever it scores it cannot move the skill average either way — and that
+is what makes the tone argument rather than just the arithmetic one: a red mark would be the only
+judgement on screen against a row the score itself declines to count. It is not a rare case:
+`npm run check-lights -- --days 150` puts it at 88 rows of 728, so it is the difference between a
+table that regularly marks a blameless row down and one that never does.
 
 That command is where every number below comes from, and it fails the build if the light stops
 discriminating or if red hardens into a proof — both are claims about the word lists, so both go stale

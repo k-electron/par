@@ -82,9 +82,12 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
               possibilities down to one counts for everything, which is the way it feels to play.
             </Typography>
             <Typography variant="body2">
-              That is why a perfectly good opener often shows amber: it does a great deal of work
-              and still leaves most of the guessing to do. A guess with only one word left to play
-              gets no light at all, because there was nothing left to clear.
+              It describes what the tiles did, not how well you chose &mdash; that is the skill
+              column&rsquo;s job. A well-judged guess can light red when the feedback breaks badly,
+              and the luck figure beside it will usually say as much. It is also why a perfectly good
+              opener often shows amber: it does a great deal of work and still leaves most of the
+              guessing to do. A guess with only one word left to play gets no light at all, because
+              there was nothing left to clear.
             </Typography>
           </Stack>
 

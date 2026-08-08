@@ -131,8 +131,8 @@ describe('the progress light', () => {
   });
 
   it('shows no light where there was no uncertainty to remove', () => {
-    // The scorer prices these at 100 with zero weight. A red mark beside that
-    // would be a verdict the game does not hold.
+    // Such a row weighs log2 1 = 0 in the skill average, so it cannot move the
+    // score either way. A red mark would be the only judgement on it.
     expect(level(1, 1)).toBe('none');
     expect(copy.progressLevel(1, 1, true)).toBe('solved');
   });
@@ -234,8 +234,8 @@ describe('the rendered results', () => {
 
   /**
    * A round that ran out of turns, and one that narrows to a single word with
-   * two turns still to play — the position the scorer prices at nothing, and the
-   * only one where the light is deliberately left unlit.
+   * two turns still to play — the position that weighs nothing in the skill
+   * average, and the only one where the light is deliberately left unlit.
    */
   const lostScore = scoreDirectly({
     guesses: [PUZZLE.starter, 'crane', 'moist', 'adapt', 'wharf', 'zilch'],
@@ -353,8 +353,8 @@ describe('the rendered results', () => {
   });
 
   it('leaves the light unlit where nothing was left to clear', () => {
-    // The scorer prices a one-word position at 100 with zero weight, so a red
-    // mark there would contradict the row it sits on.
+    // A one-word position weighs nothing in the skill average, so a red mark
+    // there would be the only judgement on a row the score does not count.
     const unlit = lostScore.breakdown.findIndex((row) => row.candidateCount <= 1);
     expect(unlit, 'fixture must reach a single-word field').toBeGreaterThan(-1);
 

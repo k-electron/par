@@ -125,9 +125,10 @@ the same care to the light beside them, for nothing, because integers are free
 here.
 
 **A field already down to one word gets no light.** There was no uncertainty to
-remove, so there is no progress to report — which is the same reason
-`scoreGuess` scores such a guess 100 with weight `log2 1 = 0`. Lighting it red
-would read as a verdict on a guess the scorer itself prices at nothing.
+remove, so there is no progress to report. The aggregation reaches the same place
+independently: such a row weighs `log2 1 = 0`, so whatever it scores it cannot
+move the skill average either way. Lighting it red would put the only judgement
+on screen against a row the score itself declines to count.
 
 **It is not the luck figure in another hat.** Luck is realized minus expected —
 how the tiles broke against what the guess could reasonably ask for. This is

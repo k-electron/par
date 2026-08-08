@@ -154,10 +154,11 @@ export function luckNote(bits: number): string {
  * about which end of it a row sits at.
  *
  * **A field already down to one word gets no light at all.** There was no
- * uncertainty to remove, so there is no progress to report — the scorer prices
- * such a guess at 100 with zero weight for the same reason, and a red mark
- * beside a perfect score would be reading the player a verdict the game does
- * not hold.
+ * uncertainty to remove, so there is no progress to report. The scorer reaches
+ * the same conclusion by a different route: such a row weighs `log2 1 = 0` in
+ * the skill average, so whatever it scores it cannot move the total either way.
+ * A red mark would then be the only judgement on a row the score itself declines
+ * to count.
  */
 export type ProgressLevel = 'solved' | 'major' | 'minor' | 'slight' | 'none';
 
