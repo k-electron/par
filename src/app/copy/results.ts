@@ -123,35 +123,31 @@ export function luckNote(bits: number): string {
  * The field cell: how far this guess narrowed what was still possible.
  *
  * **Relative on purpose, and never a count.** The column used to print the pool
- * either side of the guess, which handed over two things it had no business
- * handing over: the answer list's exact size, on every first row, and an exact
- * count of its words consistent with a known guess and pattern. Philosophy's
- * rationale for scoring against that list assumes the opposite — it is "the only
- * self-consistent choice, even though players can't see that pool".
- *
- * A ratio is also the better read. The old number only meant anything beside the
- * one it started from, because a field of 253 is a fine cut from 3000 and a poor
- * one from 260. How far the field fell says that on its own.
+ * either side of the guess, which published the answer list's size on every
+ * first row and an exact count of its words consistent with a known guess and
+ * pattern on the rest. `docs/decisions/0003` has the argument. A ratio is also
+ * the better read: 253 words is a fine cut from 3000 and a poor one from 260, so
+ * the old figure never meant anything on its own and this one does.
  *
  * Banded by integer comparison rather than by `log2(before / after)`, because a
  * band that straddled a floating-point boundary could word the same round
  * differently on two machines, and a replay link is meant to read identically
  * for both friends holding it.
  *
- * **Every rung is a floor, and that is what keeps a coarse band honest.** "Down
- * to a quarter" is true of every cut in its band, because the band begins where
- * a quarter is reached; a sharper cut than that is understated rather than
- * misreported, and the bar beside the phrase is what carries the rest.
+ * **Every rung is a floor, which is what keeps a coarse band honest.** "Down to
+ * a quarter" is true of every cut in its band, because the band begins where a
+ * quarter is reached; a sharper cut is understated rather than misreported, and
+ * the bar beside the phrase carries the rest.
  *
- * Phrased as something that happened rather than as a grade. How far the field
- * fell is partly the feedback's doing, so this belongs in the same register as
- * `luckNote` and not in the skill column's.
+ * Phrased as something that happened rather than as a grade, because how far the
+ * field fell is partly the feedback's doing — the same register as `luckNote`,
+ * not the skill column's.
  *
- * The winning guess is the exception and reports no field at all. One word
- * technically remains after it, but describing what is left invites the reader
- * to wonder what they should do about it when the game is already over. A guess
- * that *lost* the game is not the same case: it narrowed a field that was still
- * standing when the turns ran out, and that is the story of the round.
+ * The winning guess reports no field at all. One word technically remains after
+ * it, but describing what is left invites the reader to wonder what they should
+ * do about it when the game is over. A guess that *lost* is not the same case: it
+ * narrowed a field still standing when the turns ran out, which is the story of
+ * that round.
  */
 export function fieldNote(before: number, after: number, won: boolean): string {
   if (won) return 'solved';
