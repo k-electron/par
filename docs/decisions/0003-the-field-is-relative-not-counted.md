@@ -64,12 +64,60 @@ them, cheaply, because integers cost nothing here.
 The bar's own width does use `Math.log2`, which is forbidden inside `src/engine` and fine in the
 view: a last-bit difference in a CSS width is a fraction of a pixel, and it cannot change a word.
 
+## What it still leaks
+
+**This narrows the channel; it does not close it, and the residue is not exotic.** Anyone reading the
+column carefully can still prove individual words are not in the answer list, and the mechanism is
+worth stating plainly so nobody mistakes the column for airtight.
+
+**A live candidate always eliminates itself.** Consistency is pattern replay — `isConsistent` asks
+whether `computePattern(guess, candidate)` reproduces the observed pattern — and `computePattern(w, w)`
+is always the winning pattern. So if a guess was one of the words still possible and did not win, it
+is gone from the set afterwards, and the field must have narrowed by at least one. Contrapositive:
+**`nothing ruled out` proves the guess was not a live candidate.** When the guess was consistent with
+every clue on the board, which the player can check themselves, that is a proof it is not in the
+answer list.
+
+Simulating forty rounds of a player who always guesses a word still consistent with their clues, 22
+of 171 rows carried `nothing ruled out`, and every one of them was that provable case. The simulation
+is the unfavourable end of the range — it plays the alphabetically first consistent word, so it probes
+with things like `nairu` and `kolos`, where a human plays common words that are likelier to be
+answers. But `flues` for FUSES and `polos` for SOLOS are ordinary human guesses, so this is a routine
+occurrence rather than a corner.
+
+**The bar leaks it as surely as the phrase**, and more precisely: the drawn width is inline in the
+markup, so two rows can be compared exactly rather than by eye.
+
+**It is not the largest instance of its class, and that one is older.** `guessNote` says `Only one
+word left` outright when a guess faced a single candidate. In the same simulation, 29 rows carried
+that caption and between them proved 28 words are not answers — the player enumerates the dictionary
+words consistent with their own clues, and all but one of them cannot be in the list.
+
+**At one candidate the inference is intrinsic.** A row that did not win, on a field already down to a
+single word, tells you the guess was not that word; if it was consistent with the clues, it was never
+in the list. No amount of coarsening removes that, because the fact leaking is *the field reached one
+word and you missed*, which is exactly what a player wants to be told.
+
+**Why we accept it.** Position 13 puts the word lists in the bundle deliberately and rules out effort
+spent hiding them; the decision framework's last question rules out complexity aimed at an adversary
+who does not exist. Reconstructing the answer list a word at a time from post-game elimination logic
+is strictly more work than opening the page source, which is the front door and is standing open by
+design. What changed is that the ordinary results screen no longer volunteers the pool's size and an
+exact intersection count to every player on every row, which needed no reasoning at all.
+
+**If that ever stops being good enough**, the lever is coarseness rather than silence: widen the
+bottom of the scale so an empty bar means "a handful or fewer" instead of "one", merge `nothing ruled
+out` into the weakest cut band, quantise the bar's width to the bands so equal widths mean equal band
+rather than zero cut, and soften `Only one word left`. That downgrades every proof above to a hint. It
+also spends the sharpest, most talked-about part of the round — being down to a couple of words — on
+an adversary the philosophy says is not there, which is why it is written here as an option rather
+than done.
+
 ## What it costs
 
 **The endgame reads less sharply.** "2, from 9" told you precisely how tight the position was; "down
 to a quarter" does not. The compensation is that `guessNote` already says `Only one word left` when a
-guess faced a single candidate, which is the part of the endgame players actually talk about, and it
-reveals nothing about the pool's size.
+guess faced a single candidate, which is the part of the endgame players actually talk about.
 
 **A proportion needs a sentence of explanation, and a count did not.** The scoring explainer carries
 it, which spec §9 asks for anyway.

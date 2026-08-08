@@ -34,8 +34,11 @@ here landed afterwards, each behind a pull request and a green quality gate.
   field fell, so `Words left` became `Field`. A ratio is the better read anyway: the old code conceded
   that 253 words means nothing without the 3,000 it came from. The bands are integer comparisons
   rather than logarithms, so two friends on the same replay link cannot be shown different words.
-  [Decision 0003](docs/decisions/0003-the-field-is-relative-not-counted.md) has the argument, and
-  #7's principle — a row describes its own guess — is untouched.
+  #7's principle — a row describes its own guess — is untouched. This narrows the channel rather than
+  closing it: a row that ruled nothing out still proves the guess was not a live candidate, because a
+  live candidate always eliminates itself, and `Only one word left` says more than that outright.
+  [Decision 0003](docs/decisions/0003-the-field-is-relative-not-counted.md) has both the argument and
+  that accounting, measured.
 - **The guess-by-guess table reports its own guess**
   ([#7](https://github.com/k-electron/par/pull/7)). The number column showed the pool a guess was
   handed, which is a fact about the guess before it — following a round meant reading every number a
@@ -70,10 +73,13 @@ here landed afterwards, each behind a pull request and a green quality gate.
 ### Verified
 
 - **The field column prints no digit**, on a round won or lost, asserted in the component test and
-  again end to end against the production bundle — which is where a leak would actually reach a
-  player. Every bar is checked to be drawn at the field its own guess left standing, and each band
-  phrase to be a floor the cut genuinely reached, across every surviving count of three starting
-  fields.
+  again end to end against the production bundle, which is the artefact a player actually reads. Every
+  bar is checked to be drawn at the field its own guess left standing, and each band phrase to be a
+  floor the cut genuinely reached, across every surviving count of three starting fields.
+- **What the column still gives away was measured rather than assumed**, over forty simulated rounds:
+  22 rows in 171 where `nothing ruled out` proves a consistent guess is not an answer, against 29 rows
+  where the older `Only one word left` caption proves as much or more. Decision 0003 records the
+  mechanism, the numbers, and what closing it would cost.
 - **The scorer is untouched.** `candidateCount` and `remainingCount` still reach the view; it simply
   declines to print them, so `SCORER_VERSION`, existing share links and the golden score snapshot all
   stand. The change is confined to `src/app/copy/` and `src/app/ui/`.
