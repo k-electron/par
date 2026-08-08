@@ -108,6 +108,20 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   const senderTotal = await readTotal(page);
   expect(senderTotal).toMatch(/^-?\d+\.\d$/);
 
+  // The progress column lights how far each guess got and never counts the pool
+  // it narrowed: a number there is the answer list's size, or how many of its
+  // words a pattern left alive, both of which the player is not owed. Decision
+  // 0003 has the argument. Checked here as well as in the component test because
+  // this is the bundle that actually ships.
+  const progress = page
+    .getByRole('table', { name: /guess by guess/i })
+    .locator('tbody td:nth-child(2)');
+  await expect(progress.first()).toBeVisible();
+  for (const cell of await progress.allTextContents()) {
+    expect(cell, 'the progress column must not count the answer pool').not.toMatch(/\d/);
+    expect(cell.trim(), 'every row must be lit').not.toBe('');
+  }
+
   // 3. Share, and take the link out of the clipboard.
   await page.getByRole('button', { name: 'Share' }).click();
   const shared = await page.evaluate(() => navigator.clipboard.readText());

@@ -6,13 +6,18 @@
  * never criticised. Keeping the words in one file makes that reviewable in one
  * sitting instead of scattered across components.
  *
- * Two rules hold throughout, and both are testable because they live here:
+ * Three rules hold throughout, and all three are testable because they live
+ * here:
  *
  * - **Never name a better word.** Not the optimal guess, not an alternative,
  *   not a hint. Showing someone the word they missed is a lecture, and it
  *   teaches exactly the memorise-the-meta habit the game is built to avoid.
  * - **Never scold.** No "should have", no "mistake", no "wasted". A guess that
  *   cost expected guesses gets a number and moves on.
+ * - **Never count the answer pool.** How far a guess got is the interesting
+ *   part and is said in bands. The pool's size, and how many of its words a
+ *   given pattern leaves, are ours rather than the player's — `progressLevel`
+ *   has the argument, and `docs/decisions/0003` the full account.
  *
  * Par is anchored to strong play, so **most players are over par most days**.
  * The over-par phrasing is therefore the main path and gets the same care as the
@@ -115,30 +120,72 @@ export function luckNote(bits: number): string {
 }
 
 /**
- * The words-left cell: what the guess left behind, and where it started.
+ * How much of what was still unknown a guess cleared away.
  *
- * The headline is the pool after the feedback, which only means something next
- * to where it began — 253 is a fine cut from 3000 and a poor one from 260.
+ * **The one measure, not three.** What matters about a cut is neither its size
+ * in words nor its size as a fraction, but its size against how much there was
+ * left to find out — which is why this is `log2(before / after) / log2(before)`,
+ * the share of the standing uncertainty the guess removed. That single ratio
+ * carries all three things a light has to be sensitive to:
  *
- * The winning guess is the exception and gets no count. One word technically
- * remains after it, but printing "1" invites the reader to wonder what they
- * should do about it when the game is already over.
+ * - **Where the round has got to**, because the denominator shrinks as the field
+ *   does. Late narrowing is scarcer, so it counts for more.
+ * - **The proportion cut**, which is the numerator.
+ * - **The count cut**, because a fraction alone would rate 3000 → 1500 and
+ *   2 → 1 the same. Against the uncertainty each faced, the first is a twelfth
+ *   of the way home and the second is all of it.
  *
- * A guess that *lost* the game keeps its number, which is not the same case at
- * all: "1, from 2" says a word was still standing when the turns ran out, and
- * that is the story of the round rather than noise at the end of it.
+ * So a hundred words struck off a field of three thousand rates near nothing,
+ * and one struck off a field of two rates as everything, which is the ordering a
+ * player recognises.
+ *
+ * **Bands by integer comparison, never by logarithm.** `progress >= k / n` is
+ * exactly `after^n <= before^(n - k)`, so a threshold at a half is `after² <=
+ * before` and a quarter is `after⁴ <= before³`. Both stay whole numbers well
+ * inside exact integer range, so no band can straddle a floating-point boundary
+ * and word the same round differently on two machines — a replay link must read
+ * identically for both friends holding it.
+ *
+ * **`slight` deliberately covers a cut of nothing as well as a small one.** A
+ * guess that ruled nothing out is not separable here, and that is the point: a
+ * word still possible always eliminates itself when it fails, so a row that
+ * singled out "nothing ruled out" would prove the guess was never a possible
+ * answer. Saying "little or nothing" is both honest about the band and mute
+ * about which end of it a row sits at.
+ *
+ * **A field already down to one word gets no light at all.** There was no
+ * uncertainty to remove, so there is no progress to report. The scorer reaches
+ * the same conclusion by a different route: such a row weighs `log2 1 = 0` in
+ * the skill average, so whatever it scores it cannot move the total either way.
+ * A red mark would then be the only judgement on a row the score itself declines
+ * to count.
  */
-export function poolFigure(
-  before: number,
-  after: number,
-  won: boolean,
-): { value: string; note: string } {
-  if (won) return { value: '\u2014', note: 'solved' };
-  // "from 3000" beside a headline of 3000 reads like a rendering fault rather
-  // than a fact about the guess.
-  if (after >= before) return { value: String(after), note: 'nothing ruled out' };
-  return { value: String(after), note: `from ${before}` };
+export type ProgressLevel = 'solved' | 'major' | 'minor' | 'slight' | 'none';
+
+export function progressLevel(before: number, after: number, won: boolean): ProgressLevel {
+  if (won) return 'solved';
+  // Nothing was on offer, so nothing is graded. Guarding this first also keeps
+  // the comparisons below away from a field of one, where every cut is zero.
+  if (before <= 1) return 'none';
+  // progress >= 1/2.
+  if (after * after <= before) return 'major';
+  // progress >= 1/4.
+  if (after * after * after * after <= before * before * before) return 'minor';
+  return 'slight';
 }
+
+/**
+ * What each light says. Descriptions of the field, never verdicts on the player:
+ * how far a guess got is partly the feedback's doing, so this reads in the same
+ * register as `luckNote` rather than the skill column's.
+ */
+export const PROGRESS: Record<ProgressLevel, string> = {
+  solved: 'solved',
+  major: 'a big cut',
+  minor: 'a fair cut',
+  slight: 'little or nothing',
+  none: 'nothing left to cut',
+};
 
 export const RESULTS = {
   totalLabel: 'Total',
@@ -151,13 +198,15 @@ export const RESULTS = {
   columns: {
     turn: '#',
     /**
-     * Reads as the result of the guess on its own row.
+     * How far the guess on this row got, rather than how many words it left.
      *
-     * It used to be "In play" and showed the count going *in*, which described
-     * the position the previous guess had left rather than what this one did
-     * with it. Following a round meant reading each number a line late.
+     * It was "In play" and showed the count going *in*, which described the
+     * position the previous guess had left rather than what this one did with it.
+     * Then "Words left", which reported the count going out and so promised a
+     * number the column no longer gives — see `progressLevel` for why it stopped
+     * giving one.
      */
-    candidates: 'Words left',
+    progress: 'Progress',
     skill: 'Skill',
     luck: 'Luck',
   },

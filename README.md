@@ -135,12 +135,16 @@ the word lists, so regenerating them leaves it stale and every total mis-centred
 ```bash
 npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts
 npm run check-incentives -- --days 120 # confirms the incentives still point the right way
+npm run check-lights -- --days 150     # confirms the progress light still says something
 ```
 
 The first takes a few minutes and prints the guess distribution plus what the house starter
 costs against a fixed strong opener. The second exits non-zero if taking the house starter
 stops being the mildly better habit, or if collecting the bonus and then ignoring the clues
-stops being the worst option.
+stops being the worst option. The third exits non-zero if the results table's progress light
+stops discriminating between guesses, or if its red band hardens from a hint into a proof
+that a guess was never a possible answer — both are properties of the lists rather than of
+the code, which is why regenerating the lists is what puts them at risk.
 
 Recomputing `PAR` moves the golden score snapshots, because the outcome term is measured
 against it. That is intended — it forces someone to look at the new numbers. Review the diff,
