@@ -73,6 +73,22 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
           </Stack>
 
           <Stack spacing={0.5}>
+            <Typography variant="subtitle2">Progress</Typography>
+            <Typography variant="body2">
+              The light beside each guess is how much of what was still unknown it cleared away.
+              Green means most of it, amber a fair share, red little or nothing. It is measured
+              against how much there was left to find out, not in words &mdash; so striking a
+              hundred words off a wide-open field counts for very little, while narrowing two
+              possibilities down to one counts for everything, which is the way it feels to play.
+            </Typography>
+            <Typography variant="body2">
+              That is why a perfectly good opener often shows amber: it does a great deal of work
+              and still leaves most of the guessing to do. A guess with only one word left to play
+              gets no light at all, because there was nothing left to clear.
+            </Typography>
+          </Stack>
+
+          <Stack spacing={0.5}>
             <Typography variant="subtitle2">Luck</Typography>
             <Typography variant="body2">
               The luck column says how the feedback broke compared with what your guess could

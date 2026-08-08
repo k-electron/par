@@ -95,6 +95,52 @@ rather than a grade on the choice.
 Because it is an expectation, it averages to zero across every answer a guess
 could face. There is a test for that.
 
+## The progress light
+
+Beside each guess, the results view shows one of three lights for how much of the
+standing uncertainty that guess cleared away:
+
+```
+progress = log2(|S_i| / |S_i+1|) / log2(|S_i|)
+```
+
+Green at a half or more, amber at a quarter or more, red below that. Display
+only, like the luck figure, and **it never prints `|S_i|`** — decision
+[0003](decisions/0003-the-progress-light.md) has that argument.
+
+**One ratio rather than three rules.** A light has to be sensitive to how far
+into the round a guess came, to the proportion it cut, and to the count it cut;
+dividing realized information by the information that was standing does all
+three at once. The denominator shrinks with the field, so late narrowing counts
+for more. The numerator is the proportion. And a fraction alone would rate
+`3000 → 1500` and `2 → 1` alike, where against the uncertainty each faced the
+first is a twelfth of the way home and the second is all of it.
+
+**Bands by integer comparison.** `progress >= k / n` is exactly
+`after^n <= before^(n - k)`, so a half is `after² <= before` and a quarter is
+`after⁴ <= before³`. Both stay whole numbers well inside exact integer range, so
+no band can straddle a floating-point boundary and word the same round
+differently on two machines. `docs/determinism.md` governs scores; this extends
+the same care to the light beside them, for nothing, because integers are free
+here.
+
+**A field already down to one word gets no light.** There was no uncertainty to
+remove, so there is no progress to report — which is the same reason
+`scoreGuess` scores such a guess 100 with weight `log2 1 = 0`. Lighting it red
+would read as a verdict on a guess the scorer itself prices at nothing.
+
+**It is not the luck figure in another hat.** Luck is realized minus expected —
+how the tiles broke against what the guess could reasonably ask for. This is
+realized over available — how much of the way to the answer the guess actually
+got. The two correlate at 0.53, so they agree on direction and differ often
+enough to be worth showing side by side.
+
+Both of the properties the light rests on — that it discriminates, and that red
+still covers small cuts rather than only meaning "no cut" — are facts about the
+word lists rather than about the code, so they go stale when the lists are
+regenerated. `npm run check-lights` measures them and exits non-zero if either
+has lapsed.
+
 ## The constants
 
 All three live in [`src/engine/config/constants.ts`](../src/engine/config/constants.ts)

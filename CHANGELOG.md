@@ -24,6 +24,23 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Changed
 
+- **The guess-by-guess table lights each guess instead of counting the pool.** It reported the
+  candidate set as two exact integers, which handed over more than it meant to: the caption under row
+  1 was the answer list's exact size on every round ever played, and every other row was an exact
+  count of its words consistent with a guess and a pattern sitting on screen beside it.
+  `docs/philosophy.md` had assumed the opposite all along, benchmarking against the answer list "even
+  though players can't see that pool". Each row now carries one light — green, amber or red — for how
+  much of the standing uncertainty the guess cleared, which is `log2(before / after) / log2(before)`.
+  That one ratio is sensitive to all three things a light has to weigh: how far into the round the
+  guess came, the proportion it cut, and the count it cut. A hundred words off a field of three
+  thousand rates near nothing; one word off a field of two rates as everything. Bands are integer
+  comparisons rather than logarithms, so two friends on the same replay link cannot be shown
+  different words, and every light carries a phrase because roughly one man in twelve cannot separate
+  red from green. A field already down to a single word gets no light at all, since there was no
+  uncertainty to remove and the scorer prices such a guess at nothing. `Words left` became
+  `Progress`, #7's principle — a row describes its own guess — is untouched, and
+  [decision 0003](docs/decisions/0003-the-progress-light.md) has the argument, including what the
+  light still gives away and why that is accepted.
 - **The guess-by-guess table reports its own guess**
   ([#7](https://github.com/k-electron/par/pull/7)). The number column showed the pool a guess was
   handed, which is a fact about the guess before it — following a round meant reading every number a
@@ -57,6 +74,26 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Verified
 
+- **A link minted before the progress light opens with it.** `tests/app/share.test.tsx` holds a
+  payload frozen at `e4e1210` as a literal rather than re-encoding one — re-encoding proves the codec
+  agrees with itself, where a literal proves a link already in somebody's chat history still opens,
+  still recomputes the same total, and now arrives with lights it was never sent. Nothing was needed
+  to make that work: links carry guess indices and version stamps, never a score, and `StoredScore`
+  keeps a four-field summary. `SCORER_VERSION` stays at 1, since a display change is on none of its
+  documented bump reasons and bumping it would tell every reader their old links were scored by a
+  different Par.
+- **The light prints no digit**, on a round won or lost, asserted in the component test and again over
+  every surviving count of six starting fields. Each band is checked to be a floor the cut genuinely
+  reached, the light to improve only as a cut deepens, and the single-word field to stay unlit.
+- **What the light still gives away was measured rather than assumed.** A new `npm run check-lights`
+  plays 150 days of middling play — strong play settles too early to reach the interesting positions —
+  and reports that 41 of 102 red rows had ruled nothing out, so red is a 40% hint where the old count
+  was a proof. Of the 55 endgame red rows it judges against the whole dictionary, none asked for 90%
+  or more of the best information available, so red does not land on a guess that read the position
+  well; the 88 rows the scorer prices at nothing get no light rather than a red one; and the light
+  correlates with the luck figure at 0.53, so it is not that column in another hat. It exits non-zero
+  if the light stops discriminating or if red hardens into a proof, both being claims about the word
+  lists rather than the code.
 - **No past share link changed.** The app was rebuilt at `f08e738`, served beside current `main`, and
   the same real link opened in both: identical total, board, badges, per-guess skill and luck, and
   summary figures. Diffing the entire rendered page found exactly three differences, all of them
