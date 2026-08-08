@@ -6,13 +6,18 @@
  * never criticised. Keeping the words in one file makes that reviewable in one
  * sitting instead of scattered across components.
  *
- * Two rules hold throughout, and both are testable because they live here:
+ * Three rules hold throughout, and all three are testable because they live
+ * here:
  *
  * - **Never name a better word.** Not the optimal guess, not an alternative,
  *   not a hint. Showing someone the word they missed is a lecture, and it
  *   teaches exactly the memorise-the-meta habit the game is built to avoid.
  * - **Never scold.** No "should have", no "mistake", no "wasted". A guess that
  *   cost expected guesses gets a number and moves on.
+ * - **Never count the answer pool.** How far a guess narrowed the field is the
+ *   interesting part and is said in proportions. The pool's size, and how many
+ *   of its words a given pattern leaves, are ours rather than the player's — see
+ *   `fieldNote` for why that is a design position rather than an oversight.
  *
  * Par is anchored to strong play, so **most players are over par most days**.
  * The over-par phrasing is therefore the main path and gets the same care as the
@@ -115,29 +120,42 @@ export function luckNote(bits: number): string {
 }
 
 /**
- * The words-left cell: what the guess left behind, and where it started.
+ * The field cell: how far this guess narrowed what was still possible.
  *
- * The headline is the pool after the feedback, which only means something next
- * to where it began — 253 is a fine cut from 3000 and a poor one from 260.
+ * **Relative on purpose, and never a count.** The column used to print the pool
+ * either side of the guess, which handed over two things it had no business
+ * handing over: the answer list's exact size, on every first row, and an exact
+ * count of its words consistent with a known guess and pattern. Philosophy's
+ * rationale for scoring against that list assumes the opposite — it is "the only
+ * self-consistent choice, even though players can't see that pool".
  *
- * The winning guess is the exception and gets no count. One word technically
- * remains after it, but printing "1" invites the reader to wonder what they
- * should do about it when the game is already over.
+ * A ratio is also the better read. The old number only meant anything beside the
+ * one it started from, because a field of 253 is a fine cut from 3000 and a poor
+ * one from 260. How far the field fell says that on its own.
  *
- * A guess that *lost* the game keeps its number, which is not the same case at
- * all: "1, from 2" says a word was still standing when the turns ran out, and
- * that is the story of the round rather than noise at the end of it.
+ * Banded by integer comparison rather than by `log2(before / after)`, because a
+ * band that straddled a floating-point boundary could word the same round
+ * differently on two machines, and a replay link is meant to read identically
+ * for both friends holding it.
+ *
+ * Phrased as something that happened rather than as a grade. How far the field
+ * fell is partly the feedback's doing, so this belongs in the same register as
+ * `luckNote` and not in the skill column's.
+ *
+ * The winning guess is the exception and reports no field at all. One word
+ * technically remains after it, but describing what is left invites the reader
+ * to wonder what they should do about it when the game is already over. A guess
+ * that *lost* the game is not the same case: it narrowed a field that was still
+ * standing when the turns ran out, and that is the story of the round.
  */
-export function poolFigure(
-  before: number,
-  after: number,
-  won: boolean,
-): { value: string; note: string } {
-  if (won) return { value: '\u2014', note: 'solved' };
-  // "from 3000" beside a headline of 3000 reads like a rendering fault rather
-  // than a fact about the guess.
-  if (after >= before) return { value: String(after), note: 'nothing ruled out' };
-  return { value: String(after), note: `from ${before}` };
+export function fieldNote(before: number, after: number, won: boolean): string {
+  if (won) return 'solved';
+  if (after >= before) return 'nothing ruled out';
+  if (after * 2 > before) return 'narrowed a little';
+  if (after * 4 > before) return 'about halved';
+  if (after * 10 > before) return 'down to a quarter';
+  if (after * 50 > before) return 'down to a tenth';
+  return 'cut to a fraction';
 }
 
 export const RESULTS = {
@@ -151,13 +169,16 @@ export const RESULTS = {
   columns: {
     turn: '#',
     /**
-     * Reads as the result of the guess on its own row.
+     * What is still standing after the guess on its own row.
      *
      * It used to be "In play" and showed the count going *in*, which described
      * the position the previous guess had left rather than what this one did
-     * with it. Following a round meant reading each number a line late.
+     * with it. Then it was "Words left", which reported the count going out and
+     * so promised a number the column no longer gives. "Field" is the word the
+     * engine already uses for the same quantity — a field that halved reports
+     * exactly one bit — and it survives being shown as a proportion.
      */
-    candidates: 'Words left',
+    field: 'Field',
     skill: 'Skill',
     luck: 'Luck',
   },

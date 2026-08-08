@@ -12,6 +12,7 @@ import * as copy from '../../src/app/copy/results';
 import { createDirectScoringClient, scoreDirectly } from '../../src/app/scoring/direct';
 import { theme } from '../../src/app/theme/theme';
 import { App } from '../../src/app/ui/App';
+import { fieldFill } from '../../src/app/ui/field';
 import { Results } from '../../src/app/ui/Results';
 import { INSTANT_REVEAL } from '../../src/app/ui/reveal';
 import { ScoringExplainer } from '../../src/app/ui/ScoringExplainer';
@@ -88,6 +89,50 @@ describe('the phrasing', () => {
   it('explains a guess that had only one word left to play', () => {
     expect(copy.guessNote(100, true, 6, 1)).toMatch(/one word left/i);
   });
+
+  it('describes the field in proportions and never in counts', () => {
+    // The whole point of the phrasing: a digit here is the size of the answer
+    // pool, or a count of the words in it that a pattern left alive.
+    for (const before of [3000, 253, 60, 9, 2, 1]) {
+      for (let after = 1; after <= before; after += 1) {
+        for (const won of [true, false]) {
+          const note = copy.fieldNote(before, after, won);
+          expect(note, `${after} of ${before}`).not.toMatch(/\d/);
+          expect(note.length, `${after} of ${before}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it('reads the same phrase for the same cut whatever the field was', () => {
+    // Scale-free by construction. If it were not, the phrase would be a
+    // roundabout way of reporting the size of the pool.
+    expect(copy.fieldNote(3000, 1500, false)).toBe(copy.fieldNote(60, 30, false));
+    expect(copy.fieldNote(3000, 300, false)).toBe(copy.fieldNote(200, 20, false));
+  });
+
+  it('bands the cut, coarsely and in order', () => {
+    const cut = (before: number, after: number) => copy.fieldNote(before, after, false);
+
+    expect(cut(100, 100)).toBe('nothing ruled out');
+    expect(cut(100, 120)).toBe('nothing ruled out');
+    expect(cut(100, 90)).toBe('narrowed a little');
+    expect(cut(100, 50)).toBe('about halved');
+    expect(cut(100, 25)).toBe('down to a quarter');
+    expect(cut(100, 10)).toBe('down to a tenth');
+    expect(cut(3000, 6)).toBe('cut to a fraction');
+
+    // Coarse on purpose: a band that moved with every word would be the count
+    // again, spelled out.
+    expect(cut(3000, 1400)).toBe(cut(3000, 1100));
+  });
+
+  it('gives the winning guess no field to puzzle over', () => {
+    // One word does remain after a correct guess. Describing it invites the
+    // reader to wonder what they are meant to do about it.
+    expect(copy.fieldNote(2, 1, true)).toBe('solved');
+    expect(copy.fieldNote(3000, 1, true)).toBe('solved');
+  });
 });
 
 describe('what the copy must never say', () => {
@@ -109,6 +154,11 @@ describe('what the copy must never say', () => {
         copy.guessNote(null, false, 6, 1),
       ]),
       [-2, -0.5, 0, 0.5, 2].map((bits) => copy.luckNote(bits)),
+      // Every rung of the field ladder, including the two that report no cut.
+      [3000, 1400, 700, 300, 50, 6, 1].flatMap((after) => [
+        copy.fieldNote(3000, after, false),
+        copy.fieldNote(3000, after, true),
+      ]),
     );
 
   it('never scolds', () => {
@@ -135,12 +185,38 @@ describe('the rendered results', () => {
     hardMode: false,
   });
 
+  const lostScore = scoreDirectly({
+    guesses: [PUZZLE.starter, 'crane', 'moist', 'pluck', 'begun', 'dwarf'],
+    answer: PUZZLE.answer,
+    tookHouseStarter: true,
+    hardMode: false,
+  });
+
+  it('has an unsolved fixture to test the unsolved cases with', () => {
+    expect(lostScore.solved).toBe(false);
+  });
+
   function renderResults() {
     return render(
       <ThemeProvider theme={theme}>
         <Results score={score} settings={settings} />
       </ThemeProvider>,
     );
+  }
+
+  /**
+   * The drawn length of each row's bar, as a percentage.
+   *
+   * The width is inline because it is data rather than a design token, so
+   * reading it needs no layout engine — which jsdom does not have.
+   */
+  function barWidths(): number[] {
+    const table = screen.getByRole('table', { name: /guess by guess/i });
+
+    return within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => Number.parseFloat(within(row).getByTestId('field-bar').style.width));
   }
 
   it('leads with the total, then skill and par conversationally', () => {
@@ -161,12 +237,12 @@ describe('the rendered results', () => {
   });
 
   /**
-   * The column used to report the pool a guess was handed, which describes the
-   * previous guess rather than the one on the row. Following a round meant
-   * reading every number a line late, and the last row's effect was not shown
-   * anywhere at all.
+   * The column reports the effect of the guess on its own row, which is what
+   * it is for. It used to report that as two exact counts; it now reports it as
+   * how far the field fell, which is the same fact about the same guess without
+   * the pool's size attached.
    */
-  it('reports what each guess left behind, not what it was handed', () => {
+  it('reports what each guess did to the field, not what it was handed', () => {
     renderResults();
 
     const table = screen.getByRole('table', { name: /guess by guess/i });
@@ -177,9 +253,8 @@ describe('the rendered results', () => {
       const entry = score.breakdown[index]!;
       const cell = within(row).getAllByRole('cell')[1]!;
 
-      // The count going in is context, not the headline.
-      expect(cell.textContent, `row ${index + 1}`).toMatch(
-        new RegExp(`^${entry.remainingCount}(from ${entry.candidateCount}|nothing ruled out)`),
+      expect(cell.textContent, `row ${index + 1}`).toBe(
+        copy.fieldNote(entry.candidateCount, entry.remainingCount, false),
       );
     });
   });
@@ -203,33 +278,108 @@ describe('the rendered results', () => {
 
   /**
    * The opposite case, and not the same one. A guess that ran the player out of
-   * turns leaves a real count behind — "1, from 2" says a word was still
-   * standing when the game ended, which is the story of the round rather than
-   * noise at the end of it.
+   * turns still narrowed a field that was standing when the game ended, and
+   * that is the story of the round rather than noise at the end of it.
    */
-  it('keeps the count on a guess that lost the game', () => {
-    const lost = scoreDirectly({
-      guesses: [PUZZLE.starter, 'crane', 'moist', 'pluck', 'begun', 'dwarf'],
-      answer: PUZZLE.answer,
-      tookHouseStarter: true,
-      hardMode: false,
-    });
-    expect(lost.solved, 'fixture must be an unsolved game').toBe(false);
-
+  it('still describes the field on a guess that lost the game', () => {
     render(
       <ThemeProvider theme={theme}>
-        <Results score={lost} settings={settings} />
+        <Results score={lostScore} settings={settings} />
       </ThemeProvider>,
     );
 
     const table = screen.getByRole('table', { name: /guess by guess/i });
     const last = within(table).getAllByRole('row').at(-1)!;
     const cell = within(last).getAllByRole('cell')[1]!;
+    const closing = lostScore.breakdown.at(-1)!;
 
     expect(cell).not.toHaveTextContent(/solved/i);
-    expect(cell.textContent).toMatch(
-      new RegExp(`^${lost.breakdown.at(-1)!.remainingCount}from `),
+    expect(cell.textContent).toBe(
+      copy.fieldNote(closing.candidateCount, closing.remainingCount, false),
     );
+  });
+
+  /**
+   * The reason the column stopped printing counts.
+   *
+   * Every row used to carry two exact figures, and the first row's caption was
+   * the answer list's exact size on every round ever played. Between them they
+   * gave anybody curious an exact count of answer-list words consistent with a
+   * known guess and pattern, which is a membership oracle against a dictionary
+   * that ships in the same bundle. Philosophy's rationale for scoring against
+   * that list assumes the opposite: it is the self-consistent choice "even
+   * though players can't see that pool".
+   *
+   * A digit anywhere in this column is that leak returning, whatever it is
+   * measuring, so the assertion is deliberately blunt.
+   */
+  it('never counts the answer pool, on a round won or lost', () => {
+    for (const finished of [score, lostScore]) {
+      cleanup();
+      render(
+        <ThemeProvider theme={theme}>
+          <Results score={finished} settings={settings} />
+        </ThemeProvider>,
+      );
+
+      const table = screen.getByRole('table', { name: /guess by guess/i });
+      const rows = within(table).getAllByRole('row').slice(1);
+
+      rows.forEach((row, index) => {
+        const cell = within(row).getAllByRole('cell')[1]!;
+        expect(cell.textContent, `row ${index + 1} of ${rows.length}`).not.toMatch(/\d/);
+      });
+    }
+  });
+
+  it('draws every bar at the field its guess left standing', () => {
+    for (const finished of [score, lostScore]) {
+      cleanup();
+      render(
+        <ThemeProvider theme={theme}>
+          <Results score={finished} settings={settings} />
+        </ThemeProvider>,
+      );
+
+      const start = finished.breakdown[0]!.candidateCount;
+      barWidths().forEach((width, index) => {
+        const row = finished.breakdown[index]!;
+        expect(width, `row ${index + 1}`).toBeCloseTo(
+          fieldFill(row.remainingCount, start) * 100,
+          10,
+        );
+      });
+    }
+  });
+
+  it('empties the bar once the answer is pinned down', () => {
+    renderResults();
+
+    const widths = barWidths();
+    // The opener leaves most of the field alive; the winning guess leaves none
+    // of it, which is what makes the column readable as a round closing in.
+    expect(widths[0]).toBeGreaterThan(0);
+    expect(widths.at(-1)).toBe(0);
+    for (let index = 1; index < widths.length; index += 1) {
+      expect(widths[index]!, `row ${index + 1}`).toBeLessThan(widths[index - 1]!);
+    }
+  });
+
+  it('says so when a guess ruled nothing out', () => {
+    render(
+      <ThemeProvider theme={theme}>
+        <Results score={lostScore} settings={settings} />
+      </ThemeProvider>,
+    );
+
+    const stalled = lostScore.breakdown.findIndex(
+      (row) => row.remainingCount >= row.candidateCount,
+    );
+    expect(stalled, 'fixture must contain a guess that ruled nothing out').toBeGreaterThan(-1);
+
+    const table = screen.getByRole('table', { name: /guess by guess/i });
+    const row = within(table).getAllByRole('row')[stalled + 1]!;
+    expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(/nothing ruled out/i);
   });
 
   it('narrows the pool monotonically down the table', () => {

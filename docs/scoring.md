@@ -95,6 +95,38 @@ rather than a grade on the choice.
 Because it is an expectation, it averages to zero across every answer a guess
 could face. There is a test for that.
 
+## The field figure
+
+Beside each guess, the results view also shows how much of the candidate set it
+left standing: a bar whose length is `log2 remaining / log2 |S_1|`, and a phrase
+banding how far the field fell. Display only, like the luck figure, and it is
+**relative on purpose — the view never prints `|S_i|` or `remaining`.**
+
+Those counts are what the scorer weights and prices with, and they were on screen
+until [decision 0003](decisions/0003-the-field-is-relative-not-counted.md): the
+first row's caption was the answer list's exact size on every round ever played,
+and each row gave an exact count of its words consistent with a known guess and
+pattern. That is a membership oracle against a dictionary shipping in the same
+bundle, and philosophy's rationale for scoring against the answer list assumes
+the opposite — it is the self-consistent choice "even though players can't see
+that pool".
+
+A ratio is also the better read: 253 words means nothing without the 3,000 it
+came from, whereas "down to a tenth" carries its own meaning. The bands are
+decided by integer comparison in
+[`src/app/copy/results.ts`](../src/app/copy/results.ts) rather than from
+`log2(before / after)`, so no band can straddle a floating-point boundary and
+word the same round differently for two friends holding the same replay link.
+The bar's own arithmetic uses `Math.log2`, which is safe where the engine's is
+not: it sets a CSS width, so a last-bit difference is a fraction of a pixel and
+cannot change a word on screen.
+
+Logarithmic rather than linear because a linear bar would be all but empty from
+the second row onward — a decent opener leaves a few per cent of the field alive.
+On a log scale an equal cut shortens the bar by an equal amount, so the bar and
+the luck figure are measuring in the same currency, and the bar empties exactly
+as the answer is pinned down.
+
 ## The constants
 
 All three live in [`src/engine/config/constants.ts`](../src/engine/config/constants.ts)

@@ -13,17 +13,18 @@ import Typography from '@mui/material/Typography';
 import {
   RESULTS,
   ROUND,
+  fieldNote,
   guessNote,
   headline,
   luckNote,
   parPhrase,
-  poolFigure,
   resultsBadges,
   skillPhrase,
   type RoundVariant,
 } from '../copy/results';
 import { PAR } from '../../engine/config/constants';
 import { WIN_PATTERN } from '../../engine/words/pattern';
+import { fieldFill } from './field';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
 
@@ -32,6 +33,44 @@ export interface ResultsProps {
   readonly settings: ConfirmedSettings;
   /** Whose round this is. Only the second-person phrasing changes. */
   readonly variant?: RoundVariant;
+}
+
+/**
+ * How much of the field is still standing, as a length rather than a number.
+ *
+ * Decorative, and `aria-hidden` for that reason: it is a second presentation of
+ * a chain the captions beneath it already state row by row, so a screen reader
+ * reading down the column gets the same narrowing without hearing every row
+ * described twice.
+ */
+function FieldBar({ fill }: { fill: number }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        width: '100%',
+        maxWidth: 56,
+        height: 4,
+        borderRadius: 1,
+        // Semantic tokens rather than a new colour, so the bar follows the
+        // appearance setting and owes nothing to the tile palette.
+        bgcolor: 'divider',
+        overflow: 'hidden',
+      }}
+    >
+      {/*
+        `style` rather than `sx` for the width alone: it is data, and it differs
+        on every row, so `sx` would compile a fresh class for each one. It also
+        leaves the drawn length legible to a test, which a generated class does
+        not.
+      */}
+      <Box
+        data-testid="field-bar"
+        style={{ width: `${fill * 100}%` }}
+        sx={{ height: '100%', bgcolor: 'text.secondary' }}
+      />
+    </Box>
+  );
 }
 
 function Figure({ label, value, caption }: { label: string; value: string; caption?: string }) {
@@ -65,6 +104,12 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
       </Stack>
     );
   }
+
+  // The field every bar is drawn against: everything that was possible before a
+  // guess had been played. Read off the first row rather than from the word
+  // list, so the proportions describe the round as it was scored — a replay of
+  // an older list included.
+  const startingField = score.breakdown[0]?.candidateCount ?? 0;
 
   return (
     <Stack spacing={1.5} sx={{ width: '100%' }}>
@@ -117,7 +162,7 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
             <TableRow>
               <TableCell sx={{ px: 0.5 }}>{RESULTS.columns.turn}</TableCell>
               <TableCell sx={{ px: 0.5 }} align="right">
-                {RESULTS.columns.candidates}
+                {RESULTS.columns.field}
               </TableCell>
               <TableCell sx={{ px: 0.5 }} align="right">
                 {RESULTS.columns.skill}
@@ -129,7 +174,7 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
           </TableHead>
           <TableBody>
             {score.breakdown.map((row) => {
-              const pool = poolFigure(
+              const note = fieldNote(
                 row.candidateCount,
                 row.remainingCount,
                 row.pattern === WIN_PATTERN,
@@ -152,15 +197,16 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
                 </TableCell>
                 <TableCell sx={{ px: 0.5 }} align="right">
                   {/*
-                    The count the guess left behind, not the one it started
-                    from, so the row describes its own guess. The caption keeps
-                    the starting point, which is what makes the figure mean
-                    something.
+                    What this guess did to the field, and how much of it is left
+                    — both as proportions, never as counts. The row still
+                    describes its own guess; it simply says so without handing
+                    over the size of the answer pool. `fieldNote` has the
+                    argument.
                   */}
-                  <Stack spacing={0} sx={{ alignItems: 'flex-end' }}>
-                    <Box component="span">{pool.value}</Box>
+                  <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
+                    <FieldBar fill={fieldFill(row.remainingCount, startingField)} />
                     <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      {pool.note}
+                      {note}
                     </Typography>
                   </Stack>
                 </TableCell>

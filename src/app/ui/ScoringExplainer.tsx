@@ -73,6 +73,19 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
           </Stack>
 
           <Stack spacing={0.5}>
+            <Typography variant="subtitle2">The field</Typography>
+            <Typography variant="body2">
+              The bar beside each guess is how much of the field it left standing &mdash; the words
+              that were still possible answers once the tiles came back. It shrinks as the answer
+              gets pinned down and empties when a single word is left, so reading down the column
+              shows how the round closed in. A proportion rather than a count, because how far a
+              guess narrowed the field is the part that means anything; an exact tally would mostly
+              be an invitation to work out which words the answers are drawn from, and that is a
+              different game from this one.
+            </Typography>
+          </Stack>
+
+          <Stack spacing={0.5}>
             <Typography variant="subtitle2">Luck</Typography>
             <Typography variant="body2">
               The luck column says how the feedback broke compared with what your guess could

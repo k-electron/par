@@ -24,6 +24,18 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Changed
 
+- **The field column shows the cut, not the count.** The guess-by-guess table reported the candidate
+  set as two exact integers, which handed over more than it meant to: the caption under row 1 was the
+  answer list's exact size on every round ever played, and every other row was an exact count of its
+  words consistent with a guess and a pattern both sitting on screen beside it — a membership oracle
+  against a dictionary that ships in the same bundle. `docs/philosophy.md` had assumed the opposite
+  all along, benchmarking against the answer list "even though players can't see that pool". Each row
+  now carries a bar for how much of the field its guess left standing and a phrase for how far the
+  field fell, so `Words left` became `Field`. A ratio is the better read anyway: the old code conceded
+  that 253 words means nothing without the 3,000 it came from. The bands are integer comparisons
+  rather than logarithms, so two friends on the same replay link cannot be shown different words.
+  [Decision 0003](docs/decisions/0003-the-field-is-relative-not-counted.md) has the argument, and
+  #7's principle — a row describes its own guess — is untouched.
 - **The guess-by-guess table reports its own guess**
   ([#7](https://github.com/k-electron/par/pull/7)). The number column showed the pool a guess was
   handed, which is a fact about the guess before it — following a round meant reading every number a
