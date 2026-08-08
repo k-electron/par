@@ -47,8 +47,10 @@ Two things per row, neither of them a number:
   Logarithmic because a linear bar would be all but empty from row 2 down, and because an equal cut
   then shortens it by an equal amount. It empties exactly when one word is left, so a solved round
   ends empty and a round that ran out of turns with the field wide does not.
-- **A phrase** for how far the field fell: `nothing ruled out`, `narrowed a little`, `about halved`,
-  `down to a quarter`, `down to a tenth`, `cut to a fraction`, and `solved` on the winning row.
+- **A phrase** for how far the field fell: `nothing ruled out`, `narrowed a little`, `down to half`,
+  `down to a quarter`, `down to a tenth`, `cut to a fraction`, and `solved` on the winning row. Each
+  rung is a floor rather than an estimate — a band begins where its own fraction is reached, so a
+  sharper cut is understated and never misreported, and the bar carries what the words round off.
 
 The header changed from `Words left`, which promised a count, to `Field`, which the engine already
 uses for the same quantity — *a field that halved reports exactly one bit*.

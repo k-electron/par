@@ -117,7 +117,7 @@ describe('the phrasing', () => {
     expect(cut(100, 100)).toBe('nothing ruled out');
     expect(cut(100, 120)).toBe('nothing ruled out');
     expect(cut(100, 90)).toBe('narrowed a little');
-    expect(cut(100, 50)).toBe('about halved');
+    expect(cut(100, 50)).toBe('down to half');
     expect(cut(100, 25)).toBe('down to a quarter');
     expect(cut(100, 10)).toBe('down to a tenth');
     expect(cut(3000, 6)).toBe('cut to a fraction');
@@ -125,6 +125,28 @@ describe('the phrasing', () => {
     // Coarse on purpose: a band that moved with every word would be the count
     // again, spelled out.
     expect(cut(3000, 1400)).toBe(cut(3000, 1100));
+  });
+
+  it('names a floor the cut actually reached, never one it did not', () => {
+    // The coarseness is only honest if every phrase is true of every cut in its
+    // band. Each rung begins where its own fraction is reached, so a sharper cut
+    // is understated — and the bar carries what the words round off.
+    const named: readonly { readonly phrase: string; readonly divisor: number }[] = [
+      { phrase: 'down to half', divisor: 2 },
+      { phrase: 'down to a quarter', divisor: 4 },
+      { phrase: 'down to a tenth', divisor: 10 },
+    ];
+
+    for (const before of [3000, 250, 40]) {
+      for (let after = 1; after <= before; after += 1) {
+        const claimed = named.find(({ phrase }) => phrase === copy.fieldNote(before, after, false));
+        if (claimed !== undefined) {
+          expect(after, `${claimed.phrase} claimed for ${after} of ${before}`).toBeLessThanOrEqual(
+            before / claimed.divisor,
+          );
+        }
+      }
+    }
   });
 
   it('gives the winning guess no field to puzzle over', () => {

@@ -138,6 +138,11 @@ export function luckNote(bits: number): string {
  * differently on two machines, and a replay link is meant to read identically
  * for both friends holding it.
  *
+ * **Every rung is a floor, and that is what keeps a coarse band honest.** "Down
+ * to a quarter" is true of every cut in its band, because the band begins where
+ * a quarter is reached; a sharper cut than that is understated rather than
+ * misreported, and the bar beside the phrase is what carries the rest.
+ *
  * Phrased as something that happened rather than as a grade. How far the field
  * fell is partly the feedback's doing, so this belongs in the same register as
  * `luckNote` and not in the skill column's.
@@ -152,7 +157,7 @@ export function fieldNote(before: number, after: number, won: boolean): string {
   if (won) return 'solved';
   if (after >= before) return 'nothing ruled out';
   if (after * 2 > before) return 'narrowed a little';
-  if (after * 4 > before) return 'about halved';
+  if (after * 4 > before) return 'down to half';
   if (after * 10 > before) return 'down to a quarter';
   if (after * 50 > before) return 'down to a tenth';
   return 'cut to a fraction';

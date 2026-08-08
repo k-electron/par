@@ -112,8 +112,10 @@ the opposite — it is the self-consistent choice "even though players can't see
 that pool".
 
 A ratio is also the better read: 253 words means nothing without the 3,000 it
-came from, whereas "down to a tenth" carries its own meaning. The bands are
-decided by integer comparison in
+came from, whereas "down to a tenth" carries its own meaning. Each band names a
+floor rather than an estimate, so the phrase is true of every cut inside it and a
+sharper one is understated rather than misreported. The bands are decided by
+integer comparison in
 [`src/app/copy/results.ts`](../src/app/copy/results.ts) rather than from
 `log2(before / after)`, so no band can straddle a floating-point boundary and
 word the same round differently for two friends holding the same replay link.

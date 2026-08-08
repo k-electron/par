@@ -69,6 +69,17 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Verified
 
+- **The field column prints no digit**, on a round won or lost, asserted in the component test and
+  again end to end against the production bundle — which is where a leak would actually reach a
+  player. Every bar is checked to be drawn at the field its own guess left standing, and each band
+  phrase to be a floor the cut genuinely reached, across every surviving count of three starting
+  fields.
+- **The scorer is untouched.** `candidateCount` and `remainingCount` still reach the view; it simply
+  declines to print them, so `SCORER_VERSION`, existing share links and the golden score snapshot all
+  stand. The change is confined to `src/app/copy/` and `src/app/ui/`.
+- **The bar reads in both themes**, checked against a real production build in dark and light — it is
+  drawn from `divider` and `text.secondary` rather than from a colour of its own, so it follows the
+  appearance setting and owes nothing to the tile palette.
 - **No past share link changed.** The app was rebuilt at `f08e738`, served beside current `main`, and
   the same real link opened in both: identical total, board, badges, per-guess skill and luck, and
   summary figures. Diffing the entire rendered page found exactly three differences, all of them

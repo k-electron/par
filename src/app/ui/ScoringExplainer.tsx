@@ -75,13 +75,13 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
           <Stack spacing={0.5}>
             <Typography variant="subtitle2">The field</Typography>
             <Typography variant="body2">
-              The bar beside each guess is how much of the field it left standing &mdash; the words
-              that were still possible answers once the tiles came back. It shrinks as the answer
-              gets pinned down and empties when a single word is left, so reading down the column
-              shows how the round closed in. A proportion rather than a count, because how far a
-              guess narrowed the field is the part that means anything; an exact tally would mostly
-              be an invitation to work out which words the answers are drawn from, and that is a
-              different game from this one.
+              The bar beside each guess is how much narrowing was still to do once the tiles came
+              back &mdash; long while plenty of words could still be the answer, empty once only one
+              can. Every cut of the same size takes the same bite out of it, so halving the field
+              looks the same whether it happened on your second guess or your fifth. Drawn rather
+              than counted, because how far a guess narrowed the field is the part that means
+              anything; an exact tally would mostly be an invitation to work out which words the
+              answers are drawn from, and that is a different game from this one.
             </Typography>
           </Stack>
 

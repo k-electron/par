@@ -108,6 +108,18 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   const senderTotal = await readTotal(page);
   expect(senderTotal).toMatch(/^-?\d+\.\d$/);
 
+  // The field column reports how far each guess narrowed the field, and never
+  // how many words that was. A count there is the size of the answer list, or
+  // the number of its words a pattern left alive — see decision 0003. Checked
+  // here as well as in the component test because this is the shipped bundle.
+  const field = page
+    .getByRole('table', { name: /guess by guess/i })
+    .locator('tbody td:nth-child(2)');
+  await expect(field.first()).toBeVisible();
+  for (const cell of await field.allTextContents()) {
+    expect(cell, 'the field column must not count the answer pool').not.toMatch(/\d/);
+  }
+
   // 3. Share, and take the link out of the clipboard.
   await page.getByRole('button', { name: 'Share' }).click();
   const shared = await page.evaluate(() => navigator.clipboard.readText());
