@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    Par's mark: a flagstick on the green, which is also a P.
+
+    The tile is one of the board's own, in the colour a correct letter lands on,
+    and both colours are the theme's rather than near misses of them.
+    tests/icons.test.ts holds them to that. No width or height, so this one file
+    serves every size a browser asks for.
+
+    Every coordinate is even, which is not tidiness. The grid is 32 units and the
+    size that matters is 16 pixels, so an odd coordinate puts a straight edge on
+    a half pixel: the stem then renders three blurred pixels wide instead of two
+    crisp ones. Only the pennant's diagonals are allowed to soften.
+
+    The flag is one outline rather than a stem and a pennant meeting at x=14.
+    Two shapes sharing an edge are antialiased separately, so at a size where
+    that edge falls between pixels neither of them covers it fully and the tile
+    shows through: a green seam ran the height of the flag at 180 pixels.
+  -->
+  <rect width="32" height="32" rx="2" fill="#538d4e" />
+  <path fill="#ffffff" d="M8 4h6l10 6-10 6v12H8z" />
+</svg>

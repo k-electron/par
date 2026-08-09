@@ -10,6 +10,17 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Added
 
+- **An icon.** There was none, so every tab, bookmark and home screen showed a blank sheet of paper.
+  The mark is a flagstick on the green, which is also a P: the tile is one of the board's own, in the
+  colour a correct letter lands on, and both colours are read out of the theme rather than typed near
+  it. [`public/favicon.svg`](public/favicon.svg) is the mark, and `tools/icons/render.ts` rasterises
+  the two files that cannot be vector — a three-size `favicon.ico`, for Safari before 17 and a Windows
+  taskbar pin, and the 180 PNG an iOS home screen asks for, since it ignores `rel="icon"`. Each size
+  is rendered from the vector at its own size rather than resampled from one large bitmap, because at
+  16 pixels that difference is the whole icon: it is also why every coordinate in the mark is even, so
+  that no straight edge lands on a half pixel and renders three blurred pixels wide instead of two
+  crisp ones. Like the word lists, the generator needs a browser, is run deliberately, and its output
+  is committed.
 - **Forwarding a round somebody sent you**
   ([#4](https://github.com/k-electron/par/pull/4)). The replay view now carries the share control in
   the slot it occupies on your own results. It re-encodes from the guesses and flags already in the
@@ -75,6 +86,24 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Verified
 
+- **The icon is checked as a file, not as a picture somebody looked at.** `tests/icons.test.ts` holds
+  every file `index.html` names to existing, holds `public/` to carrying no icon nothing declares,
+  and holds each raster to the sizes the head claims of it, down to every entry in the ICO being a
+  whole PNG of its own size. It also parses the SVG as XML rather than as HTML, which is the
+  difference that mattered: the generator originally pasted the mark into a page, and an HTML parser
+  forgave a stray control byte an editor had left in the comment above it. The file rendered perfectly
+  there and was a broken-image icon in every real tab. Rasterising through an `<img>` and awaiting
+  `decode()` — which is how a browser consumes a favicon — makes that fail generation instead. All
+  twelve guards were shown to report by breaking one thing at a time.
+- **A green seam ran the height of the flag at 180 pixels.** The stem and the pennant were two shapes
+  meeting at `x=14`, and adjacent shapes are antialiased separately, so wherever that edge fell
+  between pixels neither of them covered it fully and the tile showed through. It was invisible at 16,
+  32 and 48, where that edge lands on a whole pixel, and turned up only in the rendered 180. The flag
+  is one outline now, and the test holds it to one shape.
+- **The icons survive the build and are served as themselves.** `e2e/icons.spec.ts` fetches each one
+  from a production build and compares the bytes with the file in `public/`. A status code could not
+  settle it: `_redirects` answers 200 with the app's HTML for any unmatched path, so on the deployed
+  site a missing icon does not 404 — it silently returns a web page, and the tab goes blank.
 - **A link minted before the progress light opens with it.** `tests/app/share.test.tsx` holds a
   payload frozen at `e4e1210` as a literal rather than re-encoding one — re-encoding proves the codec
   agrees with itself, where a literal proves a link already in somebody's chat history still opens,
