@@ -11,8 +11,12 @@
     size that matters is 16 pixels, so an odd coordinate puts a straight edge on
     a half pixel: the stem then renders three blurred pixels wide instead of two
     crisp ones. Only the pennant's diagonals are allowed to soften.
+
+    The flag is one outline rather than a stem and a pennant meeting at x=14.
+    Two shapes sharing an edge are antialiased separately, so at a size where
+    that edge falls between pixels neither of them covers it fully and the tile
+    shows through: a green seam ran the height of the flag at 180 pixels.
   -->
   <rect width="32" height="32" rx="2" fill="#538d4e" />
-  <path fill="#ffffff" d="M8 4h6v24H8z" />
-  <path fill="#ffffff" d="M14 4l10 6-10 6z" />
+  <path fill="#ffffff" d="M8 4h6l10 6-10 6v12H8z" />
 </svg>

@@ -11,7 +11,8 @@
  * from one large bitmap. That is the whole reason for a generator: at 16 pixels
  * the difference between a hand-placed edge and a downscaled one is the whole
  * icon, and the mark's coordinates are chosen (see the comment in the SVG) so
- * that every straight edge lands on a whole pixel at exactly these sizes.
+ * that every straight edge lands on a whole pixel at each of the sizes below
+ * that a tab is ever painted at.
  *
  * Chromium does the rasterising, because Playwright already ships it for the
  * end-to-end suite and it is the same engine that will paint the SVG in a tab.
@@ -145,7 +146,7 @@ async function main(): Promise<void> {
   try {
     const page = await browser.newPage({ viewport: { width: 256, height: 256 } });
 
-    const packed = [];
+    const packed: { readonly size: number; readonly png: Buffer }[] = [];
     for (const size of ICO_SIZES) {
       packed.push({ size, png: await rasterise(page, svg, size) });
     }

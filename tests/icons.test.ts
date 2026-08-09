@@ -128,9 +128,16 @@ describe('the mark', () => {
     const tiles = tileColours(DEFAULT_APPEARANCE);
     const fills = [...svg.documentElement.children].map((element) => element.getAttribute('fill'));
 
-    expect(fills.filter((fill) => fill === tiles.correct)).toHaveLength(1);
-    expect(fills.filter((fill) => fill === tiles.text)).toHaveLength(2);
-    expect(fills).toHaveLength(3);
+    expect(fills).toEqual([tiles.correct, tiles.text]);
+  });
+
+  it('draws the flag as one shape, so no seam can open along a shared edge', () => {
+    // Two adjacent shapes are antialiased separately. Where their shared edge
+    // falls between pixels neither covers it fully and the tile behind shows
+    // through, which is what a stem and a pennant meeting at x=14 did: a green
+    // line down the height of the flag, invisible at 16 and 32 because the edge
+    // landed on a whole pixel there, and plain at 180.
+    expect(svg.documentElement.getElementsByTagName('path')).toHaveLength(1);
   });
 
   it('keeps every coordinate even, so no straight edge lands on a half pixel', () => {
