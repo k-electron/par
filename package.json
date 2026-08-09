@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "compute-par": "tsx tools/par/compute-par.ts",
+    "render-icons": "tsx tools/icons/render.ts",
     "check-incentives": "tsx tools/par/incentives.ts",
     "check-lights": "tsx tools/par/lights.ts"
   },
