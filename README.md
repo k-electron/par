@@ -18,7 +18,9 @@ Node, at the version pinned in [`.node-version`](.node-version). Nothing else �
 environment variables, and no server runtime. The app is a static bundle.
 
 Python is needed only to regenerate the word lists, which is a rare, deliberate act. The generated
-lists are committed, so building, testing and running the app never require it.
+lists are committed, so building, testing and running the app never require it. The icons are the
+same arrangement: they are rasterised from an SVG by the Chromium that Playwright installs for the
+end-to-end suite, and what that writes is committed, so nothing routine needs a browser either.
 
 ## Getting started
 
@@ -152,6 +154,32 @@ then `npx vitest run -u`.
 
 [`docs/scoring.md`](docs/scoring.md) explains the model, what each constant trades, and what
 these runs measured for the shipped lists.
+
+## Regenerating the icons
+
+[`public/favicon.svg`](public/favicon.svg) is the mark: a flagstick on the green, which is also a P.
+The two files beside it are fallbacks for clients that will not take an SVG — `favicon.ico` for Safari
+before 17 and a Windows taskbar pin, `apple-touch-icon.png` for an iOS home screen, which ignores
+`rel="icon"` — and they are rasterised from it rather than drawn:
+
+```bash
+npx playwright install chromium  # already there if you have run the end-to-end suite
+npm run render-icons             # writes public/favicon.ico and public/apple-touch-icon.png
+```
+
+Run it after editing the SVG, and commit what it writes. Every size is rendered from the vector at its
+own size rather than resampled from one large bitmap, which is the whole point: at 16 pixels the
+difference between a placed edge and a downscaled one is the entire icon. It is also why the mark's
+coordinates are all even, and why the flag is one outline rather than a stem meeting a pennant — the
+SVG explains both, and `tests/icons.test.ts` enforces them.
+
+Nothing checks that the committed rasters are current with the SVG. Chromium does not promise
+byte-identical antialiasing across versions, so that audit would fail on a Playwright bump for reasons
+having nothing to do with the icon, and an audit that cries wolf is one people stop reading. What is
+checked without a browser is everything else: that each file `index.html` names exists and holds the
+sizes claimed for it, that no undeclared icon is left behind by a rename, that the SVG is well-formed
+XML, and that the mark's colours are the theme's. `e2e/icons.spec.ts` then proves a production build
+serves those exact bytes.
 
 ## Deploying to Cloudflare Pages
 

@@ -9,6 +9,18 @@
       content="Par is a daily word game scored on the quality of your decisions rather than the luck of your outcomes."
     />
     <title>Par</title>
+    <!--
+      The SVG is the mark and comes first, because a browser takes the first icon
+      it understands: current ones stop here, and anything that does not know
+      image/svg+xml reads past it to the .ico. That is Safari before 17 and a
+      Windows taskbar pin, which is also why the .ico carries three sizes rather
+      than one. iOS ignores rel="icon" for a home screen and wants the 180 PNG.
+      tools/icons/render.ts writes both from the SVG; tests/icons.test.ts checks
+      that every file named here exists and holds the sizes claimed for it.
+    -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
   </head>
   <body>
     <div id="root"></div>
