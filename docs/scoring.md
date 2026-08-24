@@ -334,20 +334,28 @@ carry it, all read off the pattern histogram the luck figure is already computed
 
 | field | what it is | what it answers |
 | --- | --- | --- |
-| `wasCandidate` | whether the guess was itself still a live answer | a bet, or a question |
+| `standing` | where the guess sat among the words still fitting, common end first | a bet, or a question |
 | `likeliestOutcomeShare` | the guess's largest bucket over `\|S_i\|` | what the guess was risking |
 | `outcomeShare` | `\|S_i+1\| / \|S_i\|` | what the tiles did with it |
 
-Two are ratios and one is a boolean, so decision [0003](decisions/0003-the-progress-light.md) is
-untouched: a ratio between two counts fixes neither. `outcomeShare` reaching
-`likeliestOutcomeShare` means the tiles came back the likeliest way, which is also the least
-informative way — so such a row's luck can never be positive, and the copy says both in one breath.
+All three are positions or ratios rather than counts, so decision
+[0003](decisions/0003-the-progress-light.md) is untouched: a ratio between two counts fixes neither.
+`outcomeShare` reaching `likeliestOutcomeShare` means the tiles came back the likeliest way, which is
+also the least informative way — so such a row's luck can never be positive, and the copy says both
+in one breath.
 
-**`wasCandidate` is spoken as a ranking and never as a possibility.** A guess fails it either because
-the tiles ruled the word out, which the reader can see on their own board, or because the answer list
-does not carry it, which they cannot — and "could not have been the answer" would publish the second
-one word at a time. The copy says "likelier answers were still standing" instead, which carries the
-same lesson and cannot be inverted into a membership test.
+**`standing` is the answer list explained rather than hidden.** The pool is every *dictionary* word
+consistent with the feedback so far, which is the pool as a player sees it, and the answer list is
+simply its top slice by frequency — `tools/wordlists/build.py` ranks the dictionary by Zipf and cuts
+at three thousand, so the two are one object seen from two sides. A guess is placed on that pool from
+the common end down, which says why a real word was never a live answer without ever saying that it
+was not one.
+
+Only the slice carries an order, so a word from below it is placed in the middle of the unranked
+tail, and the copy shows five coarse bands rather than a figure. Both are deliberate: an exact
+position would dress an estimate up as a measurement and would let a reader find the cut. Decision
+[0005](decisions/0005-the-explainer-says-why.md) has that argument, along with what a determined
+reader can still assemble.
 
 **One-step expected information is not used for any of this, and the reason is worth recording.** It
 is the obvious candidate and it disagrees with the score: a guess can rank 432nd of 2,327 legal words

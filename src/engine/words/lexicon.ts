@@ -21,7 +21,16 @@ import { ALPHABET_SIZE, WORD_LENGTH, addLetterCounts, encodeWordInto, isEncodabl
 export interface Lexicon {
   /** Every word a player may type, in a fixed order. Spec §4: ~10k-13k+. */
   readonly guesses: readonly string[];
-  /** The possible answers, a subset of `guesses`. Spec §4: ~3,000. */
+  /**
+   * The possible answers, a subset of `guesses`. Spec §4: ~3,000.
+   *
+   * **Commonest first.** The shipped list is the dictionary ranked by word
+   * frequency and cut at three thousand, so its order is not incidental: it is
+   * the only ordering either half of this codebase has, and `standingOf` reads
+   * it to place a guess among the words that still fit. A list supplied in some
+   * other order still scores identically — the search weights candidates
+   * uniformly — but the explainer will describe the wrong words as common.
+   */
   readonly answers: readonly string[];
 }
 

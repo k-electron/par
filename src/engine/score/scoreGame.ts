@@ -69,14 +69,20 @@ export interface GuessBreakdown {
   /** The position offered no real choice, so the score was unavoidable. */
   readonly forced: boolean;
   /**
-   * Whether the guess was itself still a possible answer.
+   * Where the guess sat among the words that still fitted the clues, from the
+   * common end down: 0 is the commonest of them and 1 is the bottom.
    *
    * Display only, and the difference between the two things a guess can be
-   * doing: a live shot that could win outright, or a question that could not.
-   * The explainer needs it to say why a word that cannot win was a good play,
-   * which is the one lesson the general account already spends a paragraph on.
+   * doing: a bet near the common end, where the answer lives, or a question
+   * from further down. The explainer needs it to say why a word that was never
+   * going to win can be a good play, which is the one lesson the general
+   * account already spends a paragraph on.
+   *
+   * A position rather than the membership test it replaced, because the two
+   * reasons a word falls outside the answers are not equally the player's to
+   * know — `standingOf` and decision 0005 have that argument.
    */
-  readonly wasCandidate: boolean;
+  readonly standing: number;
   /**
    * `|S_i+1| / |S_i|` — the share of the field the tiles actually left standing.
    *
@@ -138,6 +144,10 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     const guess = guesses[index]!;
     const before = scorer.candidatesAfter(history);
     const candidateCount = before.length;
+    // Read while `history` still holds only what was known when the guess was
+    // played. The push below is what makes that a real hazard rather than a
+    // note: every other display figure here is computed from `before`.
+    const standing = scorer.standingOf(history, guess);
 
     // Every guess but the first is scored, including one facing a single
     // candidate. Spec §3 is explicit that such a guess "scores 100 — but its
@@ -186,7 +196,7 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
       // and never a grade on the opener choice.
       luck: remaining > 0 ? luckBits(counts, candidateCount, remaining) : 0,
       forced: assessment?.forced ?? false,
-      wasCandidate: before.includes(guess),
+      standing,
       outcomeShare: remaining / candidateCount,
       likeliestOutcomeShare: likeliest / candidateCount,
     });

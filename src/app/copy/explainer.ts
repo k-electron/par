@@ -44,8 +44,8 @@ export interface GuessToExplain {
   readonly weight: number;
   readonly luck: number;
   readonly forced: boolean;
-  /** Whether the guess could itself still have been the answer. */
-  readonly wasCandidate: boolean;
+  /** Where the guess sat among the words that still fitted, 0 commonest to 1. */
+  readonly standing: number;
   /** The share of the field the tiles left standing. A ratio, never a count. */
   readonly outcomeShare: number;
   /** The share the guess's likeliest pattern would have left standing. */
@@ -254,34 +254,50 @@ const ROUNDS_TO_FULL_MARKS = 99.95;
 const NOTABLE_RISK = 0.35;
 
 /**
- * What kind of move it was, which is the part a player can actually learn from.
+ * Where the guess sat on the list of words that still fitted, in words.
  *
- * A guess is doing one of two things, and the difference is the single most
- * useful thing this dialog can teach: a live shot can win on the spot, and a
- * word the clues do not point at is buying information with a turn. The general
- * account below spends a whole section on why the second can beat the first;
- * naming which one each row was is what connects that lesson to the reader's
- * own card.
+ * This is the single most useful thing the dialog can teach, and it is the
+ * player's own heuristic said back to them: after each round of tiles some
+ * words still fit, the answer is always one of the commoner ones, and a guess
+ * is either a bet near that end or a question from further down. The general
+ * account below spends a section on why the second can beat the first; placing
+ * each of the reader's own guesses on the list is what connects that lesson to
+ * their card.
  *
- * **This says likelier, never impossible, and the distinction is the whole
- * reason this function exists rather than the phrase being written inline.**
- * `wasCandidate` is membership of `S_i`, so a word can fail it two ways: the
- * tiles ruled it out, which the reader can see for themselves on the board, or
- * it is a word the answer list does not carry, which they cannot. Saying "could
- * not have been the answer" collapses both into a flat impossibility claim, and
- * on the second kind that publishes one word's absence from the list every time
- * it fires — the enumeration decision 0003 took the counts off the table to
- * prevent, arriving a word at a time instead.
+ * **Bands rather than a figure, and that is a requirement rather than a
+ * simplification.** Only the common end of the pool carries an order, so a
+ * standing from below it is an estimate, and printing "67% of the way down"
+ * would dress that up as a measurement. Coarse bands also blur the cut the
+ * ranking stops at, where a precise figure would let a reader find it — the
+ * argument in `standingOf` and decision 0005.
  *
- * A ranking claim carries the same lesson and leaks nothing usable, because a
- * reader holding "likelier answers were still standing" has no threshold to
- * compare it against.
+ * The two edges of the scale carry an extra clause because they are the two
+ * rows where a player has something to take away. Everything between them is
+ * described and left alone.
  */
-function kindOfMove(row: GuessToExplain): string {
+const COMMONEST = 0.02;
+const NEAR_THE_TOP = 0.15;
+const MIDDLING = 0.35;
+const WELL_DOWN = 0.55;
+
+function placeOnTheList(row: GuessToExplain): string {
   const word = row.guess.toUpperCase();
-  return row.wasCandidate
-    ? `${word} was still among the likely answers, so it could have ended the round on the spot`
-    : `likelier answers were still standing, so ${word} was a question rather than a bet`;
+  const fitted = 'the words that still fitted';
+
+  if (row.standing <= COMMONEST) return `${word} was the commonest word left that fitted every clue`;
+  if (row.standing < NEAR_THE_TOP) return `${word} was among the commonest of ${fitted}`;
+  if (row.standing < MIDDLING) return `${word} sat near the common end of ${fitted}`;
+  if (row.standing < WELL_DOWN) return `${word} sat some way down ${fitted}`;
+  return `${word} sat well down ${fitted}`;
+}
+
+/** The placement, and what it made the guess, on the rows where that lands. */
+function standingOnTheList(row: GuessToExplain): string {
+  const placed = placeOnTheList(row);
+
+  if (row.standing < NEAR_THE_TOP) return `${placed}, so it was a real bet on the answer`;
+  if (row.standing >= WELL_DOWN) return `${placed}, so it was a question rather than a bet`;
+  return placed;
 }
 
 function skillStory(row: GuessToExplain): string {
@@ -303,20 +319,23 @@ function skillStory(row: GuessToExplain): string {
   // row it sits on already says out loud by winning.
   if (row.weight === 0) {
     return row.skill >= ROUNDS_TO_FULL_MARKS
-      ? `Skill ${score} ${DASH} only one word was still possible, and ${word} was it. It counts ` +
+      ? `Skill ${score} ${DASH} the clues had narrowed to one word, and ${word} was it. It counts ` +
           'for nothing in the average either way.'
-      : `Skill ${score} ${DASH} the clues pointed hard at another word by then, so ${word} was ` +
-          'a long shot. It counts for nothing in the average either way.';
+      : `Skill ${score} ${DASH} ${placeOnTheList(row)}, and by then the clues were pointing hard ` +
+          'at the top of that list. It counts for nothing in the average either way.';
   }
 
   if (row.forced) {
-    return `Skill ${score} ${DASH} the position offered no real choice, so nothing better than ${word} existed.`;
+    return (
+      `Skill ${score} ${DASH} ${placeOnTheList(row)}, and the position offered no real choice: ` +
+      'nothing available would have finished sooner.'
+    );
   }
   if (row.skill >= ROUNDS_TO_FULL_MARKS) {
-    return `Skill ${score} ${DASH} ${kindOfMove(row)}. Nothing available would have finished sooner.`;
+    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. Nothing available would have finished sooner.`;
   }
   if (row.skill >= NEAR_BEST) {
-    return `Skill ${score} ${DASH} ${kindOfMove(row)}. It was close to the quickest way home from there.`;
+    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. It was close to the quickest way home from there.`;
   }
 
   // Below the table's own "near best" band, the gap is worth pricing rather
@@ -328,7 +347,7 @@ function skillStory(row: GuessToExplain): string {
       : '';
 
   return (
-    `Skill ${score} ${DASH} ${kindOfMove(row)}.${risk} From there it was heading for ` +
+    `Skill ${score} ${DASH} ${standingOnTheList(row)}.${risk} From there it was heading for ` +
     `${moreTurns(row.skill)} the best play available.`
   );
 }
@@ -456,11 +475,11 @@ export function explainRound(round: RoundToExplain): ExplainedRound {
 
   return {
     lead:
-      `Every figure on the card comes out of the guesses below. Skill counts turns: how quickly ` +
-      `each guess was heading for the answer, against the quickest way home from the same ` +
-      `position. Luck is what the tiles then did with it ${DASH} whether they left more or fewer ` +
-      `words in play than a guess like that usually leaves. Skill is yours and luck is the ` +
-      `board's, which is why only one of them reaches the total.`,
+      `Every figure on the card comes out of the guesses below. After each round of tiles some ` +
+      `words still fit every clue, and the answer is always one of the commoner ones ${DASH} so ` +
+      `each guess below is placed on that list, from the common end down. Skill counts turns: ` +
+      `how quickly the guess was heading for the answer, against the quickest way home from the ` +
+      `same position. Luck is what the tiles then did with it, and it never reaches the total.`,
 
     guesses: round.breakdown.map((row, index) => ({
       turn: row.turn,

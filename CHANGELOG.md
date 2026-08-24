@@ -40,15 +40,19 @@ here landed afterwards, each behind a pull request and a green quality gate.
   — a ratio of two invisible quantities, in the order the formula computes it, with the noun both
   sides share never appearing. Beside it, `the tiles revealed 1.7 halvings less than THIEF could
   expect`, where information is what is revealed and halvings are only what it is measured in. Each
-  row now names what kind of move it was — a live shot still among the likely answers, or a question
-  played while likelier answers were standing — and then either says it was close to the quickest way
-  home or prices the gap in turns, adding what the guess was risking where that is the story: `Its
-  likeliest break would still have left about half the field standing. From there it was heading for
-  about 15% more turns than the best play available.` That distinction is deliberately a ranking and
-  never a possibility: a guess can fall outside the live answers because the tiles ruled it out,
-  which the reader can see on their own board, or because the answer list does not carry it, which
-  they cannot — and `could not have been the answer` would publish the second one word at a time,
-  which is 0003's enumeration arriving by another route. Luck is said as a size
+  row now places the guess on the list of words that still fitted every clue, from the common end
+  down, and then either says it was close to the quickest way home or prices the gap in turns, adding
+  what the guess was risking where that is the story: `Its likeliest break would still have left
+  about half the field standing. From there it was heading for about 15% more turns than the best
+  play available.` The list is the answer list explained rather than hidden — the generator ranks the
+  dictionary by frequency and cuts at three thousand, so "the answer list" and "the top slice of the
+  words that still fit" are one object seen from two sides — and it is a place on that list rather
+  than a yes or no because a guess falls outside the answers two ways: the tiles ruled it out, which
+  the reader can see on their own board, or the list does not carry it, which they cannot.
+  `could not have been the answer` would publish the second one word per round, which is 0003's
+  enumeration arriving by another route. Five coarse bands rather than a figure, since only the top
+  slice carries an order and a percentage would dress an estimate up as a measurement. Luck is said
+  as a size
   rather than in bits, since a bit is a halving and `2^-luck` is exactly how the field came out
   against what a guess like that usually leaves; where the tiles came back the likeliest way a guess
   could break, the row says so, because that is simultaneously the most probable outcome and the

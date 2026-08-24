@@ -268,17 +268,51 @@ describe('the luck figure', () => {
  * than one that is merely clumsy.
  */
 describe('what each guess was doing', () => {
-  it('separates a live shot from a word that could not win', () => {
+  it('places a live shot above a word the tiles had ruled out', () => {
     const scorer = scorerFor();
     // PLUMB shares nothing with the -ATCH family, so after BATCH it is ruled
-    // out and can only ask a question. CATCH is still standing.
+    // out and can only ask a question. CATCH is still standing, and the fixture
+    // lists it near the front, so it is one of the commoner words left.
     const score = scoreGame(
       { guesses: ['batch', 'plumb', 'catch'], answer: 'catch', tookHouseStarter: false },
       scorer,
     );
 
-    expect(score.breakdown[1]!.wasCandidate).toBe(false);
-    expect(score.breakdown[2]!.wasCandidate).toBe(true);
+    expect(score.breakdown[1]!.standing).toBe(1);
+    expect(score.breakdown[2]!.standing).toBeLessThan(0.5);
+  });
+
+  it('reads the standing off the order the answer list arrives in', () => {
+    // The list is the dictionary ranked by frequency and cut, so its order is
+    // the only notion of "common" the engine has. A scorer handed the same
+    // words in the opposite order has to place the same guess at the other end,
+    // or the explainer is describing a ranking nobody supplied.
+    const reversed = createPositionScorer({
+      lexicon: compileLexicon({ guesses: WORDS, answers: [...WORDS].reverse() }),
+      ruleset: normalRuleset,
+      policy: bruteForcePolicy,
+    });
+
+    const asShipped = scorerFor().standingOf([], 'batch');
+    const asReversed = reversed.standingOf([], 'batch');
+
+    expect(asShipped).toBeLessThan(0.5);
+    expect(asReversed).toBeGreaterThan(asShipped);
+  });
+
+  it('places every word that no longer fits at the bottom, wherever it ranked', () => {
+    // Being ruled out is not a degree of commonness, and a word the tiles have
+    // killed must not read as a plausible bet because it used to be one.
+    const scorer = scorerFor();
+    const score = scoreGame(
+      { guesses: ['batch', 'brine', 'catch'], answer: 'catch', tookHouseStarter: false },
+      scorer,
+    );
+
+    // BRINE is the eighth of fourteen fixture words, so it has a middling rank
+    // and is still ruled out by BATCH's feedback.
+    expect(scorer.standingOf([], 'brine')).toBeLessThan(1);
+    expect(score.breakdown[1]!.standing).toBe(1);
   });
 
   it('reports both shares as shares, never as counts', () => {

@@ -272,7 +272,7 @@ describe('the guess by guess account', () => {
       skill: 80,
       weight: 4,
       forced: false,
-      wasCandidate: false,
+      standing: 0.7,
       // Below the likeliest share, so the size clause is the one under test
       // rather than the "came back the likeliest way" branch.
       outcomeShare: 0.05,
@@ -307,24 +307,54 @@ describe('the guess by guess account', () => {
     });
   });
 
-  it.each(CASES)('$name: says which guesses could have won and which could not', ({ score }) => {
+  it.each(CASES)('$name: places every scored guess on the list of words that fitted', ({ score }) => {
     // The one lesson the general account spends a section on — that a word
-    // which cannot win can be the best play — only lands if the reader can see
-    // which of their own guesses were which.
+    // which was never going to win can be the best play — only lands if the
+    // reader can see where on that list each of their own guesses sat.
     const explained = explainRound(score);
 
     score.breakdown.forEach((row, index) => {
       const story = explained.guesses[index]!.skillStory;
-      // Openers, forced moves and dead fields are explained by what the
-      // position was, which says more than what the guess could have been.
-      if (row.skill === null || row.forced || row.weight === 0) return;
+      if (row.skill === null) return;
 
-      if (row.wasCandidate) {
-        expect(story, row.guess).toMatch(/could have ended the round on the spot/);
-      } else {
-        expect(story, row.guess).toMatch(/likelier answers were still standing/);
-      }
+      expect(story, row.guess).toMatch(/commonest|common end|some way down|well down/);
     });
+  });
+
+  it('walks the whole scale as the standing moves, in order and without gaps', () => {
+    // Bands are the point rather than an implementation detail — only the
+    // common end of the pool is ordered, so a figure would dress an estimate up
+    // as a measurement — and a band that never fires is a reader who never
+    // learns that end of the scale exists.
+    const row = {
+      turn: 2,
+      guess: 'crane',
+      skill: 95,
+      weight: 4,
+      luck: 0,
+      forced: false,
+      outcomeShare: 0.05,
+      likeliestOutcomeShare: 0.2,
+    };
+
+    const said = new Map<string, number[]>();
+    for (let standing = 0; standing <= 1.0001; standing += 0.01) {
+      const story = explainRound({
+        ...ROUNDS.solved,
+        solved: false,
+        breakdown: [{ ...row, standing }],
+      }).guesses[0]!.skillStory;
+
+      const band = story.replace('CRANE', '').replace(/Skill [\d.]+% . /, '');
+      said.set(band, [...(said.get(band) ?? []), standing]);
+    }
+
+    // Five bands, each holding one unbroken stretch of the scale.
+    expect(said.size).toBe(5);
+    for (const [band, standings] of said) {
+      const span = standings.at(-1)! - standings[0]!;
+      expect(span, band).toBeCloseTo(0.01 * (standings.length - 1), 6);
+    }
   });
 
   it('prices the gap only where the table has already called it short of best', () => {
@@ -359,7 +389,7 @@ describe('the guess by guess account', () => {
     expect(dead.length).toBeGreaterThan(0);
     for (const { story } of dead) {
       expect(story).not.toMatch(/more turns|as many turns/);
-      expect(story).toMatch(/a long shot|one word was still possible/);
+      expect(story).toMatch(/pointing hard at the top of that list|narrowed to one word/);
     }
   });
 
@@ -401,7 +431,7 @@ describe('what the explainer must not give away', () => {
           weight,
           luck,
           forced,
-          wasCandidate,
+          standing,
           outcomeShare,
           likeliestOutcomeShare,
         }) => ({
@@ -411,7 +441,7 @@ describe('what the explainer must not give away', () => {
           weight,
           luck,
           forced,
-          wasCandidate,
+          standing,
           outcomeShare,
           likeliestOutcomeShare,
         }),
@@ -454,16 +484,17 @@ describe('what the explainer must not give away', () => {
   });
 
   it.each(CASES)('$name: never calls a word the player played impossible', ({ score }) => {
-    // `wasCandidate` fails two ways, and only one of them is the reader's to
-    // see. A word the tiles ruled out is visibly dead on the board in front of
-    // them; a word that merely is not on the answer list looks alive and is
-    // not, so calling it impossible publishes its absence from the list. One
-    // word a round, every round, is the enumeration 0003 took the counts off
-    // the table to prevent, arriving by another route.
+    // A word falls outside the answers two ways and only one of them is the
+    // reader's to see. A word the tiles ruled out is visibly dead on the board
+    // in front of them; a word that merely is not on the answer list looks
+    // alive and is not, so calling it impossible publishes its absence from the
+    // list. One word a round, every round, is the enumeration 0003 took the
+    // counts off the table to prevent, arriving by another route.
     //
-    // Ranking language carries the same lesson and cannot be inverted, because
-    // a reader holding "likelier answers were still standing" has no threshold
-    // to measure it against. So the copy may rank and may not exclude.
+    // Placing the guess on a list instead carries the same lesson and cannot be
+    // inverted, because a reader holding "sat well down the words that still
+    // fitted" has no cut to measure it against — the ranking runs out before
+    // the pool does. So the copy may place and may not exclude.
     for (const phrase of phrases(explainRound(score))) {
       expect(phrase, phrase).not.toMatch(
         /could not have been|was not it|not a possible|never possible|impossible|ruled out/i,
