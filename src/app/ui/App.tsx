@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { answers, guesses as dictionary, starters } from '../../data';
 import { rulesetFor } from '../../engine/rules/ruleset';
@@ -45,12 +45,33 @@ export function App({ repository, now, scoring, initialHash, reveal }: AppProps 
     [repository],
   );
 
-  // One worker for the session, torn down with the app. Built lazily so a test
-  // that supplies its own scorer never spawns one.
+  /**
+   * One worker for the session. Built lazily, so a caller that supplies its own
+   * scorer never spawns one — and **never torn down here**, which is the fix
+   * rather than an oversight.
+   *
+   * It used to be disposed of in an effect cleanup, and that was fatal in
+   * development. `StrictMode` mounts, unmounts and remounts, so the cleanup ran
+   * once against the client React had kept; `dispose` terminates the worker,
+   * state survives the simulated remount, and from then on the app held a dead
+   * thread. Every request went into it and the results view waited forever on a
+   * promise that could not settle — the dev server never scored a round, while
+   * the built site, where StrictMode does none of this, was fine.
+   *
+   * Teardown bought nothing to make that worth solving cleverly. This component
+   * is the root, so the only thing that ever unmounts it is the page going away,
+   * which takes the worker with it. A resource whose lifetime is the page's does
+   * not want its lifetime expressed as a component's.
+   *
+   * StrictMode does still double-invoke this initialiser, so development builds
+   * a second client. It is never asked for anything, never spawns work, and is
+   * collected with the page — the cost of being wrong in that direction is an
+   * idle thread, where the cost of being wrong in the other direction was a
+   * game that could not be scored.
+   */
   const [ownScoring] = useState<ScoringClient | null>(() =>
     scoring === undefined && typeof Worker !== 'undefined' ? createWorkerScoringClient() : null,
   );
-  useEffect(() => () => ownScoring?.dispose(), [ownScoring]);
   const scorer = scoring ?? ownScoring ?? undefined;
 
   const puzzle = useMemo(
