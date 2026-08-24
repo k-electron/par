@@ -51,8 +51,13 @@ here landed afterwards, each behind a pull request and a green quality gate.
   the reader can see on their own board, or the list does not carry it, which they cannot.
   `could not have been the answer` would publish the second one word per round, which is 0003's
   enumeration arriving by another route. Five coarse bands rather than a figure, since only the top
-  slice carries an order and a percentage would dress an estimate up as a measurement. Luck is said
-  as a size
+  slice carries an order and a percentage would dress an estimate up as a measurement. Where a guess
+  sat is emphatically **not** how well it played, and the copy separates the two: over 35 real
+  positions two guesses deep, betting the commonest still-fitting word was the best play available in
+  none of them, and on the round this came from a word well down the list scored 95.2% where betting
+  the top of it would have scored 92.7%. So the lead says skill prefers neither a bet nor a question
+  because it counts turns, and the two kinds of row where the axes diverge carry an explicit `even
+  so` or `still`. Luck is said as a size
   rather than in bits, since a bit is a halving and `2^-luck` is exactly how the field came out
   against what a guess like that usually leaves; where the tiles came back the likeliest way a guess
   could break, the row says so, because that is simultaneously the most probable outcome and the

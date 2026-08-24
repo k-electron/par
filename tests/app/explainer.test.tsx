@@ -321,6 +321,44 @@ describe('the guess by guess account', () => {
     });
   });
 
+  it('never lets a place on the list read as the verdict on the play', () => {
+    // Where a guess sat and how well it played are different questions, and the
+    // temptation to read the first as the cause of the second is strong enough
+    // that it has to be written down: measured over 35 real midgame positions,
+    // betting the commonest word still fitting was never the best play
+    // available, and a word far down the list regularly is.
+    //
+    // So the two rows where the answers diverge carry a word saying the second
+    // figure does not follow from the first. Without them a reader concludes
+    // that "well down" means "there were better options", which is the belief
+    // the whole game is built to unteach.
+    const row = {
+      turn: 2,
+      guess: 'crane',
+      weight: 4,
+      luck: 0,
+      forced: false,
+      outcomeShare: 0.05,
+      likeliestOutcomeShare: 0.2,
+    };
+
+    const story = (standing: number, skill: number) =>
+      explainRound({
+        ...ROUNDS.solved,
+        solved: false,
+        breakdown: [{ ...row, standing, skill }],
+      }).guesses[0]!.skillStory;
+
+    // Far down the list and near the best play there was: the lesson.
+    expect(story(0.9, 96)).toMatch(/question rather than a bet\. Even so, it was close/);
+    expect(story(0.9, 100)).toMatch(/Even so, nothing available would have finished sooner/);
+    // A sound bet that still cost turns: the same point from the other side.
+    expect(story(0.05, 80)).toMatch(/real bet on the answer\..*It was still heading for/);
+    // And where they agree, no contrast is drawn, because there is none.
+    expect(story(0.05, 96)).not.toMatch(/Even so|still heading/);
+    expect(story(0.9, 80)).not.toMatch(/Even so|still heading/);
+  });
+
   it('walks the whole scale as the standing moves, in order and without gaps', () => {
     // Bands are the point rather than an implementation detail — only the
     // common end of the pool is ordered, so a figure would dress an estimate up

@@ -357,6 +357,13 @@ position would dress an estimate up as a measurement and would let a reader find
 [0005](decisions/0005-the-explainer-says-why.md) has that argument, along with what a determined
 reader can still assemble.
 
+**A standing is not a skill score, and the copy actively separates them.** Over 35 real positions two
+guesses deep with twenty or more answers alive, betting the commonest still-fitting word was the best
+play available in **none** of them — it averages the `near best` band, not full marks. A word far
+down the list is regularly the better play, which is this game's whole thesis stated as a
+measurement. The rows where the two diverge therefore carry an explicit "even so" or "still", so no
+reader reads a placement as the verdict on the play.
+
 **One-step expected information is not used for any of this, and the reason is worth recording.** It
 is the obvious candidate and it disagrees with the score: a guess can rank 432nd of 2,327 legal words
 by information and still score 94.6%, because skill is a ratio of expected *turns to finish* under

@@ -331,11 +331,26 @@ function skillStory(row: GuessToExplain): string {
       'nothing available would have finished sooner.'
     );
   }
+  // Where a guess sat on the list and how well it played are different
+  // questions, and the two rows where they answer differently are the two rows
+  // a reader is most likely to misread as cause and effect. Both get a word
+  // that says the second figure is not a consequence of the first.
+  //
+  // The bottom case is the whole thesis of the game: measured over 35 real
+  // midgame positions, betting the commonest word still fitting was *never* the
+  // best play available, and a word far down the list regularly is. The top
+  // case is its mirror — a sound bet can still cost turns.
+  const surprising = row.standing >= WELL_DOWN && row.skill >= NEAR_BEST;
+  const evenSo = surprising ? 'Even so, i' : 'I';
+
   if (row.skill >= ROUNDS_TO_FULL_MARKS) {
-    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. Nothing available would have finished sooner.`;
+    return (
+      `Skill ${score} ${DASH} ${standingOnTheList(row)}. ` +
+      `${surprising ? 'Even so, nothing' : 'Nothing'} available would have finished sooner.`
+    );
   }
   if (row.skill >= NEAR_BEST) {
-    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. It was close to the quickest way home from there.`;
+    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. ${evenSo}t was close to the quickest way home from there.`;
   }
 
   // Below the table's own "near best" band, the gap is worth pricing rather
@@ -345,10 +360,11 @@ function skillStory(row: GuessToExplain): string {
     row.likeliestOutcomeShare >= NOTABLE_RISK
       ? ` Its likeliest break would still have left ${fieldShare(row.likeliestOutcomeShare)} standing.`
       : '';
+  const despite = row.standing < NEAR_THE_TOP ? 'it was still heading' : 'from there it was heading';
 
   return (
-    `Skill ${score} ${DASH} ${standingOnTheList(row)}.${risk} From there it was heading for ` +
-    `${moreTurns(row.skill)} the best play available.`
+    `Skill ${score} ${DASH} ${standingOnTheList(row)}.${risk} ` +
+    `${despite.charAt(0).toUpperCase()}${despite.slice(1)} for ${moreTurns(row.skill)} the best play available.`
   );
 }
 
@@ -477,9 +493,11 @@ export function explainRound(round: RoundToExplain): ExplainedRound {
     lead:
       `Every figure on the card comes out of the guesses below. After each round of tiles some ` +
       `words still fit every clue, and the answer is always one of the commoner ones ${DASH} so ` +
-      `each guess below is placed on that list, from the common end down. Skill counts turns: ` +
-      `how quickly the guess was heading for the answer, against the quickest way home from the ` +
-      `same position. Luck is what the tiles then did with it, and it never reaches the total.`,
+      `each guess below is placed on that list, from the common end down. Near the top is a bet ` +
+      `on ending it there; further down is a question. Skill prefers neither, because it counts ` +
+      `turns: how quickly the guess was heading for the answer, against the quickest way home ` +
+      `from the same position. Luck is what the tiles then did with it, and it never reaches the ` +
+      `total.`,
 
     guesses: round.breakdown.map((row, index) => ({
       turn: row.turn,

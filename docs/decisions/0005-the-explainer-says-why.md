@@ -117,6 +117,36 @@ which simply told them. And the results table's own `Only one word left` still i
 row, that the guess beside it was not that word — an inference the table and the 50% already carried
 before this dialog said anything, and the unavoidable price of the row explaining itself at all.
 
+## Where a guess sat is not how well it played
+
+**The standing and the skill score are different axes, and the copy has to stop a reader welding
+them together.** The tempting reading is that near the top means skilful, well down means there were
+better options, and the commonest word left is the best play there is. All three are false, and the
+last one is false in the exact way the game exists to correct.
+
+Measured over 35 real positions two guesses deep, with at least twenty answers still alive:
+
+| | |
+| --- | --- |
+| positions where betting the commonest still-fitting word was the best play | **0 of 35** |
+| its mean skill where it scored in the `near best` band | 93.2% (23 positions) |
+| its mean skill where it scored in the `reasonable` band | 88.3% (12 positions) |
+
+Never once. And on the round this work came from, at guess 3, the played word sat well down the list
+and scored 95.2% where betting the top of it would have scored 92.7% — the word nobody would bet on
+beat the obvious bet by two and a half points.
+
+The relationship inverts in the endgame, which is why it feels true: with two words left, the
+commonest of them is usually the whole of the play. It is the midgame, where the game is decided,
+that rewards the question.
+
+So skill prefers neither, and the lead says so in as many words: *near the top is a bet on ending it
+there; further down is a question; skill counts turns*. The two rows where the axes diverge — a
+question that was nearly the best play, a sound bet that still cost turns — carry an explicit "even
+so" and "still", because those are the rows where a reader would otherwise read the placement as the
+cause of the score. `tests/app/explainer.test.tsx` pins both, and pins their absence where the two
+agree.
+
 ## What could not be used, and this is the interesting part
 
 **One-step information looked like the obvious "why" and is the wrong number.** On the round this
