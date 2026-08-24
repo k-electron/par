@@ -31,17 +31,19 @@ one thing about what the guess was doing, what it risked, or what the tiles did 
 
 Every row now names what kind of move it was, and then either where it stood or what it cost:
 
-> Skill 94.6% — THIEF could have won outright. It was close to the quickest way home from there.
+> Skill 94.6% — THIEF was still among the likely answers, so it could have ended the round on the
+> spot. It was close to the quickest way home from there.
 >
 > Luck −1.7 — the tiles came back the likeliest way THIEF could break, which is also the least it
 > could tell you: about two fifths of the field was still standing.
 
 Four questions, and where each is answered:
 
-- **Why was a good guess good?** By what it was doing: a live shot that could have won outright, or a
-  word that could not have been the answer and was therefore a pure question. The general account
-  below already spends a section arguing that a word which cannot win can be the best play; naming
-  which of the reader's own guesses were which is what connects that lesson to their card.
+- **Why was a good guess good?** By what it was doing: a live shot that was still among the likely
+  answers, or a question played while likelier answers were standing. The general account below
+  already spends a section arguing that a word which cannot win can be the best play; naming which of
+  the reader's own guesses were which is what connects that lesson to their card. It is said as a
+  ranking rather than as a possibility, for the reason the section below sets out.
 - **Why was a weak guess weak?** By what it was risking. Below the table's own `Near best` band the
   row also carries what its likeliest break would have left standing, and prices the gap in turns:
   "about 15% more turns than the best play available".
@@ -66,11 +68,39 @@ ratios of the counts and one is a boolean; a ratio between two counts fixes neit
 the round, and the fields are listed there one by one rather than spread, so a fourth is a decision
 somebody takes rather than something a spread waves through.
 
-**A word that could not have been the answer is a small inferred leak, and it is accepted.** Saying
-"GLUES could not have been the answer by then" tells a reader that GLUES is not on the answer list.
-0003 already weighed this class of thing and took it: the round is over, the answer is on screen, and
-mining the list a word at a time from post-game copy is strictly more work than reading the page
-source. What it buys is the only honest answer to why that row scored 50.
+## The copy ranks; it never excludes
+
+`wasCandidate` is membership of `S_i`, and a guess can fail it two different ways. **Only one of them
+is the reader's to see.** A word the tiles ruled out is visibly dead on the board in front of them. A
+word that is merely absent from the answer list looks alive and is not.
+
+The first draft of this copy said "GLUES could not have been the answer by then", which collapses
+both into one flat impossibility claim — and on the second kind, that publishes one word's absence
+from the answer list every time it fires. That is precisely the enumeration
+[0003](0003-the-progress-light.md) took the counts off the table to prevent, arriving a word at a
+time instead of all at once. It is worse than the count column was in one respect: a count is a fact
+about a position nobody will revisit, where this is a durable fact about a specific word, and it
+lands on a guess the reader chose and will remember.
+
+So every sentence here ranks and none excludes:
+
+| instead of | the copy says |
+| --- | --- |
+| `GLUES could not have been the answer by then` | `the clues pointed hard at another word by then, so GLUES was a long shot` |
+| `LOPES could not have been the answer, so it was a pure question` | `likelier answers were still standing, so LOPES was a question rather than a bet` |
+| `THIEF could have won outright` | `THIEF was still among the likely answers, so it could have ended the round on the spot` |
+
+The lesson survives intact — a reader still learns which of their guesses were bets and which were
+questions — and the claim cannot be inverted, because a reader holding "likelier answers were still
+standing" has no threshold to measure it against. `tests/app/explainer.test.tsx` scans every sentence
+of every round for impossibility language, so the flat version cannot come back by accident.
+
+**What a determined reader can still assemble.** The results table says `Only one word left` on a
+single-candidate row, and this dialog says the clues pointed at another word, so the two together
+imply the guess was not that word. That inference was already available from the table and the 50%
+beside it, and it is the unavoidable cost of answering why that row scored what it did at all. The
+luck line on such a row says the field was already settled rather than restating the count, so this
+dialog adds nothing to what the table had published.
 
 ## What could not be used, and this is the interesting part
 

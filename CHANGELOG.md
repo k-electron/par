@@ -40,11 +40,15 @@ here landed afterwards, each behind a pull request and a green quality gate.
   — a ratio of two invisible quantities, in the order the formula computes it, with the noun both
   sides share never appearing. Beside it, `the tiles revealed 1.7 halvings less than THIEF could
   expect`, where information is what is revealed and halvings are only what it is measured in. Each
-  row now names what kind of move it was — a live shot that could have won outright, or a word that
-  could not have been the answer and was therefore a pure question — and then either says it was
-  close to the quickest way home or prices the gap in turns, adding what the guess was risking where
-  that is the story: `Its likeliest break would still have left about half the field standing. From
-  there it was heading for about 15% more turns than the best play available.` Luck is said as a size
+  row now names what kind of move it was — a live shot still among the likely answers, or a question
+  played while likelier answers were standing — and then either says it was close to the quickest way
+  home or prices the gap in turns, adding what the guess was risking where that is the story: `Its
+  likeliest break would still have left about half the field standing. From there it was heading for
+  about 15% more turns than the best play available.` That distinction is deliberately a ranking and
+  never a possibility: a guess can fall outside the live answers because the tiles ruled it out,
+  which the reader can see on their own board, or because the answer list does not carry it, which
+  they cannot — and `could not have been the answer` would publish the second one word at a time,
+  which is 0003's enumeration arriving by another route. Luck is said as a size
   rather than in bits, since a bit is a halving and `2^-luck` is exactly how the field came out
   against what a guess like that usually leaves; where the tiles came back the likeliest way a guess
   could break, the row says so, because that is simultaneously the most probable outcome and the

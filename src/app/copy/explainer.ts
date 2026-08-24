@@ -258,15 +258,30 @@ const NOTABLE_RISK = 0.35;
  *
  * A guess is doing one of two things, and the difference is the single most
  * useful thing this dialog can teach: a live shot can win on the spot, and a
- * word that cannot win is buying information with a turn. The general account
- * below spends a whole section on why the second can beat the first; naming
- * which one each row was is what connects that lesson to the reader's own card.
+ * word the clues do not point at is buying information with a turn. The general
+ * account below spends a whole section on why the second can beat the first;
+ * naming which one each row was is what connects that lesson to the reader's
+ * own card.
+ *
+ * **This says likelier, never impossible, and the distinction is the whole
+ * reason this function exists rather than the phrase being written inline.**
+ * `wasCandidate` is membership of `S_i`, so a word can fail it two ways: the
+ * tiles ruled it out, which the reader can see for themselves on the board, or
+ * it is a word the answer list does not carry, which they cannot. Saying "could
+ * not have been the answer" collapses both into a flat impossibility claim, and
+ * on the second kind that publishes one word's absence from the list every time
+ * it fires — the enumeration decision 0003 took the counts off the table to
+ * prevent, arriving a word at a time instead.
+ *
+ * A ranking claim carries the same lesson and leaks nothing usable, because a
+ * reader holding "likelier answers were still standing" has no threshold to
+ * compare it against.
  */
 function kindOfMove(row: GuessToExplain): string {
   const word = row.guess.toUpperCase();
   return row.wasCandidate
-    ? `${word} could have won outright`
-    : `${word} could not have been the answer by then, so it was a pure question`;
+    ? `${word} was still among the likely answers, so it could have ended the round on the spot`
+    : `likelier answers were still standing, so ${word} was a question rather than a bet`;
 }
 
 function skillStory(row: GuessToExplain): string {
@@ -290,8 +305,8 @@ function skillStory(row: GuessToExplain): string {
     return row.skill >= ROUNDS_TO_FULL_MARKS
       ? `Skill ${score} ${DASH} only one word was still possible, and ${word} was it. It counts ` +
           'for nothing in the average either way.'
-      : `Skill ${score} ${DASH} one word was still possible by then, and ${word} was not it. ` +
-          'It counts for nothing in the average either way.';
+      : `Skill ${score} ${DASH} the clues pointed hard at another word by then, so ${word} was ` +
+          'a long shot. It counts for nothing in the average either way.';
   }
 
   if (row.forced) {
@@ -334,7 +349,7 @@ function luckStory(row: GuessToExplain, won: boolean): string {
   // weighs zero, because guess 1 is never scored whatever it faced, and it is
   // the one row of the round facing the whole answer list.
   if (row.skill !== null && row.weight === 0) {
-    return `Luck ${bits(row.luck)} ${DASH} with one word left, there was nothing for the tiles to decide.`;
+    return `Luck ${bits(row.luck)} ${DASH} the field was already settled, so there was nothing for the tiles to decide.`;
   }
 
   // The winning row's luck is otherwise always positive, because finishing is

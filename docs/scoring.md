@@ -334,7 +334,7 @@ carry it, all read off the pattern histogram the luck figure is already computed
 
 | field | what it is | what it answers |
 | --- | --- | --- |
-| `wasCandidate` | whether the guess could itself still have been the answer | a live shot, or a pure question |
+| `wasCandidate` | whether the guess was itself still a live answer | a bet, or a question |
 | `likeliestOutcomeShare` | the guess's largest bucket over `\|S_i\|` | what the guess was risking |
 | `outcomeShare` | `\|S_i+1\| / \|S_i\|` | what the tiles did with it |
 
@@ -342,6 +342,12 @@ Two are ratios and one is a boolean, so decision [0003](decisions/0003-the-progr
 untouched: a ratio between two counts fixes neither. `outcomeShare` reaching
 `likeliestOutcomeShare` means the tiles came back the likeliest way, which is also the least
 informative way — so such a row's luck can never be positive, and the copy says both in one breath.
+
+**`wasCandidate` is spoken as a ranking and never as a possibility.** A guess fails it either because
+the tiles ruled the word out, which the reader can see on their own board, or because the answer list
+does not carry it, which they cannot — and "could not have been the answer" would publish the second
+one word at a time. The copy says "likelier answers were still standing" instead, which carries the
+same lesson and cannot be inverted into a membership test.
 
 **One-step expected information is not used for any of this, and the reason is worth recording.** It
 is the obvious candidate and it disagrees with the score: a guess can rank 432nd of 2,327 legal words

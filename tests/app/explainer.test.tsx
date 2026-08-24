@@ -320,9 +320,9 @@ describe('the guess by guess account', () => {
       if (row.skill === null || row.forced || row.weight === 0) return;
 
       if (row.wasCandidate) {
-        expect(story, row.guess).toMatch(/could have won outright/);
+        expect(story, row.guess).toMatch(/could have ended the round on the spot/);
       } else {
-        expect(story, row.guess).toMatch(/could not have been the answer/);
+        expect(story, row.guess).toMatch(/likelier answers were still standing/);
       }
     });
   });
@@ -359,7 +359,7 @@ describe('the guess by guess account', () => {
     expect(dead.length).toBeGreaterThan(0);
     for (const { story } of dead) {
       expect(story).not.toMatch(/more turns|as many turns/);
-      expect(story).toMatch(/one word was still possible/);
+      expect(story).toMatch(/a long shot|one word was still possible/);
     }
   });
 
@@ -449,6 +449,24 @@ describe('what the explainer must not give away', () => {
       if (count <= 100) continue;
       expect(text, `count ${count}`).not.toMatch(
         new RegExp(String.raw`(?<![\d.])${count}(?![\d.])`),
+      );
+    }
+  });
+
+  it.each(CASES)('$name: never calls a word the player played impossible', ({ score }) => {
+    // `wasCandidate` fails two ways, and only one of them is the reader's to
+    // see. A word the tiles ruled out is visibly dead on the board in front of
+    // them; a word that merely is not on the answer list looks alive and is
+    // not, so calling it impossible publishes its absence from the list. One
+    // word a round, every round, is the enumeration 0003 took the counts off
+    // the table to prevent, arriving by another route.
+    //
+    // Ranking language carries the same lesson and cannot be inverted, because
+    // a reader holding "likelier answers were still standing" has no threshold
+    // to measure it against. So the copy may rank and may not exclude.
+    for (const phrase of phrases(explainRound(score))) {
+      expect(phrase, phrase).not.toMatch(
+        /could not have been|was not it|not a possible|never possible|impossible|ruled out/i,
       );
     }
   });
