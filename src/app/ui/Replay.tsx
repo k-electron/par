@@ -230,7 +230,13 @@ function RevealedReplay({
       <Button size="small" variant="text" onClick={() => setExplaining(true)}>
         {RESULTS.explainerLink}
       </Button>
-      <ScoringExplainer open={explaining} onClose={() => setExplaining(false)} />
+      {/*
+        The sender's round, recomputed here, is what gets walked through. A link
+        minted before this existed carries the same guesses and so explains
+        itself the same way; one this build cannot score yet shows the general
+        account and no walkthrough.
+      */}
+      <ScoringExplainer open={explaining} onClose={() => setExplaining(false)} score={score} />
 
       <Button variant="contained" onClick={onDismiss}>
         Play today&rsquo;s puzzle
