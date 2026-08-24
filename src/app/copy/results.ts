@@ -110,12 +110,21 @@ export function guessNote(
   return 'Cost about a turn';
 }
 
+/**
+ * How far the tiles have to break from expectation before it is worth saying so.
+ *
+ * Exported because the explainer needs the same line: a round that reads "broke
+ * as expected" in the table and then gets told the tiles revealed less than the
+ * guess could expect is two surfaces disagreeing about one number.
+ */
+export const LUCK_NOTICEABLE = 0.3;
+
 /** The luck figure, phrased as something that happened rather than a grade. */
 export function luckNote(bits: number): string {
   if (bits > 1.0) return 'ran hot';
-  if (bits > 0.3) return 'broke your way';
+  if (bits > LUCK_NOTICEABLE) return 'broke your way';
   if (bits < -1.0) return 'ran cold';
-  if (bits < -0.3) return 'broke against you';
+  if (bits < -LUCK_NOTICEABLE) return 'broke against you';
   return 'broke as expected';
 }
 
