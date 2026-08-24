@@ -35,6 +35,29 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Changed
 
+- **The explainer says why each guess scored what it did, instead of restating the formula.** Every
+  scored row read `what the best available play needed from there, as a share of what THIEF needed`
+  — a ratio of two invisible quantities, in the order the formula computes it, with the noun both
+  sides share never appearing. Beside it, `the tiles revealed 1.7 halvings less than THIEF could
+  expect`, where information is what is revealed and halvings are only what it is measured in. Each
+  row now names what kind of move it was — a live shot that could have won outright, or a word that
+  could not have been the answer and was therefore a pure question — and then either says it was
+  close to the quickest way home or prices the gap in turns, adding what the guess was risking where
+  that is the story: `Its likeliest break would still have left about half the field standing. From
+  there it was heading for about 15% more turns than the best play available.` Luck is said as a size
+  rather than in bits, since a bit is a halving and `2^-luck` is exactly how the field came out
+  against what a guess like that usually leaves; where the tiles came back the likeliest way a guess
+  could break, the row says so, because that is simultaneously the most probable outcome and the
+  least informative one. Three display-only fields carry it — `wasCandidate`, `outcomeShare` and
+  `likeliestOutcomeShare` — all read off the pattern histogram the luck figure was already computed
+  from, so nothing new is searched. Two are ratios and one is a boolean, so
+  [0003](docs/decisions/0003-the-progress-light.md) is untouched and 0004's structural guarantee
+  still holds: strip the counts out of a score and the explanation is identical. One-step expected
+  information was the obvious basis for all this and is not used, because it disagrees with the
+  score — a guess can rank 432nd of 2,327 legal words by information and still score 94.6%, since
+  skill is a ratio of expected turns to finish and information is one move deep.
+  [Decision 0005](docs/decisions/0005-the-explainer-says-why.md) has the argument, including the
+  coin-flip wording that a test correctly refused.
 - **The scoring explainer works through the round it is opened from.** It taught the model in the
   abstract and left the reader to apply it, so a player looking at `86%`, `−1.2` and a `87.8` had to
   work out for themselves which sentence accounted for which figure — and that the `86` was a

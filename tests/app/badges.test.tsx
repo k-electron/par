@@ -66,6 +66,9 @@ function scoreWith(solved: boolean, guessesUsed: number, skill: number): GameSco
     weight: index === 0 ? 0 : 1,
     luck: 0,
     forced: false,
+    wasCandidate: false,
+    outcomeShare: 0.1,
+    likeliestOutcomeShare: 0.2,
   }));
 
   return { skill, outcome: 0, starterBonus: 0, total: skill, guessesUsed, solved, breakdown };

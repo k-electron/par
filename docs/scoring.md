@@ -328,6 +328,27 @@ total. It computes nothing — every figure is read off the `GameScore` above it
 structural subset of that score with the candidate counts removed, so decision
 [0004](decisions/0004-the-explainer-works-your-own-round.md) holds by type rather than by care.
 
+Each row also says *why* it scored what it did, which decision
+[0005](decisions/0005-the-explainer-says-why.md) has the argument for. Three display-only fields
+carry it, all read off the pattern histogram the luck figure is already computed from:
+
+| field | what it is | what it answers |
+| --- | --- | --- |
+| `wasCandidate` | whether the guess could itself still have been the answer | a live shot, or a pure question |
+| `likeliestOutcomeShare` | the guess's largest bucket over `\|S_i\|` | what the guess was risking |
+| `outcomeShare` | `\|S_i+1\| / \|S_i\|` | what the tiles did with it |
+
+Two are ratios and one is a boolean, so decision [0003](decisions/0003-the-progress-light.md) is
+untouched: a ratio between two counts fixes neither. `outcomeShare` reaching
+`likeliestOutcomeShare` means the tiles came back the likeliest way, which is also the least
+informative way — so such a row's luck can never be positive, and the copy says both in one breath.
+
+**One-step expected information is not used for any of this, and the reason is worth recording.** It
+is the obvious candidate and it disagrees with the score: a guess can rank 432nd of 2,327 legal words
+by information and still score 94.6%, because skill is a ratio of expected *turns to finish* under
+continued optimal play and information is one move deep. The magnitude in every sentence therefore
+comes from the skill score itself, restated as turns.
+
 ## Determinism
 
 A shared result has to re-score to the identical number on someone else's

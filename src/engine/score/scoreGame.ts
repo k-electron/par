@@ -68,6 +68,32 @@ export interface GuessBreakdown {
   readonly luck: number;
   /** The position offered no real choice, so the score was unavoidable. */
   readonly forced: boolean;
+  /**
+   * Whether the guess was itself still a possible answer.
+   *
+   * Display only, and the difference between the two things a guess can be
+   * doing: a live shot that could win outright, or a question that could not.
+   * The explainer needs it to say why a word that cannot win was a good play,
+   * which is the one lesson the general account already spends a paragraph on.
+   */
+  readonly wasCandidate: boolean;
+  /**
+   * `|S_i+1| / |S_i|` — the share of the field the tiles actually left standing.
+   *
+   * A ratio rather than either count, on purpose. Decision 0003 keeps the pool
+   * size ours, and `docs/decisions/0005` records why these three are shares.
+   */
+  readonly outcomeShare: number;
+  /**
+   * The share the guess's likeliest pattern would have left standing: its
+   * largest bucket over `|S_i|`.
+   *
+   * What the guess was risking, before the tiles turned over. Equal to
+   * `outcomeShare` exactly when the tiles came back the likeliest way, which
+   * is also the least informative way — so a row where the two agree is a row
+   * whose luck cannot be positive.
+   */
+  readonly likeliestOutcomeShare: number;
 }
 
 export interface GameScore {
@@ -136,6 +162,18 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     history.push({ guess, pattern });
     const remaining = scorer.candidatesAfter(history).length;
 
+    // One histogram serves the luck figure and both display shares. It is the
+    // partition the guess would have made of the position it faced, so
+    // everything read off it describes the guess rather than the outcome — bar
+    // `outcomeShare`, which is the outcome and says so.
+    const counts = patternCounts(guess, before);
+    let likeliest = 0;
+    for (const count of counts) {
+      if (count > likeliest) {
+        likeliest = count;
+      }
+    }
+
     breakdown.push({
       turn: index + 1,
       guess,
@@ -146,8 +184,11 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
       weight,
       // Shown for guess 1 too: it is the honest explanation for a fast finish,
       // and never a grade on the opener choice.
-      luck: remaining > 0 ? luckBits(patternCounts(guess, before), candidateCount, remaining) : 0,
+      luck: remaining > 0 ? luckBits(counts, candidateCount, remaining) : 0,
       forced: assessment?.forced ?? false,
+      wasCandidate: before.includes(guess),
+      outcomeShare: remaining / candidateCount,
+      likeliestOutcomeShare: likeliest / candidateCount,
     });
 
     if (pattern === WIN_PATTERN) {

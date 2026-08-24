@@ -259,6 +259,76 @@ describe('the luck figure', () => {
   });
 });
 
+/**
+ * The three display-only figures decision 0005 added, so the explainer can say
+ * why a row scored what it did rather than restating the ratio.
+ *
+ * They are checked here rather than through the copy because they are claims
+ * about the position, and a sentence that is true of the wrong number is worse
+ * than one that is merely clumsy.
+ */
+describe('what each guess was doing', () => {
+  it('separates a live shot from a word that could not win', () => {
+    const scorer = scorerFor();
+    // PLUMB shares nothing with the -ATCH family, so after BATCH it is ruled
+    // out and can only ask a question. CATCH is still standing.
+    const score = scoreGame(
+      { guesses: ['batch', 'plumb', 'catch'], answer: 'catch', tookHouseStarter: false },
+      scorer,
+    );
+
+    expect(score.breakdown[1]!.wasCandidate).toBe(false);
+    expect(score.breakdown[2]!.wasCandidate).toBe(true);
+  });
+
+  it('reports both shares as shares, never as counts', () => {
+    const scorer = scorerFor();
+    const score = scoreGame(
+      { guesses: ['batch', 'crane', 'plumb'], answer: 'plumb', tookHouseStarter: false },
+      scorer,
+    );
+
+    for (const row of score.breakdown) {
+      expect(row.outcomeShare).toBeGreaterThan(0);
+      expect(row.outcomeShare).toBeLessThanOrEqual(1);
+      expect(row.likeliestOutcomeShare).toBeGreaterThan(0);
+      expect(row.likeliestOutcomeShare).toBeLessThanOrEqual(1);
+      // The realized bucket is one of the buckets, so it cannot beat the
+      // biggest one. The explainer reads equality as "the tiles came back the
+      // likeliest way", and that reading is only sound while this holds.
+      expect(row.outcomeShare).toBeLessThanOrEqual(row.likeliestOutcomeShare);
+      // Both are `k / |S_i|` for the same denominator, which is what makes the
+      // equality test above exact rather than a floating-point coin toss.
+      expect(row.outcomeShare).toBe(row.remainingCount / row.candidateCount);
+      expect(row.likeliestOutcomeShare * row.candidateCount).toBeCloseTo(
+        Math.round(row.likeliestOutcomeShare * row.candidateCount),
+        10,
+      );
+    }
+  });
+
+  it('ties landing in the likeliest bucket to the luck figure being unkind', () => {
+    // The two are the same fact seen twice: the biggest bucket is the least
+    // informative outcome, so realized bits are at their lowest there and luck
+    // cannot come out positive. The explainer says so in one breath, and would
+    // be lying on any round where this failed.
+    const scorer = scorerFor();
+
+    for (const answer of WORDS) {
+      const score = scoreGame(
+        { guesses: ['batch', 'crane', answer], answer, tookHouseStarter: false },
+        scorer,
+      );
+
+      for (const row of score.breakdown) {
+        if (row.outcomeShare >= row.likeliestOutcomeShare && row.candidateCount > 1) {
+          expect(row.luck, `${row.guess} on ${answer}`).toBeLessThanOrEqual(0);
+        }
+      }
+    }
+  });
+});
+
 describe('hard mode', () => {
   it('never scores below what was legally achievable', () => {
     // Spec §10, and the substance of it: hard mode restricts the legal set for

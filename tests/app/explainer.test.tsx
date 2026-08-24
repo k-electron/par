@@ -18,7 +18,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { explainRound, type ExplainedRound } from '../../src/app/copy/explainer';
-import { luckNote } from '../../src/app/copy/results';
+import { luckNote, NEAR_BEST } from '../../src/app/copy/results';
 import { createDirectScoringClient, scoreDirectly } from '../../src/app/scoring/direct';
 import { Repository } from '../../src/app/storage/repository';
 import { createMemoryStorage } from '../../src/app/storage/storage';
@@ -78,6 +78,17 @@ function phrases(explained: ExplainedRound): string[] {
     explained.total.story,
   ];
 }
+
+/**
+ * How the two directions of the luck sentence read.
+ *
+ * Both can say "as many words", since half as many and twice as many are both
+ * multiples, so the direction has to be read off the quantifier rather than off
+ * the shape of the phrase.
+ */
+const CROWDED =
+  /more words in play|(twice|three times|four times|five times|several times) as many|the likeliest way/;
+const CLEARED = /fewer words in play|(half|a third|a quarter|a fifth) as many|a small fraction/;
 
 /** The first number in a fragment, however it is dressed: `64% of the average`. */
 function value(text: string): number {
@@ -232,15 +243,57 @@ describe('the guess by guess account', () => {
     score.breakdown.forEach((row, index) => {
       const story = explained.guesses[index]!.luckStory;
       const note = luckNote(row.luck);
+      const deadField = row.skill !== null && row.weight === 0;
+      const won = score.solved && index === score.breakdown.length - 1;
 
-      if (note === 'broke as expected') {
-        expect(story, row.guess).toMatch(/about as/);
+      if (deadField) {
+        expect(story, row.guess).toMatch(/nothing for the tiles to decide/);
+      } else if (won) {
+        expect(story, row.guess).toMatch(/came home/);
+      } else if (note === 'broke as expected') {
+        expect(story, row.guess).toMatch(/about as they usually do/);
       } else if (row.luck > 0) {
-        expect(story, row.guess).toMatch(/revealed .* more than/);
+        expect(story, row.guess).toMatch(CLEARED);
       } else {
-        expect(story, row.guess).toMatch(/revealed .* less than/);
+        expect(story, row.guess).toMatch(CROWDED);
       }
     });
+  });
+
+  it('never describes a kind break as a crowded one, or the reverse', () => {
+    // The two directions are different arithmetic — a field twice as big is
+    // 100% more, but one twice as small is 50% fewer, not 100% fewer — so the
+    // easy bug here is a sentence that contradicts the sign printed beside it.
+    // Swept across a spread of luck figures rather than the handful the four
+    // rounds happen to contain.
+    const row = {
+      turn: 2,
+      guess: 'crane',
+      skill: 80,
+      weight: 4,
+      forced: false,
+      wasCandidate: false,
+      // Below the likeliest share, so the size clause is the one under test
+      // rather than the "came back the likeliest way" branch.
+      outcomeShare: 0.05,
+      likeliestOutcomeShare: 0.5,
+    };
+
+    for (let luck = -4; luck <= 4; luck += 0.1) {
+      const story = explainRound({
+        ...ROUNDS.solved,
+        solved: false,
+        breakdown: [{ ...row, luck }],
+      }).guesses[0]!.luckStory;
+
+      if (luck > 0.5) {
+        expect(story, `luck ${luck}`).toMatch(CLEARED);
+        expect(story, `luck ${luck}`).not.toMatch(CROWDED);
+      } else if (luck < -0.5) {
+        expect(story, `luck ${luck}`).toMatch(CROWDED);
+        expect(story, `luck ${luck}`).not.toMatch(CLEARED);
+      }
+    }
   });
 
   it('states each guess\u2019s own skill figure', () => {
@@ -253,6 +306,77 @@ describe('the guess by guess account', () => {
       expect(story, row.guess).toContain(`${row.skill.toFixed(1)}%`);
     });
   });
+
+  it.each(CASES)('$name: says which guesses could have won and which could not', ({ score }) => {
+    // The one lesson the general account spends a section on — that a word
+    // which cannot win can be the best play — only lands if the reader can see
+    // which of their own guesses were which.
+    const explained = explainRound(score);
+
+    score.breakdown.forEach((row, index) => {
+      const story = explained.guesses[index]!.skillStory;
+      // Openers, forced moves and dead fields are explained by what the
+      // position was, which says more than what the guess could have been.
+      if (row.skill === null || row.forced || row.weight === 0) return;
+
+      if (row.wasCandidate) {
+        expect(story, row.guess).toMatch(/could have won outright/);
+      } else {
+        expect(story, row.guess).toMatch(/could not have been the answer/);
+      }
+    });
+  });
+
+  it('prices the gap only where the table has already called it short of best', () => {
+    // `NEAR_BEST` is shared with `guessNote` on purpose. A row badged "Near
+    // best" in the table and then told in the dialog how many more turns it was
+    // heading for is two surfaces disagreeing about one number.
+    for (const { name, score } of CASES) {
+      const explained = explainRound(score);
+
+      score.breakdown.forEach((row, index) => {
+        const story = explained.guesses[index]!.skillStory;
+        if (row.skill === null || row.forced || row.weight === 0) return;
+
+        if (row.skill >= NEAR_BEST) {
+          expect(story, `${name} ${row.guess}`).not.toMatch(/more turns|as many turns/);
+        } else {
+          expect(story, `${name} ${row.guess}`).toMatch(/more turns|as many turns/);
+        }
+      });
+    }
+  });
+
+  it('leaves the row it declines to count out of the pricing altogether', () => {
+    // A guess facing one word weighs nothing in the average, and telling it how
+    // many more turns it was heading for would be the loudest sentence on the
+    // card attached to the row the score itself ignores.
+    const explained = explainRound(ROUNDS.lost);
+    const dead = ROUNDS.lost.breakdown
+      .map((row, index) => ({ row, story: explained.guesses[index]!.skillStory }))
+      .filter(({ row }) => row.skill !== null && row.weight === 0);
+
+    expect(dead.length).toBeGreaterThan(0);
+    for (const { story } of dead) {
+      expect(story).not.toMatch(/more turns|as many turns/);
+      expect(story).toMatch(/one word was still possible/);
+    }
+  });
+
+  it('does not read a win on a dead field as a stroke of luck', () => {
+    // Walking in the last possible word wins on a field of one, where the luck
+    // figure is exactly zero. The winning row's usual line explains a large
+    // number, so on this round it would be captioning a 0.0.
+    const walkIn = round([PUZZLE.starter, 'crane', 'moist', 'adapt', PUZZLE.answer]);
+    const last = walkIn.breakdown.at(-1)!;
+    const story = explainRound(walkIn).guesses.at(-1)!.luckStory;
+
+    expect(walkIn.solved).toBe(true);
+    expect(last.weight).toBe(0);
+    expect(Math.abs(last.luck)).toBeLessThan(0.05);
+    expect(story).toMatch(/nothing for the tiles to decide/);
+    expect(story).not.toMatch(/came home/);
+  });
 });
 
 describe('what the explainer must not give away', () => {
@@ -261,16 +385,37 @@ describe('what the explainer must not give away', () => {
     // guarantee here is structural rather than a scan for digits — strip the two
     // counts out of the score and the explanation is identical, so no sentence
     // in it can be a function of a count.
+    //
+    // The three fields decision 0005 added survive the stripping, and that is
+    // the point of listing them one by one rather than spreading the row: two
+    // of them are ratios of the counts and one is a boolean, so none of them
+    // can be inverted into a count, and adding a fourth field has to be a
+    // decision taken here rather than something a spread would wave through.
     const blind = {
       ...score,
-      breakdown: score.breakdown.map(({ turn, guess, skill, weight, luck, forced }) => ({
-        turn,
-        guess,
-        skill,
-        weight,
-        luck,
-        forced,
-      })),
+      breakdown: score.breakdown.map(
+        ({
+          turn,
+          guess,
+          skill,
+          weight,
+          luck,
+          forced,
+          wasCandidate,
+          outcomeShare,
+          likeliestOutcomeShare,
+        }) => ({
+          turn,
+          guess,
+          skill,
+          weight,
+          luck,
+          forced,
+          wasCandidate,
+          outcomeShare,
+          likeliestOutcomeShare,
+        }),
+      ),
     };
 
     expect(explainRound(blind)).toEqual(explainRound(score));
