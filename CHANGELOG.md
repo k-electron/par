@@ -88,6 +88,22 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Fixed
 
+- **The dev server never scored a round.** Every finished game sat on "Working out your round…"
+  forever, on `npm run dev` only — the built site was always fine, which is why nothing caught it and
+  why `playwright.config.ts` runs against the build. `App` built its scoring worker in a `useState`
+  initialiser and disposed of it in an effect cleanup, and `StrictMode` punishes that asymmetry in
+  two ways at once: it double-invokes the initialiser, and it mounts, unmounts and remounts. The
+  cleanup therefore ran once against the client React had kept, `dispose` terminated its worker,
+  state survived the simulated remount, and from then on every request was posted into a dead thread
+  behind a promise that could not settle. The worker is no longer torn down by the component that
+  uses it, because teardown there bought nothing: `App` is the root, so the only thing that ever
+  unmounts it is the page going away, which takes the worker with it. StrictMode still builds a
+  spare client in development, which is never asked for anything — being wrong in that direction
+  costs an idle thread, where being wrong in the other direction cost every score.
+  `tests/app/scoringWorker.test.tsx` is new and is the gap that let this through: every other suite
+  hands `App` a scorer of its own, so nothing had ever exercised the worker's lifecycle. It mounts
+  inside the `StrictMode` the app actually ships, and its fake worker treats termination as death,
+  so a request reaching a terminated worker presents as the hang it really was.
 - **The replay board sat 83px left of centre**
   ([#3](https://github.com/k-electron/par/pull/3)). `Board` and `Keyboard` centre themselves with
   `mx: 'auto'`, and MUI's `Stack` resets every direct child's margin at a specificity that outranks
