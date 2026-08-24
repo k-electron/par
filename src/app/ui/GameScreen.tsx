@@ -331,7 +331,12 @@ export function GameScreen({
           <Button size="small" variant="text" onClick={() => setExplaining(true)}>
             {RESULTS.explainerLink}
           </Button>
-          <ScoringExplainer open={explaining} onClose={() => setExplaining(false)} />
+          {/*
+            Handed the round it is sitting under, so the explanation is about
+            these guesses rather than about scoring in general. Null while the
+            worker is still thinking, which the dialog reads without.
+          */}
+          <ScoringExplainer open={explaining} onClose={() => setExplaining(false)} score={score} />
         </Stack>
       ) : (
         <Keyboard

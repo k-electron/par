@@ -319,6 +319,15 @@ working set is therefore dictionary × *current candidates*, not dictionary × *
 answers* — roughly 2.6 MB rather than the 39 MB a full guess-by-answer matrix would need, built once per game and reused,
 since a candidate set only ever shrinks.
 
+## What the player is told
+
+The results view shows the three parts and a row per guess. The explainer behind it works through
+the round on screen: what each guess scored and why, every scored guess's share of the skill
+average, `C_PAR × (PAR − n)` with that round's own `n` in it, and the addition that produced the
+total. It computes nothing — every figure is read off the `GameScore` above it — and it is handed a
+structural subset of that score with the candidate counts removed, so decision
+[0004](decisions/0004-the-explainer-works-your-own-round.md) holds by type rather than by care.
+
 ## Determinism
 
 A shared result has to re-score to the identical number on someone else's

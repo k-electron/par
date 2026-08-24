@@ -35,6 +35,23 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Changed
 
+- **The scoring explainer works through the round it is opened from.** It taught the model in the
+  abstract and left the reader to apply it, so a player looking at `86%`, `−1.2` and a `87.8` had to
+  work out for themselves which sentence accounted for which figure — and that the `86` was a
+  weighted average of three of their four guesses rather than a plain one. It now opens on the round
+  itself: every guess with what its skill figure means and how the tiles broke against what that
+  guess could expect, then each scored guess's share of the skill average and the average itself,
+  then `C_PAR × (PAR − n)` with that round's own `n` in it, then the addition that produced the
+  total. Nothing in it computes a score — every figure is read off the same `GameScore` the card
+  above it uses, and the one piece of arithmetic is a share of the skill average — so a link minted
+  months ago opens with an explanation it was never sent, and `SCORER_VERSION` stays at 1. The
+  candidate counts [0003](docs/decisions/0003-the-progress-light.md) took off the table do not come
+  back: the copy is handed a structural subset of the score with them removed, so it cannot print a
+  count it never receives, and the weight that does survive is only ever shown as a share of the
+  round's total, which is a ratio between two logarithms and fixes neither. Points read to two
+  decimals where the card reads one, because parts rounded to a tenth sum to the wrong tenth about
+  half the time and an explanation whose own addition looks broken is worse than none.
+  [Decision 0004](docs/decisions/0004-the-explainer-works-your-own-round.md) has the argument.
 - **The guess-by-guess table lights each guess instead of counting the pool.** It reported the
   candidate set as two exact integers, which handed over more than it meant to: the caption under row
   1 was the answer list's exact size on every round ever played, and every other row was an exact

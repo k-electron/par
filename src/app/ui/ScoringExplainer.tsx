@@ -1,22 +1,51 @@
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import type { ReactNode } from 'react';
+
+import { explainRound, type ExplainedFigure, type RoundToExplain } from '../copy/explainer';
 
 /**
  * The honest, short account of why the number is what it is.
  *
- * Two constraints shape this. It has to leave someone who has never heard of
- * information theory understanding why a probe can beat a guess — and it must
- * never reveal best play. The worked example below is invented for teaching:
- * the position it describes cannot be a real Par position, because Par draws
- * one answer a day and this asks you to imagine three at once. It also never
- * appears on screen beside a live game.
+ * Three constraints shape this. It has to leave someone who has never heard of
+ * information theory understanding why a probe can beat a guess. It must never
+ * reveal best play. And it has to answer the question a player actually arrives
+ * with, which is not "how does skill work" but "why is *my* skill 86" — so the
+ * round they just finished is walked through first, guess by guess, and the
+ * general account follows.
+ *
+ * The score is optional and the dialog reads without it. A replay that is still
+ * scoring, or one the scorer declined, still opens and still explains the game;
+ * it simply has no round to work through. That is also what makes this reach
+ * links sent before it existed: a share link carries guesses, never figures,
+ * so the walkthrough is rebuilt from the same recomputed score the card is.
+ *
+ * The invented example below is for teaching and cannot be a real Par position:
+ * it asks you to imagine three answers at once, where Par draws one a day.
  */
-export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ScoringExplainer({
+  open,
+  onClose,
+  score = null,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /**
+   * Deliberately narrower than `GameScore`. `RoundToExplain` omits the
+   * candidate counts, so this view cannot print the size of the answer pool
+   * even by accident — decision 0003, held by the type rather than by care.
+   */
+  score?: RoundToExplain | null;
+}) {
+  const round = score === null ? null : explainRound(score);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
       <DialogTitle>How this is scored</DialogTitle>
@@ -27,6 +56,78 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
             whether your opener happened to land near the answer. Par scores what each guess was
             worth <em>before</em> the tiles turned over, and then pays out the luck separately.
           </Typography>
+
+          {round !== null && (
+            <Stack spacing={1.5} data-testid="explainer-round">
+              <Divider textAlign="left">
+                <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+                  This round, number by number
+                </Typography>
+              </Divider>
+
+              <Typography variant="body2">{round.lead}</Typography>
+
+              <Stack spacing={1.25}>
+                {round.guesses.map((guess) => (
+                  <Stack key={guess.turn} spacing={0}>
+                    <Box
+                      component="span"
+                      sx={{
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      {guess.guess}
+                    </Box>
+                    <Typography variant="body2">{guess.skillStory}</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {guess.luckStory}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+
+              <Figure name="Skill" figure={round.skill}>
+                {round.skill.shares.length > 0 && (
+                  <Stack spacing={0} sx={{ py: 0.5 }}>
+                    {round.skill.shares.map((share, index) => (
+                      <Stack
+                        key={`${share.guess}-${index}`}
+                        direction="row"
+                        spacing={1}
+                        sx={{ justifyContent: 'space-between' }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                        >
+                          {share.guess}
+                        </Box>
+                        <Box component="span" sx={{ fontWeight: 700 }}>
+                          {share.score}
+                        </Box>
+                        <Box component="span" sx={{ color: 'text.secondary' }}>
+                          {share.share}
+                        </Box>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
+                <Typography variant="body2">{round.skill.result}</Typography>
+              </Figure>
+
+              <Figure name="Par" figure={round.par} />
+              <Figure name="Starter bonus" figure={round.bonus} />
+              <Figure name="Total" figure={round.total} />
+            </Stack>
+          )}
+
+          <Divider textAlign="left">
+            <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+              Why the scoring works this way
+            </Typography>
+          </Divider>
 
           <Stack spacing={0.5}>
             <Typography variant="subtitle2">Why a word that cannot win can be the best play</Typography>
@@ -46,57 +147,45 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
           </Stack>
 
           <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Skill</Typography>
+            <Typography variant="subtitle2">Skill cannot see what happened</Typography>
             <Typography variant="body2">
-              Every guess from your second onward is compared against the best that was available
-              in that exact position, and turned into a percentage. Because it only ever looks at
-              what was knowable beforehand, getting lucky cannot raise it and getting unlucky
-              cannot lower it. A guess made when three hundred words were still alive counts for
-              much more than one made when only two were.
-            </Typography>
-            <Typography variant="body2">
-              Your opening guess is never scored. Whatever you open with, good or wild, expresses
-              itself through the position it leaves you &mdash; and that is priced by par instead.
-              It is why a lucky opener is a legitimate win here rather than a loophole.
+              Each guess is measured against the best that was available in that exact position, so
+              getting lucky cannot raise it and getting unlucky cannot lower it. Your opening guess
+              is never scored: whatever you open with, good or wild, expresses itself through the
+              position it leaves you, and that is priced by par instead. It is why a lucky opener is
+              a legitimate win here rather than a loophole.
             </Typography>
           </Stack>
 
           <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Par</Typography>
+            <Typography variant="subtitle2">Par is set by strong play</Typography>
             <Typography variant="body2">
               Par is what a strong player averages, not what a typical player averages, so being
               over it is the normal state of affairs rather than a telling-off. Every guess under
-              par is worth the same number of points as every other, which is deliberate: it means
-              a gamble can win you a day but never a season. Finishing fast earns a badge, never
-              extra points.
+              par is worth the same as every other, which is deliberate: it means a gamble can win
+              you a day but never a season. Finishing fast earns a badge, never extra points.
             </Typography>
           </Stack>
 
           <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Progress</Typography>
+            <Typography variant="subtitle2">The progress light</Typography>
             <Typography variant="body2">
-              The light beside each guess is how much of what was still unknown it cleared away.
-              Green means most of it, amber a fair share, red little or nothing. It is measured
-              against how much there was left to find out, not in words &mdash; so striking a
-              hundred words off a wide-open field counts for very little, while narrowing two
-              possibilities down to one counts for everything, which is the way it feels to play.
-            </Typography>
-            <Typography variant="body2">
-              It describes what the tiles did, not how well you chose &mdash; that is the skill
-              column&rsquo;s job. A well-judged guess can light red when the feedback breaks badly,
-              and the luck figure beside it will usually say as much. It is also why a perfectly good
-              opener often shows amber: it does a great deal of work and still leaves most of the
-              guessing to do. A guess with only one word left to play gets no light at all, because
-              there was nothing left to clear.
+              The light beside each guess is how much of what was still unknown it cleared away, so
+              striking a hundred words off a wide-open field counts for very little while narrowing
+              two possibilities down to one counts for everything. It describes what the tiles did,
+              not how well you chose &mdash; a well-judged guess can light red when the feedback
+              breaks badly. It is also why a perfectly good opener often shows amber: it does a
+              great deal of work and still leaves most of the guessing to do. A guess with only one
+              word left to play gets no light at all, because there was nothing left to clear.
             </Typography>
           </Stack>
 
           <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Luck</Typography>
+            <Typography variant="subtitle2">Luck counts for nothing</Typography>
             <Typography variant="body2">
-              The luck column says how the feedback broke compared with what your guess could
-              reasonably expect. Positive means the tiles were kind. It is there to talk about and
-              counts for nothing.
+              The luck figure says how the feedback broke against what your guess could reasonably
+              expect. Positive means the tiles were kind. It is there to talk about: it never enters
+              a total, and across every answer a guess could have faced it averages out to zero.
             </Typography>
           </Stack>
 
@@ -119,5 +208,32 @@ export function ScoringExplainer({ open, onClose }: { open: boolean; onClose: ()
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+/**
+ * One figure from the card, with the arithmetic that produced it.
+ *
+ * The name and the number sit on one line so a reader can find the same pair on
+ * the card above and know they are reading about the right thing.
+ */
+function Figure({
+  name,
+  figure,
+  children,
+}: {
+  name: string;
+  figure: ExplainedFigure;
+  children?: ReactNode;
+}) {
+  return (
+    <Stack spacing={0.25}>
+      <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
+        <Typography variant="subtitle2">{name}</Typography>
+        <Typography variant="subtitle2">{figure.figure}</Typography>
+      </Stack>
+      <Typography variant="body2">{figure.story}</Typography>
+      {children}
+    </Stack>
   );
 }
