@@ -183,8 +183,9 @@ export function ScoringExplainer({
           <Stack spacing={0.5}>
             <Typography variant="subtitle2">Luck counts for nothing</Typography>
             <Typography variant="body2">
-              The luck figure is there to talk about. It never enters a total, and across every
-              answer a guess could have faced it averages out to zero.
+              The luck figure says how the feedback broke against what your guess could reasonably
+              expect. Positive means the tiles were kind. It is there to talk about: it never enters
+              a total, and across every answer a guess could have faced it averages out to zero.
             </Typography>
           </Stack>
 
