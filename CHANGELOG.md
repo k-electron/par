@@ -40,8 +40,8 @@ here landed afterwards, each behind a pull request and a green quality gate.
   — a ratio of two invisible quantities, in the order the formula computes it, with the noun both
   sides share never appearing. Beside it, `the tiles revealed 1.7 halvings less than THIEF could
   expect`, where information is what is revealed and halvings are only what it is measured in. Each
-  row now places the guess on the list of words that still fitted every clue, from the common end
-  down, and then either says it was close to the quickest way home or prices the gap in turns, adding
+  row now places the guess among the words that still fitted every clue, from the likeliest down, and
+  then either says it was close to the quickest way home or prices the gap in turns, adding
   what the guess was risking where that is the story: `Its likeliest break would still have left
   about half the field standing. From there it was heading for about 15% more turns than the best
   play available.` The list is the answer list explained rather than hidden — the generator ranks the
@@ -57,7 +57,13 @@ here landed afterwards, each behind a pull request and a green quality gate.
   none of them, and on the round this came from a word well down the list scored 95.2% where betting
   the top of it would have scored 92.7%. So the lead says skill prefers neither a bet nor a question
   because it counts turns, and the two kinds of row where the axes diverge carry an explicit `even
-  so` or `still`. Luck is said as a size
+  so` or `still`. The scale runs `was the likeliest word` to `was way below the likeliest words that
+  still fitted`, and says *likely* rather than *common* — frequency is the mechanism and is named once
+  in the lead, but on a row it reads as a claim about English rather than about the position. Every
+  luck row now names its direction before explaining it, on a scale everybody already owns — `ran hot`,
+  `ran warm`, `ran cool`, `ran cold`, sharing `luckNote`'s thresholds so the dialog and the table
+  cannot disagree, and avoiding its second-person middle pair because `broke against you` is wrong
+  above somebody else's replay. Luck is said as a size
   rather than in bits, since a bit is a halving and `2^-luck` is exactly how the field came out
   against what a guess like that usually leaves; where the tiles came back the likeliest way a guess
   could break, the row says so, because that is simultaneously the most probable outcome and the

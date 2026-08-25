@@ -87,8 +87,9 @@ function phrases(explained: ExplainedRound): string[] {
  * the shape of the phrase.
  */
 const CROWDED =
-  /more words in play|(twice|three times|four times|five times|several times) as many|the likeliest way/;
-const CLEARED = /fewer words in play|(half|a third|a quarter|a fifth) as many|a small fraction/;
+  /ran cold|ran cool|more words standing|(twice|three times|four times|five times|several times) as many/;
+const CLEARED =
+  /ran hot|ran warm|fewer words standing|(half|a third|a quarter|a fifth) as many|a small fraction/;
 
 /** The first number in a fragment, however it is dressed: `64% of the average`. */
 function value(text: string): number {
@@ -247,11 +248,11 @@ describe('the guess by guess account', () => {
       const won = score.solved && index === score.breakdown.length - 1;
 
       if (deadField) {
-        expect(story, row.guess).toMatch(/nothing for the tiles to decide/);
+        expect(story, row.guess).toMatch(/nothing left for the tiles to decide/);
       } else if (won) {
         expect(story, row.guess).toMatch(/came home/);
       } else if (note === 'broke as expected') {
-        expect(story, row.guess).toMatch(/about as they usually do/);
+        expect(story, row.guess).toMatch(/broke about as expected/);
       } else if (row.luck > 0) {
         expect(story, row.guess).toMatch(CLEARED);
       } else {
@@ -317,7 +318,7 @@ describe('the guess by guess account', () => {
       const story = explained.guesses[index]!.skillStory;
       if (row.skill === null) return;
 
-      expect(story, row.guess).toMatch(/commonest|common end|some way down|well down/);
+      expect(story, row.guess).toMatch(/the likeliest word that still fitted|likeliest words that still fitted/);
     });
   });
 
@@ -427,7 +428,7 @@ describe('the guess by guess account', () => {
     expect(dead.length).toBeGreaterThan(0);
     for (const { story } of dead) {
       expect(story).not.toMatch(/more turns|as many turns/);
-      expect(story).toMatch(/pointing hard at the top of that list|narrowed to one word/);
+      expect(story).toMatch(/settled on the likeliest word|narrowed to one word/);
     }
   });
 
@@ -442,7 +443,7 @@ describe('the guess by guess account', () => {
     expect(walkIn.solved).toBe(true);
     expect(last.weight).toBe(0);
     expect(Math.abs(last.luck)).toBeLessThan(0.05);
-    expect(story).toMatch(/nothing for the tiles to decide/);
+    expect(story).toMatch(/nothing left for the tiles to decide/);
     expect(story).not.toMatch(/came home/);
   });
 });
@@ -533,9 +534,13 @@ describe('what the explainer must not give away', () => {
     // inverted, because a reader holding "sat well down the words that still
     // fitted" has no cut to measure it against — the ranking runs out before
     // the pool does. So the copy may place and may not exclude.
+    // Scanned for claims about the guess rather than for the words "ruled out",
+    // which the luck copy uses legitimately about the field: "no break could
+    // have ruled out fewer" is a fact about the tiles, where "the tiles ruled
+    // GLUES out" is the claim this forbids.
     for (const phrase of phrases(explainRound(score))) {
       expect(phrase, phrase).not.toMatch(
-        /could not have been|was not it|not a possible|never possible|impossible|ruled out/i,
+        /could not have been|was not it|not a possible|never possible|impossible|was ruled out|ruled \w+ out/i,
       );
     }
   });

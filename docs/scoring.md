@@ -334,7 +334,7 @@ carry it, all read off the pattern histogram the luck figure is already computed
 
 | field | what it is | what it answers |
 | --- | --- | --- |
-| `standing` | where the guess sat among the words still fitting, common end first | a bet, or a question |
+| `standing` | where the guess sat among the words still fitting, likeliest first | a bet, or a question |
 | `likeliestOutcomeShare` | the guess's largest bucket over `\|S_i\|` | what the guess was risking |
 | `outcomeShare` | `\|S_i+1\| / \|S_i\|` | what the tiles did with it |
 
@@ -348,8 +348,9 @@ in one breath.
 consistent with the feedback so far, which is the pool as a player sees it, and the answer list is
 simply its top slice by frequency — `tools/wordlists/build.py` ranks the dictionary by Zipf and cuts
 at three thousand, so the two are one object seen from two sides. A guess is placed on that pool from
-the common end down, which says why a real word was never a live answer without ever saying that it
-was not one.
+the likeliest down, which says why a real word was never a live answer without ever saying that it was
+not one. The copy says *likely* rather than *common* throughout, naming frequency once in the lead and
+then leaving it — decision [0005](decisions/0005-the-explainer-says-why.md) records why.
 
 Only the slice carries an order, so a word from below it is placed in the middle of the unranked
 tail, and the copy shows five coarse bands rather than a figure. Both are deliberate: an exact

@@ -44,7 +44,7 @@ export interface GuessToExplain {
   readonly weight: number;
   readonly luck: number;
   readonly forced: boolean;
-  /** Where the guess sat among the words that still fitted, 0 commonest to 1. */
+  /** Where the guess sat among the words that still fitted, 0 likeliest to 1. */
   readonly standing: number;
   /** The share of the field the tiles left standing. A ratio, never a count. */
   readonly outcomeShare: number;
@@ -129,17 +129,17 @@ function bits(value: number): string {
  * that risked much the same thing say much the same thing.
  */
 const FRACTIONS: readonly { readonly at: number; readonly text: string }[] = [
-  { at: 0.5, text: 'about half the field' },
-  { at: 0.4, text: 'about two fifths of the field' },
-  { at: 1 / 3, text: 'about a third of the field' },
-  { at: 0.25, text: 'about a quarter of the field' },
-  { at: 0.2, text: 'about a fifth of the field' },
-  { at: 0.1, text: 'about a tenth of the field' },
+  { at: 0.5, text: 'about half' },
+  { at: 0.4, text: 'about two fifths' },
+  { at: 1 / 3, text: 'about a third' },
+  { at: 0.25, text: 'about a quarter' },
+  { at: 0.2, text: 'about a fifth' },
+  { at: 0.1, text: 'about a tenth' },
 ];
 
 function fieldShare(share: number): string {
-  if (share > 0.62) return 'most of the field';
-  if (share < 0.06) return 'a sliver of the field';
+  if (share > 0.62) return 'most';
+  if (share < 0.06) return 'a sliver';
 
   let closest = FRACTIONS[0]!;
   for (const fraction of FRACTIONS) {
@@ -186,6 +186,26 @@ function moreTurns(skill: number): string {
 }
 
 /**
+ * How the tiles ran, on one four-step scale.
+ *
+ * The sign of the luck figure has to land before any explanation of it does,
+ * because a reader who has not yet worked out which way is good cannot read the
+ * clause that follows. Hot and cold are the two words everybody already has for
+ * this, and the table beside it says `ran hot` and `ran cold` at the same two
+ * thresholds — `luckNote` owns them, and this shares its boundary constant.
+ *
+ * Deliberately not `luckNote`'s middle pair, which is second person: `broke
+ * against you` is wrong above somebody else's replayed round, and this file is
+ * read on both.
+ */
+function temperature(luck: number): string {
+  if (luck > 1) return 'ran hot';
+  if (luck > LUCK_NOTICEABLE) return 'ran warm';
+  if (luck < -1) return 'ran cold';
+  return 'ran cool';
+}
+
+/**
  * The luck figure as a size, rather than in bits.
  *
  * A bit is a halving, so `2^-luck` is exactly how the field came out against
@@ -211,8 +231,8 @@ function sizeGap(luck: number): string {
   if (factor < 2) {
     const gap = luck < 0 ? factor - 1 : 1 - 1 / factor;
     return luck < 0
-      ? `about ${roughPercent(gap)} more words in play than`
-      : `about ${roughPercent(gap)} fewer words in play than`;
+      ? `about ${roughPercent(gap)} more words standing than`
+      : `about ${roughPercent(gap)} fewer words standing than`;
   }
 
   // Past the ladder, a named multiple would be an understatement dressed as a
@@ -220,13 +240,13 @@ function sizeGap(luck: number): string {
   const step = Math.round(factor) - 2;
   if (step >= MULTIPLES.length) {
     return luck < 0
-      ? 'several times as many words in play as'
-      : 'a small fraction of the words in play that';
+      ? 'several times as many words standing as'
+      : 'a small fraction of the words';
   }
 
   return luck < 0
-    ? `about ${MULTIPLES[step]} as many words in play as`
-    : `about ${FRACTIONS_OF[step]} as many words in play as`;
+    ? `about ${MULTIPLES[step]} as many words standing as`
+    : `about ${FRACTIONS_OF[step]} as many words standing as`;
 }
 
 /**
@@ -254,18 +274,24 @@ const ROUNDS_TO_FULL_MARKS = 99.95;
 const NOTABLE_RISK = 0.35;
 
 /**
- * Where the guess sat on the list of words that still fitted, in words.
+ * Where the guess sat among the words that still fitted, in words.
  *
  * This is the single most useful thing the dialog can teach, and it is the
  * player's own heuristic said back to them: after each round of tiles some
- * words still fit, the answer is always one of the commoner ones, and a guess
- * is either a bet near that end or a question from further down. The general
- * account below spends a section on why the second can beat the first; placing
- * each of the reader's own guesses on the list is what connects that lesson to
- * their card.
+ * words still fit, the answer is always one of the likelier ones, and a guess
+ * is either a bet from up there or a question from below. The general account
+ * spends a section on why the second can beat the first; placing each of the
+ * reader's own guesses is what connects that lesson to their card.
+ *
+ * **Likely rather than common, which is a deliberate retreat from the
+ * mechanism.** What actually selects the answer list is word frequency, and
+ * "commonest" says so — but it reads as a claim about English rather than about
+ * this position, and a player does not need to know how the list was built to
+ * use the idea. The lead names frequency once, in passing, and every row after
+ * it talks about likelihood.
  *
  * **Bands rather than a figure, and that is a requirement rather than a
- * simplification.** Only the common end of the pool carries an order, so a
+ * simplification.** Only the likely end of the pool carries an order, so a
  * standing from below it is an estimate, and printing "67% of the way down"
  * would dress that up as a measurement. Coarse bands also blur the cut the
  * ranking stops at, where a precise figure would let a reader find it — the
@@ -275,20 +301,20 @@ const NOTABLE_RISK = 0.35;
  * rows where a player has something to take away. Everything between them is
  * described and left alone.
  */
-const COMMONEST = 0.02;
+const LIKELIEST = 0.02;
 const NEAR_THE_TOP = 0.15;
 const MIDDLING = 0.35;
 const WELL_DOWN = 0.55;
 
 function placeOnTheList(row: GuessToExplain): string {
   const word = row.guess.toUpperCase();
-  const fitted = 'the words that still fitted';
+  const likeliest = 'the likeliest words that still fitted';
 
-  if (row.standing <= COMMONEST) return `${word} was the commonest word left that fitted every clue`;
-  if (row.standing < NEAR_THE_TOP) return `${word} was among the commonest of ${fitted}`;
-  if (row.standing < MIDDLING) return `${word} sat near the common end of ${fitted}`;
-  if (row.standing < WELL_DOWN) return `${word} sat some way down ${fitted}`;
-  return `${word} sat well down ${fitted}`;
+  if (row.standing <= LIKELIEST) return `${word} was the likeliest word that still fitted`;
+  if (row.standing < NEAR_THE_TOP) return `${word} was up among ${likeliest}`;
+  if (row.standing < MIDDLING) return `${word} was a little below ${likeliest}`;
+  if (row.standing < WELL_DOWN) return `${word} was well below ${likeliest}`;
+  return `${word} was way below ${likeliest}`;
 }
 
 /** The placement, and what it made the guess, on the rows where that lands. */
@@ -321,8 +347,8 @@ function skillStory(row: GuessToExplain): string {
     return row.skill >= ROUNDS_TO_FULL_MARKS
       ? `Skill ${score} ${DASH} the clues had narrowed to one word, and ${word} was it. It counts ` +
           'for nothing in the average either way.'
-      : `Skill ${score} ${DASH} ${placeOnTheList(row)}, and by then the clues were pointing hard ` +
-          'at the top of that list. It counts for nothing in the average either way.';
+      : `Skill ${score} ${DASH} ${placeOnTheList(row)}, and by then the clues had settled on the ` +
+          'likeliest word. It counts for nothing in the average either way.';
   }
 
   if (row.forced) {
@@ -358,7 +384,7 @@ function skillStory(row: GuessToExplain): string {
   // asking why this row is the low one wants the reason, not the ratio.
   const risk =
     row.likeliestOutcomeShare >= NOTABLE_RISK
-      ? ` Its likeliest break would still have left ${fieldShare(row.likeliestOutcomeShare)} standing.`
+      ? ` At its most likely it would have left ${fieldShare(row.likeliestOutcomeShare)} of what still fitted standing.`
       : '';
   const despite = row.standing < NEAR_THE_TOP ? 'it was still heading' : 'from there it was heading';
 
@@ -384,7 +410,7 @@ function luckStory(row: GuessToExplain, won: boolean): string {
   // weighs zero, because guess 1 is never scored whatever it faced, and it is
   // the one row of the round facing the whole answer list.
   if (row.skill !== null && row.weight === 0) {
-    return `Luck ${bits(row.luck)} ${DASH} the field was already settled, so there was nothing for the tiles to decide.`;
+    return `Luck ${bits(row.luck)} ${DASH} nothing left for the tiles to decide by then.`;
   }
 
   // The winning row's luck is otherwise always positive, because finishing is
@@ -394,27 +420,30 @@ function luckStory(row: GuessToExplain, won: boolean): string {
   // exists to prevent.
   if (won) {
     return (
-      `Luck ${bits(row.luck)} ${DASH} ${word} came home. Finishing turns over everything there ` +
-      'was left to find out, which is why the figure is large.'
+      `Luck ${bits(row.luck)} ${DASH} ${word} came home. Finishing is the biggest break there ` +
+      'is, since it settles everything at once.'
     );
   }
 
   if (Math.abs(row.luck) <= LUCK_NOTICEABLE) {
-    return `Luck ${bits(row.luck)} ${DASH} the tiles broke about as they usually do for a guess like ${word}.`;
+    return `Luck ${bits(row.luck)} ${DASH} the tiles broke about as expected for a guess like ${word}.`;
   }
 
   // Landing in the guess's biggest bucket is the least informative thing that
-  // could have happened to it, and it is also the most likely — which is why
-  // this branch can never fire on a lucky row: realized bits are at their
+  // could have happened to it, and it is also the most probable — which is why
+  // this branch can never fire on a warm row: realized bits are at their
   // minimum there, so the luck figure cannot be positive.
   if (row.outcomeShare >= row.likeliestOutcomeShare) {
     return (
-      `Luck ${bits(row.luck)} ${DASH} the tiles came back the likeliest way ${word} could break, ` +
-      `which is also the least it could tell you: ${fieldShare(row.outcomeShare)} was still standing.`
+      `Luck ${bits(row.luck)} ${DASH} the tiles ${temperature(row.luck)}: no break could have ` +
+      `ruled out fewer, leaving ${fieldShare(row.outcomeShare)} of what still fitted.`
     );
   }
 
-  return `Luck ${bits(row.luck)} ${DASH} the tiles left ${sizeGap(row.luck)} ${word} usually leaves.`;
+  return (
+    `Luck ${bits(row.luck)} ${DASH} the tiles ${temperature(row.luck)}: they left ` +
+    `${sizeGap(row.luck)} ${word} normally leaves.`
+  );
 }
 
 /**
@@ -492,12 +521,12 @@ export function explainRound(round: RoundToExplain): ExplainedRound {
   return {
     lead:
       `Every figure on the card comes out of the guesses below. After each round of tiles some ` +
-      `words still fit every clue, and the answer is always one of the commoner ones ${DASH} so ` +
-      `each guess below is placed on that list, from the common end down. Near the top is a bet ` +
-      `on ending it there; further down is a question. Skill prefers neither, because it counts ` +
-      `turns: how quickly the guess was heading for the answer, against the quickest way home ` +
-      `from the same position. Luck is what the tiles then did with it, and it never reaches the ` +
-      `total.`,
+      `words still fit every clue, and the answer is always one of the likelier ones ${DASH} the ` +
+      `words people actually use ${DASH} so each guess below is placed among them, from the ` +
+      `likeliest down. Up there a guess is a bet on ending the round; below, it is a question. ` +
+      `Skill prefers neither, because it counts turns: how quickly the guess was heading for the ` +
+      `answer, against the quickest way home from the same position. Luck is what the tiles then ` +
+      `did with it, and it never reaches the total.`,
 
     guesses: round.breakdown.map((row, index) => ({
       turn: row.turn,

@@ -31,16 +31,16 @@ one thing about what the guess was doing, what it risked, or what the tiles did 
 
 Every row now names what kind of move it was, and then either where it stood or what it cost:
 
-> Skill 94.6% — THIEF was among the commonest of the words that still fitted, so it was a real bet
-> on the answer. It was close to the quickest way home from there.
+> Skill 94.6% — THIEF was up among the likeliest words that still fitted, so it was a real bet on the
+> answer. It was close to the quickest way home from there.
 >
-> Luck −1.7 — the tiles came back the likeliest way THIEF could break, which is also the least it
-> could tell you: about two fifths of the field was still standing.
+> Luck −1.7 — the tiles ran cold: no break could have ruled out fewer, leaving about two fifths of
+> what still fitted.
 
 Four questions, and where each is answered:
 
-- **Why was a good guess good?** By where it sat on the list of words that still fitted the clues,
-  from the common end down. The general account below already spends a section arguing that a word
+- **Why was a good guess good?** By where it sat among the words that still fitted the clues, from
+  the likeliest down. The general account below already spends a section arguing that a word
   which was never going to win can be the best play; placing each of the reader's own guesses on
   that list is what connects the lesson to their card. The next section is why it is a place on a
   list rather than a yes or no.
@@ -84,7 +84,7 @@ chose and will remember.
 The model that replaces it is the one a player already has, and it happens to be the implementation:
 
 > After each round of tiles some words still fit every clue. The answer is always one of the
-> commoner ones. So each guess sits somewhere on that list, from the common end down.
+> likelier ones. So each guess sits somewhere among them, from the likeliest down.
 
 That is exactly what `tools/wordlists/build.py` does — the answer list is the dictionary ranked by
 Zipf frequency and cut at three thousand, so "the answer list" and "the top slice of the words that
@@ -94,9 +94,9 @@ live answer.
 
 | instead of | the copy says |
 | --- | --- |
-| `GLUES could not have been the answer by then` | `GLUES sat well down the words that still fitted, and by then the clues were pointing hard at the top of that list` |
-| `LOPES could not have been the answer, so it was a pure question` | `LOPES sat well down the words that still fitted, so it was a question rather than a bet` |
-| `THIEF could have won outright` | `THIEF was among the commonest of the words that still fitted, so it was a real bet on the answer` |
+| `GLUES could not have been the answer by then` | `GLUES was way below the likeliest words that still fitted, and by then the clues had settled on the likeliest word` |
+| `LOPES could not have been the answer, so it was a pure question` | `LOPES was way below the likeliest words that still fitted, so it was a question rather than a bet` |
+| `THIEF could have won outright` | `THIEF was up among the likeliest words that still fitted, so it was a real bet on the answer` |
 
 **Bands, never a figure, and the reason is the shape of the data.** Only the top slice carries an
 order, because frequency is what selected it; below the cut there is no ranking to read. `standingOf`
@@ -146,6 +146,38 @@ question that was nearly the best play, a sound bet that still cost turns — ca
 so" and "still", because those are the rows where a reader would otherwise read the placement as the
 cause of the score. `tests/app/explainer.test.tsx` pins both, and pins their absence where the two
 agree.
+
+## The words themselves, since three of them were wrong twice
+
+Copy this dense gets its vocabulary decided once and then held, so the three that moved are recorded
+here rather than rediscovered.
+
+**`likely`, not `commonest`.** Frequency is genuinely the mechanism — it is what the generator ranks
+by — and the first draft said so on every row. But "the commonest of the words that still fitted"
+reads as a claim about English rather than about this position, and a player does not need to know how
+the list was built to use the idea. The lead names it once in passing, *the words people actually
+use*, and every row after that talks about likelihood.
+
+**`was way below`, not `sat well down`.** The scale is now `was the likeliest word` → `was up among` →
+`was a little below` → `was well below` → `was way below`, all of it anchored on one phrase the reader
+can hold: **the likeliest words that still fitted**. What the first draft had was a placement without
+a landmark, which is why it read as a shrug.
+
+**A temperature, not a lecture, on the luck rows.** They were the worst copy in the dialog through
+three drafts, and the diagnosis was structural rather than lexical: they explained before they
+oriented. `the tiles revealed 1.7 halvings less than THIEF could expect` and then `the tiles came back
+the likeliest way THIEF could break, which is also the least it could tell you` both ask a reader to
+follow a mechanism before telling them whether the news is good. Every luck row now names the
+direction first, on a scale everybody already owns — `ran hot`, `ran warm`, `ran cool`, `ran cold` —
+and only then says what happened, in one clause.
+
+The two thresholds are `luckNote`'s, so the dialog and the table cannot disagree about which rows ran
+cold. Its middle pair is deliberately *not* reused: `broke against you` is wrong above somebody
+else's replayed round, and this copy is read on both.
+
+Where the tiles landed on the guess's largest bucket, the row now says `no break could have ruled out
+fewer` — which is the same fact as the old sentence's "likeliest way it could break", said as its
+consequence instead of its cause, and it is what a reader wanted to know.
 
 ## What could not be used, and this is the interesting part
 
