@@ -105,10 +105,20 @@ export function guessNote(
   if (candidateCount <= 1) return 'Only one word left';
   if (forced) return 'Forced — nothing better existed';
   if (skill >= 99) return 'Best available';
-  if (skill >= 90) return 'Near best';
+  if (skill >= NEAR_BEST) return 'Near best';
   if (skill >= 70) return 'Reasonable';
   return 'Cost about a turn';
 }
+
+/**
+ * Where a skill score stops reading as "close to the best there was".
+ *
+ * Exported for the same reason `LUCK_NOTICEABLE` is: the explainer describes
+ * the same row in a sentence, and a guess badged `Near best` in the table that
+ * is then told in the dialog how many more turns it was heading for is two
+ * surfaces disagreeing about one number.
+ */
+export const NEAR_BEST = 90;
 
 /**
  * How far the tiles have to break from expectation before it is worth saying so.

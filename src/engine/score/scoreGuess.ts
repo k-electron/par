@@ -65,6 +65,35 @@ export interface PositionScorer {
    * caller bug rather than a score.
    */
   scoreGuess(history: readonly Observation[], guess: string): GuessScore;
+  /**
+   * Where `guess` sat among the words that still fitted, from the common end
+   * down: 0 is the commonest of them and 1 is the bottom.
+   *
+   * ## What the number means
+   *
+   * The pool is every **dictionary** word consistent with the feedback so far,
+   * which is the pool as a player sees it — they have no idea which of those
+   * words we would accept as an answer. Ordered by how common the words are,
+   * the answer list is the top slice of it, so "near the top" and "a plausible
+   * answer" are the same statement said two ways.
+   *
+   * Only that top slice carries an order, because frequency is what selected
+   * it; below the cut there is no ranking to read. **A word down there is
+   * therefore placed in the middle of the unranked tail**, which is the honest
+   * expectation when all that is known is which side of the cut it fell. That
+   * deliberately blurs the cut rather than reporting it: a bare "below the
+   * slice" would publish one word's absence from the answer list every time a
+   * round was explained, which is decision 0003's enumeration arriving a word
+   * at a time. Decision 0005 has the argument.
+   *
+   * A guess the tiles had already ruled out is not in the pool at all and sits
+   * at the bottom, 1.
+   *
+   * Display only. Nothing here reaches a score, and like `scoreGuess` this is
+   * never told the answer — a standing is a function of the history and the
+   * guess alone.
+   */
+  standingOf(history: readonly Observation[], guess: string): number;
   /** The candidates a history leaves, as words, for the UI's own stats. */
   candidatesAfter(history: readonly Observation[]): string[];
   /** How many positions the search has solved, for the performance tests. */
@@ -171,6 +200,48 @@ export function createPositionScorer(dependencies: ScoringDependencies): Positio
         forced,
         expectedBits: expectedInformationBits(patternCounts(guess, words), candidateCount),
       };
+    },
+
+    standingOf(history, guess) {
+      const fits = (word: string): boolean => {
+        for (const observation of history) {
+          if (!isConsistent(word, observation)) {
+            return false;
+          }
+        }
+        return true;
+      };
+
+      let pool = 0;
+      for (const word of lexicon.guessWords) {
+        if (fits(word)) {
+          pool += 1;
+        }
+      }
+      // The answer always fits its own history, so the pool is never empty and
+      // this is a guard against a caller inventing feedback rather than a case.
+      if (pool === 0) {
+        return 1;
+      }
+
+      // Ascending answer indices are the ranked slice in order, because the
+      // answer list is the dictionary sorted by frequency and cut.
+      const ranked = candidateIndices(history);
+      const rank = lexicon.answerIndexOf(guess);
+
+      if (rank >= 0 && fits(guess)) {
+        let commoner = 0;
+        for (const answer of ranked) {
+          if (answer < rank) {
+            commoner += 1;
+          }
+        }
+        return commoner / pool;
+      }
+
+      // Below the cut, or ruled out entirely. The tail has no order to read, so
+      // the middle of it is the most that can be said.
+      return fits(guess) ? (ranked.length + (pool - ranked.length) / 2) / pool : 1;
     },
 
     candidatesAfter(history) {
