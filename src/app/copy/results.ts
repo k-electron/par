@@ -131,6 +131,34 @@ export const NEAR_BEST = 90;
 export const REASONABLE = 70;
 
 /**
+ * Where the track starts, and why it is not zero.
+ *
+ * `skill` is `100 × best/cost`, a ratio of expected guesses, so it cannot reach
+ * 0. Measured over 120 puzzles at three player strengths — about a thousand
+ * scored rows — nothing came in below 50. The bottom half of a 0–100 track is
+ * unreachable rather than merely unvisited, and spending half the width on it
+ * left 95 and 100 drawn almost identically, which is most of where rows land.
+ *
+ * 50 is where a whole turn goes: `best 1.000, yours 2.000` is one word left and
+ * a guess that was not it. So the track covers exactly the range from giving up
+ * a turn to giving up nothing.
+ *
+ * A truncated axis has to disclose itself, and the exact figure under the bar is
+ * the disclosure: the bar ranks the rows, the number says what they scored.
+ *
+ * ponytail: measured, not proved. A score under the floor clamps to an empty
+ * track rather than a negative one, and the number beside it still reads
+ * correctly, so this degrades rather than lies. Lower it if real rows ever
+ * arrive below 50.
+ */
+const SKILL_FLOOR = 50;
+
+/** The fill's share of the track. Clamped, so a score under the floor is empty. */
+export function skillMeterFill(skill: number): number {
+  return Math.max(0, ((skill - SKILL_FLOOR) / (100 - SKILL_FLOOR)) * 100);
+}
+
+/**
  * How far the tiles have to break from expectation before it is worth saying so.
  *
  * Exported because the explainer needs the same line: a round that reads "broke
