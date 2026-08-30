@@ -162,6 +162,19 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Fixed
 
+- **The finished page scrolled about 670px past its own last line.** Only after a round ended, which
+  is when the results table exists. The table carries every phrase it stopped drawing in a visually
+  hidden span, and those were written in `sx` rather than in CSS — `sx` is not CSS, it runs bare
+  numbers through MUI's transforms, and the two that applied here disagree about what `1` means.
+  `width: 1` and `height: 1` go through the sizing transform, which reads anything up to 1 as a
+  *fraction*, so the intended one-pixel boxes were `100% × 100%`: eighteen viewport-sized,
+  absolutely positioned spans hanging below the layout. (`m: -1` goes through the spacing scale
+  instead and meant −8px, where the recipe wants −1px.) Every length in that object is a string now.
+  Nothing rendering to a DOM without layout can see this — jsdom reports every rect as zero — so the
+  guard is an end-to-end one, asserting the document scrolls no further than the body actually
+  reaches. It was shown to fail, at 678px, by reverting the fix under it.
+
+
 - **The dev server never scored a round.** Every finished game sat on "Working out your round…"
   forever, on `npm run dev` only — the built site was always fine, which is why nothing caught it and
   why `playwright.config.ts` runs against the build. `App` built its scoring worker in a `useState`
