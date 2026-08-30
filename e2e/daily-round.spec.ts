@@ -190,6 +190,45 @@ test('the results sit below the board rather than on top of it', async ({ page }
 });
 
 /**
+ * The finished page must not scroll past its own content.
+ *
+ * The results table carries every phrase it stopped drawing in a visually
+ * hidden span, and those are written in `sx` rather than in CSS. `sx` is not
+ * CSS: `width: 1` goes through MUI's sizing transform, which reads anything up
+ * to 1 as a fraction, so the intended one-pixel boxes were 100% × 100%.
+ * Eighteen viewport-sized absolutely-positioned spans scrolled the page about
+ * 670px past its last line, and only once the round was over, because that is
+ * when the table exists.
+ *
+ * Nothing that renders to a DOM without layout can see this — jsdom reports
+ * every rect as zero — so the guard has to live here, in a real browser.
+ */
+test('the finished page does not scroll past its own content', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start' }).click();
+
+  await revealed(page);
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+    if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
+    await page.keyboard.type(word);
+    await page.keyboard.press('Enter');
+    await revealed(page);
+  }
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('table', { name: /guess by guess/i })).toBeVisible();
+
+  const { scrollable, laidOut } = await page.evaluate(() => ({
+    scrollable: document.documentElement.scrollHeight,
+    laidOut: Math.round(document.body.getBoundingClientRect().height),
+  }));
+
+  // Equal in practice. The tolerance is for sub-pixel rounding on the layout
+  // box, not for room to overflow into.
+  expect(scrollable - laidOut, `${scrollable - laidOut}px of dead scroll below the page`)
+    .toBeLessThanOrEqual(2);
+});
+
+/**
  * A tile's own style is its final colour, and the reveal animation is what
  * conceals it until the flip reaches halfway. So a row must never reach the
  * screen before its animation is attached.

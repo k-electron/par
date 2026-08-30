@@ -88,10 +88,17 @@ const METER_HEIGHT = 6;
  */
 const HIDDEN = {
   position: 'absolute',
-  width: 1,
-  height: 1,
-  p: 0,
-  m: -1,
+  // Every length here is a string on purpose. `sx` is not CSS: it runs numbers
+  // through MUI's transforms, and the two that apply here disagree about what a
+  // bare 1 means. `width: 1` and `height: 1` go through the sizing transform,
+  // which reads anything up to 1 as a fraction — so these were 100% × 100%,
+  // eighteen viewport-sized absolutely-positioned boxes that scrolled the page
+  // 670px past its own content once the table appeared. `m: -1` goes through
+  // the spacing scale instead and means -8px, where the recipe wants -1px.
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
   overflow: 'hidden',
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',
