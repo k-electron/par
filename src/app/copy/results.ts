@@ -106,7 +106,7 @@ export function guessNote(
   if (forced) return 'Forced — nothing better existed';
   if (skill >= 99) return 'Best available';
   if (skill >= NEAR_BEST) return 'Near best';
-  if (skill >= 70) return 'Reasonable';
+  if (skill >= REASONABLE) return 'Reasonable';
   return 'Cost about a turn';
 }
 
@@ -119,6 +119,16 @@ export function guessNote(
  * surfaces disagreeing about one number.
  */
 export const NEAR_BEST = 90;
+
+/**
+ * Where a skill score stops reading as "a reasonable play".
+ *
+ * Exported for `NEAR_BEST`'s reason. The results table colours its skill meter
+ * on these same two thresholds, so the bar and the phrase it replaced band the
+ * row the same way — a guess called `Reasonable` by the words must not be
+ * coloured as though it cost a turn.
+ */
+export const REASONABLE = 70;
 
 /**
  * How far the tiles have to break from expectation before it is worth saying so.
@@ -194,9 +204,10 @@ export function progressLevel(before: number, after: number, won: boolean): Prog
 }
 
 /**
- * What each light says. Descriptions of the field, never verdicts on the player:
- * how far a guess got is partly the feedback's doing, so this reads in the same
- * register as `luckNote` rather than the skill column's.
+ * What each band says. Read aloud rather than drawn since the table went
+ * visual, which does not soften them: descriptions of the field, never verdicts
+ * on the player. How far a guess got is partly the feedback's doing, so these
+ * read in the same register as `luckNote` rather than the skill column's.
  */
 export const PROGRESS: Record<ProgressLevel, string> = {
   solved: 'solved',
@@ -215,7 +226,11 @@ export const RESULTS = {
   unsolved: 'Not solved',
   /** Column headers for the per-guess table. */
   columns: {
-    turn: '#',
+    /**
+     * The word played. It read `#` over a column that has carried the guess and
+     * never its number since the table had one.
+     */
+    turn: 'Guess',
     /**
      * How far the guess on this row got, rather than how many words it left.
      *

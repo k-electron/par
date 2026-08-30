@@ -21,11 +21,41 @@ import { answers, starters } from '../../src/data';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
 import { PAR } from '../../src/engine/config/constants';
 import { WIN_PATTERN } from '../../src/engine/words/pattern';
+import type { GameScore, GuessBreakdown } from '../../src/engine/score/scoreGame';
 
 const FIXED_NOW = new Date('2026-06-15T16:00:00Z');
 const PUZZLE = drawPuzzle(165, { answers, starters });
 
 const settings: ConfirmedSettings = { hardMode: false, useHouseStarter: true, confirmed: true };
+
+/**
+ * One breakdown row, from the two counts the progress column reads.
+ *
+ * Everything else is filler the column never looks at, so it is set to whatever
+ * keeps the row valid rather than to anything meaningful.
+ */
+function handRow(
+  turn: number,
+  guess: string,
+  candidateCount: number,
+  remainingCount: number,
+  pattern = 0,
+): GuessBreakdown {
+  return {
+    turn,
+    guess,
+    pattern,
+    candidateCount,
+    remainingCount,
+    skill: turn === 1 ? null : 80,
+    weight: 1,
+    luck: 0,
+    forced: false,
+    standing: 0.5,
+    outcomeShare: remainingCount / candidateCount,
+    likeliestOutcomeShare: remainingCount / candidateCount,
+  };
+}
 
 function mountApp() {
   return render(
@@ -249,6 +279,60 @@ describe('the rendered results', () => {
     expect(lostScore.breakdown.some((row) => row.candidateCount <= 1)).toBe(true);
   });
 
+  /**
+   * A round assembled by hand rather than played, for the tests about what the
+   * progress column draws.
+   *
+   * Deriving the expected band from `progressLevel` in the assertion is the
+   * temptation, and it proves nothing: it recomputes the component's own
+   * expression, so it passes whatever the bands turn out to be, and it makes
+   * what the test claims a function of the generated word lists. These counts
+   * are chosen so each row lands in a different band, written out below. Where
+   * the bands themselves belong is `describe('the progress light')` above.
+   */
+  const banded: GameScore = {
+    skill: 80,
+    outcome: 0,
+    starterBonus: 0,
+    total: 80,
+    guessesUsed: 5,
+    solved: true,
+    breakdown: [
+      // 100 words off 3000 is barely a step into the uncertainty.
+      handRow(1, 'spork', 3000, 2900),
+      // after² <= before: half of what was left to find out.
+      handRow(2, 'crane', 2900, 40),
+      // after⁴ <= before³ but not the above: a quarter.
+      handRow(3, 'moist', 40, 11),
+      // Nothing left to remove, two turns from the end.
+      handRow(4, 'pluck', 1, 1),
+      handRow(5, 'yeast', 1, 1, WIN_PATTERN),
+    ],
+  };
+
+  /** The same rows, with the last one failing instead of winning. */
+  const bandedLost: GameScore = {
+    ...banded,
+    solved: false,
+    breakdown: banded.breakdown.map((row, index) =>
+      index === banded.breakdown.length - 1 ? { ...row, pattern: 0 } : row,
+    ),
+  };
+
+  const BANDS = ['little or nothing', 'a big cut', 'a fair cut', 'nothing left to cut', 'solved'];
+
+  function renderBanded(score: GameScore) {
+    render(
+      <ThemeProvider theme={theme}>
+        <Results score={score} settings={settings} />
+      </ThemeProvider>,
+    );
+    return within(screen.getByRole('table', { name: /guess by guess/i }))
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => within(row).getAllByRole('cell')[1]!.textContent);
+  }
+
   function renderResults() {
     return render(
       <ThemeProvider theme={theme}>
@@ -274,24 +358,11 @@ describe('the rendered results', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(score.breakdown.length + 1);
   });
 
-  /** Each row lights for its own guess, which is the point of the column. */
-  it('lights each row for the guess on it', () => {
-    renderResults();
-
-    const table = screen.getByRole('table', { name: /guess by guess/i });
-    const rows = within(table).getAllByRole('row').slice(1);
-
-    rows.forEach((row, index) => {
-      const entry = score.breakdown[index]!;
-      const cell = within(row).getAllByRole('cell')[1]!;
-      const expected = copy.progressLevel(
-        entry.candidateCount,
-        entry.remainingCount,
-        entry.pattern === WIN_PATTERN,
-      );
-
-      expect(cell.textContent, `row ${index + 1}`).toBe(copy.PROGRESS[expected]);
-    });
+  it('draws each row the band its own guess earned', () => {
+    // Five rows, five different bands, in this order. A column that read the
+    // wrong row's counts would come out in a different order; one that read the
+    // same row every time would not vary at all.
+    expect(renderBanded(banded)).toEqual(BANDS);
   });
 
   it('reads the winning guess as solved', () => {
@@ -331,25 +402,13 @@ describe('the rendered results', () => {
     }
   });
 
-  it('lights every row of a lost round, and calls none of them solved', () => {
-    render(
-      <ThemeProvider theme={theme}>
-        <Results score={lostScore} settings={settings} />
-      </ThemeProvider>,
-    );
+  it('bands every row of a lost round, and calls none of them solved', () => {
+    const drawn = renderBanded(bandedLost);
 
-    const table = screen.getByRole('table', { name: /guess by guess/i });
-    const rows = within(table).getAllByRole('row').slice(1);
-
-    rows.forEach((row, index) => {
-      const entry = lostScore.breakdown[index]!;
-      const cell = within(row).getAllByRole('cell')[1]!;
-
-      expect(cell).not.toHaveTextContent(/solved/i);
-      expect(cell.textContent, `row ${index + 1}`).toBe(
-        copy.PROGRESS[copy.progressLevel(entry.candidateCount, entry.remainingCount, false)],
-      );
-    });
+    // Only the winning pattern earns the top band, so the last row drops to the
+    // one its counts alone deserve rather than keeping the round's ending.
+    expect(drawn).toEqual([...BANDS.slice(0, -1), 'nothing left to cut']);
+    expect(drawn.join(' ')).not.toMatch(/solved/i);
   });
 
   it('leaves the light unlit where nothing was left to clear', () => {
@@ -427,7 +486,7 @@ describe('the rendered results', () => {
     const shown = within(table)
       .getAllByRole('row')
       .slice(1)
-      .map((row) => row.querySelector('span')?.textContent ?? '');
+      .map((row) => within(row).getAllByRole('cell')[0]!.textContent ?? '');
 
     expect(shown).toEqual(score.breakdown.map((row) => row.guess));
   });

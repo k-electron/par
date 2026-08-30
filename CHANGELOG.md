@@ -35,6 +35,29 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Changed
 
+- **The guess-by-guess table shows its three measures instead of narrating them.** Every row carried
+  two lines of prose — a note under the word and a note under the luck figure — and the note under
+  the word was mostly the skill number restated in bands: `Best available` at 99, `Near best` at 90,
+  `Reasonable` at 70. So a six-row round spent twelve lines saying what four columns already said,
+  and the reader had to parse a sentence per cell to compare two turns. The words are all still
+  rendered, off-screen, so a screen reader reads exactly what the page used to print.
+  - **Progress** is four pips rather than one dot with a phrase under it. The count carries the
+    ordering, which the colour could not: `solved` and `major` are both green, so hue was always
+    coarser than the bands `progressLevel` computes. Still a band and never a count of words —
+    [0003](docs/decisions/0003-the-progress-light.md) is otherwise untouched.
+  - **Skill** is a bar against a track fixed at 100, which is the scorer's ceiling rather than a
+    scaling choice, so the empty part is exactly what the guess left on the table. Banded on
+    `guessNote`'s own thresholds, `NEAR_BEST` and a newly named `REASONABLE`, so the bar and the
+    phrase it replaced cannot disagree about a row. The two cases that were never a band of the
+    number are drawn rather than written: a forced move greys its fill, since the score was the
+    position's doing and not the player's, and an unscored opener shows an empty track.
+  - **Luck** is a bar either side of a zero mark, full at two bits, so its sign is the first thing
+    read. Amber for hot and blue for cold, deliberately not green and red: luck never reaches a
+    total, and colouring it like a grade would make the one display-only figure look like the
+    verdict on the round.
+  - The `#` header now reads `Guess`. It labelled a column of words, which it had done since the
+    note moved in underneath the word.
+
 - **The explainer says why each guess scored what it did, instead of restating the formula.** Every
   scored row read `what the best available play needed from there, as a share of what THIEF needed`
   — a ratio of two invisible quantities, in the order the formula computes it, with the noun both
@@ -160,6 +183,22 @@ here landed afterwards, each behind a pull request and a green quality gate.
   the word-list licensing paragraph no longer rests its argument on the project being unpublished.
 
 ### Verified
+
+- **The progress column's rendering tests stopped recomputing the answer they were checking.** Three
+  of them derived the expected band by calling `progressLevel` in the assertion — the component's own
+  expression — so they passed whatever the bands turned out to be, and what they claimed was a
+  function of the generated word lists. They now render a round assembled by hand, five rows landing
+  in five different bands chosen in the test file and written out there. A column reading the wrong
+  row's counts comes out in a different order; one reading the same row every time does not vary. The
+  bands themselves are still checked against fixed counts in `describe('the progress light')`, and
+  each new assertion was shown to fail by pinning the component to one band.
+- **`scoreGame` now checks the ordering its test was named for.** `prices a loss below any solve`
+  asserted only that the outcome equalled `outcomePoints(6, false)`, which is the line `scoreGame`
+  runs — it could not have caught the floor being wrong. It compares a lost round against a solve
+  that used all six guesses, which is the claim the unsolved floor actually exists to make.
+- **The guess column is read as a cell rather than as the first `span` in the row.** That query
+  encoded where the markup happened to put the word, and broke on a layout change that left every
+  word exactly where it was.
 
 - **The icon is checked as a file, not as a picture somebody looked at.** `tests/icons.test.ts` holds
   every file `index.html` names to existing, holds `public/` to carrying no icon nothing declares,
