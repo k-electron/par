@@ -77,11 +77,16 @@ Both stay whole numbers well inside exact integer range. A band resting on a flo
 comparison could word the same round differently on two machines, and a replay link is meant to read
 identically for both friends holding it.
 
-**Never colour alone.** Each light carries a phrase — `a big cut`, `a fair cut`, `little or nothing`,
-`nothing left to cut`, `solved` — and the phrase is the signal rather than a caption on it. Roughly
-one man in twelve cannot separate red from green, which is why the board ships a high-contrast tile
-palette at all; a signal living only in hue would undo that. It also keeps the light legible next to
-a board where green and yellow already mean something else entirely.
+**Never colour alone.** Roughly one man in twelve cannot separate red from green, which is why the
+board ships a high-contrast tile palette at all; a signal living only in hue would undo that. The
+light shipped as a dot with its phrase underneath — `a big cut`, `a fair cut`, `little or nothing`,
+`nothing left to cut`, `solved` — and the phrase, not the dot, was the signal.
+
+The phrase moved off the screen once the table went visual (see below); the row it sits in still
+carries it for a screen reader. What replaced it is **four pips, of which the level lights nought to
+four**, so the ordering is a count before it is a hue. That is strictly more than the colour ever
+said: `solved` and `major` are both green, so hue alone was always coarser than the bands the scorer
+computed.
 
 ## Old links
 
@@ -129,7 +134,8 @@ differ often enough to be worth showing side by side.
 ## What it costs
 
 **The endgame reads less sharply.** "2, from 9" told you precisely how tight the position was, and a
-light does not. `guessNote` still says `Only one word left` where it matters most.
+light does not. `guessNote` still says `Only one word left` where it matters most — to a screen
+reader since the table went visual, where before it was on the page.
 
 **A light needs a sentence of explanation where a count did not.** The scoring explainer carries it,
 which spec §9 asks for anyway — and it has something worth saying: a perfectly good opener often
@@ -149,6 +155,6 @@ units changed.
 ## Reversing it
 
 `progressLevel` and `PROGRESS` in [`src/app/copy/results.ts`](../../src/app/copy/results.ts) are the
-whole of it, plus `ProgressLight` in `Results.tsx`. Return the counts from there and the old column is
+whole of it, plus `ProgressPips` in `Results.tsx`. Return the counts from there and the old column is
 back, along with the first row publishing the size of the answer list. `tests/app/results.test.tsx`
 asserts that no digit reaches the column on a round won or lost, so it cannot come back by accident.

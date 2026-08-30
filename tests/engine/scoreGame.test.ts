@@ -170,19 +170,23 @@ describe('the total', () => {
     expect(scoreGame({ ...shared, tookHouseStarter: true }, scorer).starterBonus).toBe(EPSILON);
   });
 
-  it('prices a loss below any solve', () => {
+  it('prices a loss below even the slowest solve', () => {
     const scorer = scorerFor();
+    const game = { answer: 'catch', tookHouseStarter: false } as const;
     const lost = scoreGame(
-      {
-        guesses: ['plumb', 'shirt', 'grove', 'stomp', 'brine', 'drone'],
-        answer: 'catch',
-        tookHouseStarter: false,
-      },
+      { ...game, guesses: ['plumb', 'shirt', 'grove', 'stomp', 'brine', 'drone'] },
+      scorer,
+    );
+    const scraped = scoreGame(
+      { ...game, guesses: ['plumb', 'shirt', 'grove', 'stomp', 'brine', 'catch'] },
       scorer,
     );
 
     expect(lost.solved).toBe(false);
-    expect(lost.outcome).toBe(outcomePoints(6, false));
+    expect(scraped.guessesUsed).toBe(6);
+    // Both used every turn, so without the unsolved floor these would pay the
+    // same and running out would cost nothing over getting there on the last one.
+    expect(lost.outcome).toBeLessThan(scraped.outcome);
   });
 
   it('stops at the winning guess', () => {
