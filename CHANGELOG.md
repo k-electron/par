@@ -45,12 +45,21 @@ here landed afterwards, each behind a pull request and a green quality gate.
     ordering, which the colour could not: `solved` and `major` are both green, so hue was always
     coarser than the bands `progressLevel` computes. Still a band and never a count of words —
     [0003](docs/decisions/0003-the-progress-light.md) is otherwise untouched.
-  - **Skill** is a bar against a track fixed at 100, which is the scorer's ceiling rather than a
-    scaling choice, so the empty part is exactly what the guess left on the table. Banded on
-    `guessNote`'s own thresholds, `NEAR_BEST` and a newly named `REASONABLE`, so the bar and the
-    phrase it replaced cannot disagree about a row. The two cases that were never a band of the
-    number are drawn rather than written: a forced move greys its fill, since the score was the
-    position's doing and not the player's, and an unscored opener shows an empty track.
+  - **Skill** is a bar over the range a guess can actually reach, 50 to 100, with the exact figure
+    still under it. `skill` is `100 × best/cost`, a ratio of expected guesses, so it cannot reach
+    zero — and across 120 puzzles at three player strengths, about a thousand scored rows, nothing
+    came in below 50. A 0–100 track therefore spent half its width on scores that cannot happen and
+    drew 95 and 100 almost identically, which is where most rows land. 50 is where a whole turn
+    goes: `best 1.000, yours 2.000` is one word left and a guess that was not it, so the track now
+    covers exactly the range from giving up a turn to giving up nothing. The truncation discloses
+    itself through the figure beside the bar — the bar ranks the rows, the number says what they
+    scored — and a score under the measured floor clamps to an empty track rather than a negative
+    one. Banded on `guessNote`'s own thresholds, `NEAR_BEST` and a newly named `REASONABLE`, so the
+    bar and the phrase it replaced cannot disagree about a row. The two cases that were never a
+    band of the number are drawn rather than written: a forced move greys its fill, since the score
+    was the position's doing and not the player's, and an unscored opener is outlined rather than
+    filled — flooring the track means a row *at* the floor draws nothing, and a solid empty track
+    would otherwise read the same as a row that was never measured.
   - **Luck** is a bar either side of a zero mark, full at two bits, so its sign is the first thing
     read. Amber for hot and blue for cold, deliberately not green and red: luck never reaches a
     total, and colouring it like a grade would make the one display-only figure look like the

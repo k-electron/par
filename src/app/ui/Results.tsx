@@ -17,6 +17,7 @@ import {
   NEAR_BEST,
   REASONABLE,
   guessNote,
+  skillMeterFill,
   headline,
   luckNote,
   parPhrase,
@@ -125,10 +126,8 @@ function ProgressPips({ level }: { level: ProgressLevel }) {
 }
 
 /**
- * The track is 100 because 100 is what the position had on offer — the scorer's
- * ceiling rather than a scaling choice — so the empty part of the bar is exactly
- * what the guess left behind. Banded on `guessNote`'s own thresholds, so the bar
- * and the phrase it replaced cannot disagree about a row.
+ * Banded on `guessNote`'s own thresholds, so the bar and the phrase it replaced
+ * cannot disagree about a row.
  *
  * A forced move greys its fill instead: the position offered no real choice, so
  * whatever the number came out at was the position's doing and not the player's
@@ -145,20 +144,28 @@ function SkillMeter({
 }) {
   return (
     <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
+      {/*
+        An unscored row is outlined rather than filled. Flooring the track means
+        a row at the floor draws nothing, and a solid empty track would then read
+        the same as an opener that was never measured — one is the worst score
+        available, the other is no score at all.
+      */}
       <Box
         aria-hidden
         sx={{
           width: METER_WIDTH,
           height: METER_HEIGHT,
           borderRadius: METER_HEIGHT,
-          bgcolor: 'action.hover',
+          bgcolor: skill === null ? 'transparent' : 'action.hover',
+          border: skill === null ? '1px dashed' : undefined,
+          borderColor: skill === null ? 'divider' : undefined,
           overflow: 'hidden',
         }}
       >
         {skill !== null && (
           <Box
             sx={{
-              width: `${skill}%`,
+              width: `${skillMeterFill(skill)}%`,
               height: '100%',
               borderRadius: METER_HEIGHT,
               bgcolor: forced

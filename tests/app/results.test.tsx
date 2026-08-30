@@ -254,6 +254,32 @@ describe('what the copy must never say', () => {
   });
 });
 
+/**
+ * The bar's scale, apart from the view, because the interesting part is the map
+ * rather than the markup.
+ */
+describe('the skill meter', () => {
+  it('spends the whole track on the range a guess can reach', () => {
+    // 50 is a whole turn given up — one word left and a guess that was not it —
+    // and nothing scored below it in about a thousand simulated rows.
+    expect(copy.skillMeterFill(100)).toBe(100);
+    expect(copy.skillMeterFill(75)).toBe(50);
+    expect(copy.skillMeterFill(50)).toBe(0);
+  });
+
+  it('separates two scores the old track drew almost on top of each other', () => {
+    // A real pair from puzzle 242: 97.8 beside a 100. On a 0-100 track they
+    // differed by 2.2% of the width, which is under a pixel at this size.
+    expect(copy.skillMeterFill(100) - copy.skillMeterFill(97.8)).toBeCloseTo(4.4, 6);
+  });
+
+  it('empties rather than inverts under the floor', () => {
+    // The floor is measured, not proved. A row below it must not draw backwards.
+    expect(copy.skillMeterFill(40)).toBe(0);
+    expect(copy.skillMeterFill(0)).toBe(0);
+  });
+});
+
 describe('the rendered results', () => {
   const score = scoreDirectly({
     guesses: [PUZZLE.starter, 'crane', PUZZLE.answer],
