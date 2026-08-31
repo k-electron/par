@@ -354,6 +354,12 @@ describe('the replay itself', () => {
     );
   }
 
+  it('celebrates nobody \u2014 the win on screen is not the reader\u2019s', () => {
+    mountRevealed();
+
+    expect(screen.queryByTestId('confetti')).not.toBeInTheDocument();
+  });
+
   it('rebuilds the sender\u2019s board', () => {
     mountRevealed();
 
