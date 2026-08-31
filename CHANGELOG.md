@@ -181,6 +181,12 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Fixed
 
+- **`nanoid` bumped past a high-severity advisory**
+  ([GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8)). 3.3.16 to 3.3.18, a
+  lockfile-only change: nothing depends on it directly, it arrives under `vite` through `postcss`
+  and only ever runs at build time, so no shipped byte changes. Reported by `npm audit` and long
+  predates the confetti that surfaced it. `npm audit` now finds nothing.
+
 - **The finished page scrolled about 670px past its own last line.** Only after a round ended, which
   is when the results table exists. The table carries every phrase it stopped drawing in a visually
   hidden span, and those were written in `sx` rather than in CSS — `sx` is not CSS, it runs bare
