@@ -10,16 +10,23 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Added
 
-- **Confetti when you solve it** ([#22](https://github.com/k-electron/par/pull/22)). Forty CSS-animated pieces over a fixed,
+- **Confetti when you solve it** ([#22](https://github.com/k-electron/par/pull/22)). Two poppers in
+  the bottom corners, firing across each other — sixty CSS-animated pieces over a fixed,
   `pointer-events: none`, `aria-hidden` overlay in
-  [`src/app/ui/Confetti.tsx`](src/app/ui/Confetti.tsx) — no canvas, no dependency, nothing a screen
-  reader has to read past. It waits on the same `finished` flag the score does, so the celebration
-  lands with the last tile rather than over a row still turning over, and it is skipped entirely
-  under a reduced-motion preference. Only on your own board: a shared round is somebody else's win,
-  and [`Replay.tsx`](src/app/ui/Replay.tsx) does not render it. The scatter is derived from each
-  piece's index rather than drawn at random, because the screen re-renders while the score settles
-  and redrawn random values would teleport the pieces mid-fall. Three tests hold the line — the
-  confetti is absent mid-reveal and present after, absent on a loss, absent on a replayed link.
+  [`src/app/ui/Confetti.tsx`](src/app/ui/Confetti.tsx). No canvas, no dependency, nothing a screen
+  reader has to read past. Where each piece is thrown arrives as custom properties on the element,
+  so the whole burst shares one keyframe instead of one per piece, and the two halves of that
+  keyframe are eased in opposite directions: decelerating out of the barrel, then accelerating
+  under gravity as it fades. A single easing across both is what made the first attempt read as
+  snowfall. Corners rather than a burst from the middle, because the results land in the centre of
+  the screen the moment the board settles. It waits on the same `finished` flag the score does, so
+  the celebration lands with the last tile rather than over a row still turning over, and it is
+  skipped entirely under a reduced-motion preference. Only on your own board: a shared round is
+  somebody else's win, and [`Replay.tsx`](src/app/ui/Replay.tsx) does not render it. The spread is
+  derived from each piece's index rather than drawn at random, because the screen re-renders while
+  the score settles and redrawn random values would teleport the pieces mid-flight. Three tests
+  hold the line — the confetti is absent mid-reveal and present after, absent on a loss, absent on
+  a replayed link.
 
 - **An icon.** There was none, so every tab, bookmark and home screen showed a blank sheet of paper.
   The mark is a flagstick on the green, which is also a P: the tile is one of the board's own, in the
