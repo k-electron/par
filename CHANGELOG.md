@@ -10,7 +10,7 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Added
 
-- **Confetti when you solve it** (PR_LINK). Forty CSS-animated pieces over a fixed,
+- **Confetti when you solve it** ([#22](https://github.com/k-electron/par/pull/22)). Forty CSS-animated pieces over a fixed,
   `pointer-events: none`, `aria-hidden` overlay in
   [`src/app/ui/Confetti.tsx`](src/app/ui/Confetti.tsx) — no canvas, no dependency, nothing a screen
   reader has to read past. It waits on the same `finished` flag the score does, so the celebration
