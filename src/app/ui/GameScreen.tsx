@@ -24,6 +24,7 @@ import {
 } from '../state/gameSession';
 import { AppearanceMenu } from './AppearanceMenu';
 import { Board } from './Board';
+import { Confetti } from './Confetti';
 import { DefinitionLink } from './DefinitionLink';
 import { INSTANT_REVEAL, REVEAL, revealDuration, type RevealTiming } from './reveal';
 import { Keyboard } from './Keyboard';
@@ -239,6 +240,13 @@ export function GameScreen({
         width: '100%',
       }}
     >
+      {/*
+        Waits on `finished` rather than on the win itself, so the celebration
+        lands with the last tile instead of over a row still turning over.
+        Skipped entirely under a reduced-motion preference.
+      */}
+      {finished && session.status === 'won' && !stillness && <Confetti />}
+
       <Stack spacing={0.75} sx={{ textAlign: 'center' }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center' }}>
           <Box sx={{ flex: '1 1 0' }} />

@@ -147,6 +147,24 @@ describe('a row turning over', () => {
     }
   });
 
+  /**
+   * The celebration is decoration too, so it obeys the same rule as the score:
+   * nothing about the ending appears over a row still turning over.
+   */
+  it('holds the confetti back until the last tile has landed', async () => {
+    const user = userEvent.setup();
+    await mountScored([PUZZLE.starter, PUZZLE.answer]);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    await settled();
+    await user.keyboard(`${PUZZLE.answer}{Enter}`);
+
+    expect(revealingRow(), 'should still be mid-reveal').not.toBeNull();
+    expect(screen.queryByTestId('confetti')).not.toBeInTheDocument();
+
+    expect(await screen.findByTestId('confetti', {}, PATIENCE)).toBeInTheDocument();
+  });
+
   it('leaves the keys alone until the row it belongs to has settled', async () => {
     const user = userEvent.setup();
     mountApp();
@@ -213,6 +231,7 @@ describe('a row turning over', () => {
     expect(screen.queryByText(/the answer was/i)).not.toBeInTheDocument();
 
     expect(await screen.findByText(/the answer was/i, {}, PATIENCE)).toBeInTheDocument();
+    expect(screen.queryByTestId('confetti'), 'a loss is not celebrated').not.toBeInTheDocument();
   });
 });
 
