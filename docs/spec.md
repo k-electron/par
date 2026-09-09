@@ -189,6 +189,7 @@ Sharing has two jobs that pull against each other: it must spoil nothing for som
 - **It includes a link that encodes the player's exact path.** Opening it reconstructs the board, recomputes the score from scratch, and shows the full play-by-play: each guess, its skill score, and its luck. The recomputed total must match the sender's exactly.
 - **The link must be opaque.** Guesses and answer must not be readable from the URL text — chat clients preview URLs, and nobody should be spoiled by glancing at one. Compact encoding of word indices is enough; light obfuscation on top is fine. This is spoiler-prevention, not security, and should be treated as such.
 - **Spoiler gate:** if a recipient hasn't finished that day's puzzle themselves, warn them before revealing anything and let them back out. It's a confirmation, not a wall — someone who chooses to look gets straight in.
+- **Device-native share on mobile:** on Android and iOS devices, sharing invokes the operating system's native share sheet via the Web Share API. Desktop platforms, browsers without Web Share, or environments where permissions are refused fall back to clipboard copying and manual text selection.
 - Malformed or unrecognized links fail gracefully.
 
 ---

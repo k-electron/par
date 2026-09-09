@@ -10,6 +10,14 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Added
 
+- **Native share sheet on Android and iOS**. Tapping the share button on mobile
+  devices now invokes `navigator.share` rather than only copying to the clipboard,
+  letting players send their round straight to Messages, WhatsApp, or other apps.
+  Desktop browsers (macOS Safari, Windows Chrome) continue copying directly to the
+  clipboard with the existing snackbar to avoid popping intrusive desktop OS
+  dialogs. User dismissals (`AbortError`) cancel cleanly without triggering false
+  error or fallback states, while actual failures degrade gracefully to clipboard
+  copy and the manual `<TextField>` fallback.
 - **Confetti when you solve it** ([#22](https://github.com/k-electron/par/pull/22)). Two cannons in
   the bottom corners, firing across each other, drawn by
   [`canvas-confetti`](https://github.com/catdad/canvas-confetti) — the first cut hand-rolled the
