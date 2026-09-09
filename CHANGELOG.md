@@ -8,8 +8,33 @@ landed as pull requests against a live site.
 The site went up on Cloudflare Pages at [par-e7i.pages.dev](https://par-e7i.pages.dev). Everything
 here landed afterwards, each behind a pull request and a green quality gate.
 
-### Added
-
+- **Clean up legacy 'radial' naming and update score documentation** ([#33](https://github.com/k-electron/par/pull/33)).
+  Renames `src/app/ui/radialScore.ts` to [`src/app/ui/scoreZones.ts`](src/app/ui/scoreZones.ts), completely removing
+  vestigial "radial" naming from code and tests following the transition to the horizontal bar meter. Adds
+  Architecture Decision Record [0006](docs/decisions/0006-horizontal-score-meter-and-dynamic-zones.md), updates
+  [`docs/scoring.md`](docs/scoring.md) with comprehensive documentation of score meter zones, dynamic per-day per-mode
+  curve fitting, and secret edge-case zones, and updates [`README.md`](README.md).
+- **2-line Blind luck, secret Blind zone, headline removal, and share zone** ([#32](https://github.com/k-electron/par/pull/32)).
+  Splits the "Blind luck" zone label across two lines (`Blind<br />luck`) on the horizontal meter with bottom-baseline alignment
+  so single-line labels sit flush with "luck". Introduces a secret "Blind" zone (`#334155` light / `#64748B` dark) on the far
+  left for sub-60 rounds ($< 60.0$) with a dynamic floor ($S_{\text{floor}} = \min(0, \lfloor \text{score}/10 \rfloor \times 10)$),
+  preventing scale breakages while remaining hidden during normal play. Removes the redundant headline text line ("Just about flawless.", etc.)
+  from the results card. Appends the exact zone name (e.g. `Good`, `Ultra`, `Godlike`, `Blind luck`, `Blind`) to line 1 of shared
+  clipboard text without appending the word "zone".
+- **Dynamic per-day per-mode curve fitting and secret Blind luck zone** ([#31](https://github.com/k-electron/par/pull/31)).
+  Replaces static global score bounds with dynamic session-level curve fitting: derives $S_{\text{max}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2) + (\text{took house starter} ? \epsilon : 0)$
+  tailored to the day's PAR, starter choice, and ruleset. Isolates unearned guess-1 hole-in-one luck ($n = 1$) into a hidden
+  7th "Blind luck" zone, making the "Godlike" zone mathematically attainable for skilled human multi-guess play ($n \ge 2$).
+- **Remove redundant active zone badge under score number** ([#30](https://github.com/k-electron/par/pull/30)).
+  Cleans up visual hierarchy on results screen by removing the duplicate zone chip under the score number, allowing the
+  prominent horizontal score meter and stroke phrase to lead the presentation.
+- **Horizontal multi-segment score meter** ([#29](https://github.com/k-electron/par/pull/29)).
+  Replaces the circular radial gauge with [`HorizontalScoreMeter.tsx`](src/app/ui/HorizontalScoreMeter.tsx), a compact
+  multi-segment horizontal bar displaying Troll, Bad, Meh, Good, Ultra, and Godlike zones with tick marks and an animated
+  needle indicator, keeping key results and badges visible above the fold on mobile screens.
+- **Radial score gauge and synchronized reveal scroll** ([#28](https://github.com/k-electron/par/pull/28)).
+  Initial qualitative scoring presentation visualising round totals across performance zones with synchronized scrolling
+  during the board reveal.
 - **`starters_v2` for Game 260+ and re-calibrated `PAR_V2`** ([#26](https://github.com/k-electron/par/pull/26)).
   Derives a dedicated house starter pool for the v2 era (`starters_v2`) dynamically from `answers_v2` using
   Option B: the top 5,000 words ordered by frequency that do not contain triple letters (Philosophy §9).

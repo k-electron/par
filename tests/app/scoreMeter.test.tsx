@@ -11,7 +11,7 @@ import {
   computeDynamicZones,
   scoreToPositionPct,
   zoneForScore,
-} from '../../src/app/ui/radialScore';
+} from '../../src/app/ui/scoreZones';
 
 afterEach(cleanup);
 
