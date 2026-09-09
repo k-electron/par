@@ -138,13 +138,15 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
   const parStrokes = options.par !== undefined && options.par < 50 ? options.par : PAR;
   const parScore = 100 + starterBonus;
 
-  // Theoretical ceiling for 2-guess play (Option 2A)
-  const sMax = options.maxScore !== undefined
-    ? options.maxScore
-    : 100 + C_PAR * (parStrokes - 2) + starterBonus;
-
   // Hole-in-one theoretical maximum (Option 2B)
   const holeInOneScore = 100 + C_PAR * (parStrokes - 1) + starterBonus;
+
+  // Theoretical ceiling for 2-guess play (Option 2A)
+  const s2Max = 100 + C_PAR * (parStrokes - 2) + starterBonus;
+  const sMax =
+    options.maxScore !== undefined && options.maxScore < holeInOneScore - 0.5
+      ? options.maxScore
+      : s2Max;
 
   // Reveal secret "Blind" zone if player scored below Troll (< 60)
   const isBlind = options.totalScore !== undefined && options.totalScore < METER_MIN_SCORE;

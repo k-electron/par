@@ -55,6 +55,7 @@ export function createDirectScoringClient(): ScoringClient {
   return {
     async score(query) {
       const key = [
+        query.puzzleNumber ?? 'd',
         query.hardMode ? 'h' : 'n',
         query.tookHouseStarter ? 's' : 'o',
         query.answer,

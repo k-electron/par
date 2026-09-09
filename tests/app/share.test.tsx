@@ -375,6 +375,47 @@ describe('cutover versioning (v1 vs v2)', () => {
     expect(decodedV1.ok && decodedV1.game.scorerVersion).toBe(SCORER_VERSION_V1);
     expect(decodedV2.ok && decodedV2.game.scorerVersion).toBe(SCORER_VERSION_V2);
   });
+
+  it('scores and shares Game 260+ with PAR_V2, dynamic zone name, and scorer version 2', () => {
+    const v2Score = scoreDirectly({
+      guesses: ['swole', 'sheet', 'sheen'],
+      answer: 'sheen',
+      tookHouseStarter: true,
+      hardMode: false,
+      puzzleNumber: 260,
+    });
+
+    expect(v2Score.par).toBe(3.98);
+    expect(v2Score.solved).toBe(true);
+    expect(v2Score.guessesUsed).toBe(3);
+
+    const text = shareText({
+      puzzleNumber: 260,
+      score: v2Score,
+      hardMode: false,
+      tookHouseStarter: true,
+      guessIndices: [0, 1, 2],
+      wordListVersion: WORD_LIST_VERSION,
+      origin: 'https://par.pages.dev/',
+    });
+
+    // Share text contains puzzle 260, zone name (without "zone"), and PAR phrase
+    expect(text).toMatch(/^Par 260 3\/6 — \d+\.\d+ · (Good|Ultra|Godlike|Meh)/);
+    expect(text).not.toContain('zone');
+    expect(text).toContain('a stroke under par');
+    expect(text).toContain('house starter');
+
+    // Replay link in share text decodes cleanly with scorer version 2
+    const link = text.split('\n').filter((l) => l.startsWith('https://'))[0]!;
+    const payload = link.split('#r=')[1]!;
+    const decoded = decodeSharedGame(payload);
+    expect(decoded.ok).toBe(true);
+    if (decoded.ok) {
+      expect(decoded.game.puzzleNumber).toBe(260);
+      expect(decoded.game.scorerVersion).toBe(SCORER_VERSION_V2);
+      expect(decoded.game.tookHouseStarter).toBe(true);
+    }
+  });
 });
 
 describe('the replay itself', () => {
