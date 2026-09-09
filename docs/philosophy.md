@@ -96,7 +96,7 @@ The daily starter is drawn from a pool much wider than the answer list but still
 
 The point of that shape: taking the house starter should never feel like a trap, but it should rarely feel like a gift either. If the pool were pristine, the choice would be boring; if it included garbage, taking the bonus would be a sucker's bet and nobody would. A small minority of days should have a doubled letter — those are the spicy ones, informationally weaker and worth a groan. Never a triple; that's past interesting and into unfair.
 
-*What testing showed:* with decent continuation play, starter quality barely affects outcomes — roughly a tenth of a guess between a random decent word and the theoretically best one. So the pool's exact composition isn't delicate, and duplicate-letter days need no compensation. In v2, the house starter penalty remains 0.2133 guesses, so `EPSILON = 3` continues to maintain the exact intended +2 point daily net tax on bookmark players.
+*What testing showed:* with decent continuation play, starter quality barely affects outcomes — roughly a tenth of a guess between a random decent word and the theoretically best one. So the pool's exact composition isn't delicate, and duplicate-letter days need no compensation. In v2 (Game 260+), the house starter pool is drawn from `starters_v2` (the first 5,000 words of `answers_v2` with triples filtered out per the rule above), guaranteeing every house starter is a legitimate answer with zero regular plurals. The house starter penalty measures 0.2833 guesses (~1.13 points), so `EPSILON = 3` continues to maintain the exact intended +1.8 to +2.8 point daily net tax on bookmark players.
 
 ---
 

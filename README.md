@@ -134,10 +134,16 @@ all players receive the same word worldwide:
     - Tier 2 (next 2,500 words): weight 4 (~23.8% probability)
     - Tier 3 (next 2,500 words): weight 2 (~11.9% probability)
     - Tier 4 (remaining 2,070 words, including pure verbs): weight 1 (~4.9% probability)
+  - **House starters v2 (`starters_v2`)**: In v1, starters were drawn uniformly from a 5,000-word dictionary pool
+    that contained regular plurals (`MASKS`, `BOATS`, etc.). Since v2 filters plurals from candidate answers, drawing a word
+    like `MASKS` made it obvious that the starter had a 0% chance of being a hole-in-one. From puzzle 260 onwards, daily
+    house starters are drawn from `starters_v2`, dynamically derived from the top 5,000 words of `answers_v2` that contain no
+    triple letters (Philosophy §9). Every house starter in the v2 era is a legitimate answer candidate in `answers_v2` with 0%
+    simple regular plurals and 0% triple letters.
   - **Backward compatibility and Path A scoring**: Puzzles 0 through 259 and all historical share links continue to use
     v1 selection and score against the legacy lexicon with unweighted search (`SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`)
     without divergence or version warnings. Games from puzzle 260 onward use Path A probability-weighted search
-    against the v2 candidate distribution (`SCORER_VERSION_V2 = 2`, `PAR_V2`), ensuring decision evaluation exactly matches
+    against the v2 candidate distribution (`SCORER_VERSION_V2 = 2`, `PAR_V2 = 3.9800`), ensuring decision evaluation exactly matches
     word probability. Replay links from both eras open cleanly with complete fidelity.
 
 See [`docs/wordlists.md`](docs/wordlists.md) and [`docs/scoring.md`](docs/scoring.md) for generation scripts, POS filtering, and scoring math.
@@ -165,12 +171,13 @@ the word lists, so regenerating them leaves it stale and every total mis-centred
 ```bash
 npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts (defaults to v2, parallel workers)
 npm run compute-par -- --v1 --days 300 # recomputes legacy v1 PAR
-npm run check-incentives -- --days 120 # confirms the incentives still point the right way
+npm run check-incentives -- --days 120 # confirms the incentives still point the right way (defaults to v2)
+npm run check-incentives -- --v1 --days 120 # confirms v1 legacy incentives
 npm run check-lights -- --days 150     # confirms the progress light still says something
 ```
 
 The first runs multi-threaded across worker threads and prints the guess distribution plus what
-the house starter costs against a fixed strong opener (`PAR_V2 = 3.9100`). The second exits non-zero if taking the house starter
+the house starter costs against a fixed strong opener (`PAR_V2 = 3.9800`). The second exits non-zero if taking the house starter
 stops being the mildly better habit, or if collecting the bonus and then ignoring the clues
 stops being the worst option. The third exits non-zero if the results table's progress light
 stops discriminating between guesses, or if its red band hardens from a hint into a proof
