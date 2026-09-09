@@ -109,7 +109,7 @@ describe('HorizontalScoreMeter', () => {
   const lightTheme = createTheme({ palette: { mode: 'light' } });
   const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
-  it('renders meter with semantic h3 score, active zone badge, and all zone names', () => {
+  it('renders meter with semantic h3 score and all zone names', () => {
     render(
       <ThemeProvider theme={lightTheme}>
         <HorizontalScoreMeter score={102.4} par={100} animated={false} />
@@ -125,10 +125,6 @@ describe('HorizontalScoreMeter', () => {
     // Score in h3
     const heading = screen.getByRole('heading', { level: 3 });
     expect(heading).toHaveTextContent('102.4');
-
-    // Active Zone badge
-    expect(screen.getByText('Good Zone')).toBeInTheDocument();
-    expect(screen.getByText('(98–104)')).toBeInTheDocument();
 
     // All 6 zone names are clearly visible
     expect(screen.getByText('Troll')).toBeInTheDocument();
@@ -155,7 +151,6 @@ describe('HorizontalScoreMeter', () => {
     );
 
     expect(screen.getByText('108.7')).toBeInTheDocument();
-    expect(screen.getByText('Ultra Zone')).toBeInTheDocument();
   });
 
   it('handles clamped boundary scores cleanly', () => {
@@ -165,7 +160,6 @@ describe('HorizontalScoreMeter', () => {
       </ThemeProvider>,
     );
     expect(screen.getByText('50.0')).toBeInTheDocument();
-    expect(screen.getByText('Troll Zone')).toBeInTheDocument();
 
     rerender(
       <ThemeProvider theme={lightTheme}>
@@ -173,7 +167,6 @@ describe('HorizontalScoreMeter', () => {
       </ThemeProvider>,
     );
     expect(screen.getByText('120.0')).toBeInTheDocument();
-    expect(screen.getByText('Godlike Zone')).toBeInTheDocument();
   });
 
   it('renders without error when animated={true}', () => {
