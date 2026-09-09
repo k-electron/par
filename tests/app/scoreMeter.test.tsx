@@ -166,6 +166,35 @@ describe('computeDynamicZones', () => {
     expect(zoneForScore(111.89, dyn.zones).id).toBe('blind_luck');
   });
 
+  it('reveals secret "Blind" zone for scores under Troll (< 60)', () => {
+    const dyn = computeDynamicZones({
+      maxScore: 107.92,
+      par: 3.9733,
+      starterBonus: 0,
+      guessesUsed: 6,
+      totalScore: 45.2,
+    });
+
+    expect(dyn.isBlind).toBe(true);
+    expect(dyn.meterMinScore).toBe(0);
+    expect(dyn.zones).toHaveLength(7);
+    expect(dyn.zones[0]?.id).toBe('blind');
+    expect(dyn.zones[0]?.label).toBe('Blind');
+    expect(dyn.zones[0]?.minScore).toBe(0);
+    expect(dyn.zones[0]?.maxScore).toBe(60);
+
+    // Troll starts at 60
+    expect(dyn.zones[1]?.id).toBe('troll');
+    expect(dyn.zones[1]?.minScore).toBe(60);
+
+    // All 7 widths sum to 100%
+    const totalWidth = dyn.horizontalZones.reduce((acc, z) => acc + z.widthPct, 0);
+    expect(totalWidth).toBe(100);
+
+    // zoneForScore maps 45.2 to 'blind'
+    expect(zoneForScore(45.2, dyn.zones).id).toBe('blind');
+  });
+
   it('allows players to achieve Godlike without needing a hole-in-one', () => {
     const dyn = computeDynamicZones({
       maxScore: 107.92,
@@ -258,13 +287,14 @@ describe('HorizontalScoreMeter', () => {
     expect(screen.getByText('Godlike')).toBeInTheDocument();
 
     // "Blind luck" is HIDDEN for normal games
-    expect(screen.queryByText('Blind luck')).toBeNull();
+    expect(screen.queryByText('Blind')).toBeNull();
+    expect(screen.queryByText('luck')).toBeNull();
 
     // PAR marker
     expect(screen.getByText('▲ PAR')).toBeInTheDocument();
   });
 
-  it('renders the 7th "Blind luck" zone when a hole-in-one is achieved (n = 1)', () => {
+  it('renders the 7th "Blind luck" zone across 2 lines when a hole-in-one is achieved (n = 1)', () => {
     render(
       <ThemeProvider theme={lightTheme}>
         <HorizontalScoreMeter
@@ -282,10 +312,34 @@ describe('HorizontalScoreMeter', () => {
     expect(meter).toBeInTheDocument();
     expect(meter).toHaveAttribute('aria-valuenow', '111.9');
 
-    // "Blind luck" zone label is present!
-    expect(screen.getByText('Blind luck')).toBeInTheDocument();
+    // "Blind luck" zone label is present rendered across 2 lines (and accessible label)!
+    expect(screen.getAllByText(/Blind[\s\S]*luck/)).toHaveLength(2);
     expect(screen.getByText('Godlike')).toBeInTheDocument();
     expect(screen.getByText('Ultra')).toBeInTheDocument();
+  });
+
+  it('renders the secret "Blind" zone when score is under 60', () => {
+    render(
+      <ThemeProvider theme={lightTheme}>
+        <HorizontalScoreMeter
+          score={42.5}
+          par={3.9733}
+          maxScore={107.9}
+          starterBonus={0}
+          guessesUsed={6}
+          animated={false}
+        />
+      </ThemeProvider>,
+    );
+
+    const meter = screen.getByRole('meter');
+    expect(meter).toBeInTheDocument();
+    expect(meter).toHaveAttribute('aria-valuenow', '42.5');
+    expect(meter).toHaveAttribute('aria-valuemin', '0');
+
+    // "Blind" zone label is present on the far left!
+    expect(screen.getByText('Blind')).toBeInTheDocument();
+    expect(screen.getByText('Troll')).toBeInTheDocument();
   });
 
   it('renders correctly in dark mode', () => {
