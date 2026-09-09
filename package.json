@@ -19,7 +19,8 @@
     "compute-par": "tsx tools/par/compute-par.ts",
     "render-icons": "tsx tools/icons/render.ts",
     "check-incentives": "tsx tools/par/incentives.ts",
-    "check-lights": "tsx tools/par/lights.ts"
+    "check-lights": "tsx tools/par/lights.ts",
+    "simulate-zones": "tsx tools/par/simulate-zones.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
