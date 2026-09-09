@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { WORD_LIST_VERSION, guesses as dictionary } from '../../data';
 import { SHARE, type RoundVariant } from '../copy/results';
+import { isMobilePlatform } from '../share/platform';
 import { shareText } from '../share/share';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
@@ -58,6 +59,32 @@ export function ShareButton({
 
   const share = useCallback(async () => {
     if (text === null) return;
+
+    if (
+      isMobilePlatform() &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.share === 'function'
+    ) {
+      try {
+        if (!navigator.canShare || navigator.canShare({ text })) {
+          await navigator.share({ text });
+          return;
+        }
+      } catch (error) {
+        // Dismissing or cancelling the native share sheet is an intentional
+        // user dismissal, not a failure. Suppress AbortError rather than
+        // falling back to copying to the clipboard or opening the text field.
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'name' in error &&
+          error.name === 'AbortError'
+        ) {
+          return;
+        }
+        // Other errors fall through to the clipboard fallback.
+      }
+    }
 
     try {
       if (typeof navigator !== 'undefined' && typeof navigator.clipboard?.writeText === 'function') {

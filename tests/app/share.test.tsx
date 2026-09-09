@@ -6,7 +6,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { decodeSharedGame, encodeSharedGame, type SharedGame } from '../../src/app/share/codec';
 import { replayLink, shareText } from '../../src/app/share/share';
@@ -15,6 +15,8 @@ import { Repository } from '../../src/app/storage/repository';
 import { createMemoryStorage } from '../../src/app/storage/storage';
 import { theme } from '../../src/app/theme/theme';
 import { App } from '../../src/app/ui/App';
+import { ShareButton } from '../../src/app/ui/ShareButton';
+import { isMobilePlatform } from '../../src/app/share/platform';
 import { WORD_LIST_VERSION, answers, guesses as dictionary, starters } from '../../src/data';
 import { SCORER_VERSION } from '../../src/engine/config/constants';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
@@ -536,5 +538,149 @@ describe('the replay itself', () => {
     // replay lands on their own completed game rather than a settings gate.
     expect(await screen.findByRole('heading', { level: 1, name: 'PAR' })).toBeInTheDocument();
     expect(screen.queryByText(/somebody.s round/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('the native share sheet on mobile', () => {
+  const originalUserAgent = navigator.userAgent;
+  const originalMaxTouchPoints = navigator.maxTouchPoints;
+  const originalPlatform = navigator.platform;
+
+  function setMobileEnv(ua: string, touchPoints = 0, platform = '') {
+    Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true });
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: touchPoints, configurable: true });
+    Object.defineProperty(navigator, 'platform', { value: platform, configurable: true });
+  }
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'userAgent', { value: originalUserAgent, configurable: true });
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: originalMaxTouchPoints, configurable: true });
+    Object.defineProperty(navigator, 'platform', { value: originalPlatform, configurable: true });
+    delete (navigator as Partial<Navigator>).share;
+    delete (navigator as Partial<Navigator>).canShare;
+    vi.restoreAllMocks();
+  });
+
+  it('detects iPhone, iPad, and Android as mobile, and desktop as non-mobile', () => {
+    setMobileEnv('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    expect(isMobilePlatform()).toBe(true);
+
+    setMobileEnv('Mozilla/5.0 (Linux; Android 14; Pixel 8)');
+    expect(isMobilePlatform()).toBe(true);
+
+    // iPadOS presenting as MacIntel with touch points
+    setMobileEnv('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5, 'MacIntel');
+    expect(isMobilePlatform()).toBe(true);
+
+    // Desktop Chrome / macOS
+    setMobileEnv('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0, 'MacIntel');
+    expect(isMobilePlatform()).toBe(false);
+
+    // Desktop Windows
+    setMobileEnv('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 0, 'Win32');
+    expect(isMobilePlatform()).toBe(false);
+  });
+
+  it('opens navigator.share on mobile without copying to clipboard', async () => {
+    setMobileEnv('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
+
+    const clipboardSpy = vi.spyOn(navigator.clipboard, 'writeText');
+    const user = userEvent.setup();
+
+    const score = scoreDirectly({
+      guesses: PLAYED,
+      answer: PUZZLE.answer,
+      tookHouseStarter: true,
+      hardMode: false,
+    });
+
+    render(
+      <ThemeProvider theme={theme}>
+        <ShareButton
+          puzzleNumber={PUZZLE_NUMBER}
+          score={score}
+          settings={{ hardMode: false, useHouseStarter: true, confirmed: true }}
+          guesses={PLAYED}
+        />
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /share/i }));
+
+    expect(shareMock).toHaveBeenCalledTimes(1);
+    expect(shareMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining(`Par ${PUZZLE_NUMBER}`),
+      }),
+    );
+    expect(clipboardSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText(/copied/i)).not.toBeInTheDocument();
+  });
+
+  it('suppresses AbortError when the user dismisses the native share sheet', async () => {
+    setMobileEnv('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    const abortError = new DOMException('Share canceled', 'AbortError');
+    const shareMock = vi.fn().mockRejectedValue(abortError);
+    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
+
+    const clipboardSpy = vi.spyOn(navigator.clipboard, 'writeText');
+    const user = userEvent.setup();
+
+    const score = scoreDirectly({
+      guesses: PLAYED,
+      answer: PUZZLE.answer,
+      tookHouseStarter: true,
+      hardMode: false,
+    });
+
+    render(
+      <ThemeProvider theme={theme}>
+        <ShareButton
+          puzzleNumber={PUZZLE_NUMBER}
+          score={score}
+          settings={{ hardMode: false, useHouseStarter: true, confirmed: true }}
+          guesses={PLAYED}
+        />
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /share/i }));
+
+    expect(shareMock).toHaveBeenCalledTimes(1);
+    expect(clipboardSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText(/copied/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/shareable result/i)).not.toBeInTheDocument();
+  });
+
+  it('falls back to clipboard if native share fails with an unexpected error', async () => {
+    setMobileEnv('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    const shareMock = vi.fn().mockRejectedValue(new Error('Share failed'));
+    Object.defineProperty(navigator, 'share', { value: shareMock, configurable: true });
+
+    const user = userEvent.setup();
+    const score = scoreDirectly({
+      guesses: PLAYED,
+      answer: PUZZLE.answer,
+      tookHouseStarter: true,
+      hardMode: false,
+    });
+
+    render(
+      <ThemeProvider theme={theme}>
+        <ShareButton
+          puzzleNumber={PUZZLE_NUMBER}
+          score={score}
+          settings={{ hardMode: false, useHouseStarter: true, confirmed: true }}
+          guesses={PLAYED}
+        />
+      </ThemeProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /share/i }));
+
+    expect(shareMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/copied/i)).toBeInTheDocument();
   });
 });
