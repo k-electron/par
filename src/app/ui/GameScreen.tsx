@@ -222,6 +222,24 @@ export function GameScreen({
   }, [over, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode, onScored, puzzleNumber]);
 
   const [showingStats, setShowingStats] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const scrolledRef = useRef(false);
+
+  useEffect(() => {
+    if (!finished || score === null || scrolledRef.current) return;
+    scrolledRef.current = true;
+
+    const timer = window.setTimeout(() => {
+      if (typeof resultsRef.current?.scrollIntoView === 'function') {
+        resultsRef.current.scrollIntoView({
+          behavior: stillness ? 'auto' : 'smooth',
+          block: 'center',
+        });
+      }
+    }, 60);
+
+    return () => window.clearTimeout(timer);
+  }, [finished, score, stillness]);
 
   return (
     <Stack
@@ -326,7 +344,7 @@ export function GameScreen({
       </Box>
 
       {finished && scoring !== undefined ? (
-        <Stack spacing={1} sx={{ pb: 1 }}>
+        <Stack ref={resultsRef} spacing={1} sx={{ pb: 1 }}>
           <Results score={score} settings={settings} />
           {score !== null && (
             <ShareButton

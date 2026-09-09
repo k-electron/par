@@ -31,6 +31,7 @@ import { PAR } from '../../engine/config/constants';
 import { WIN_PATTERN } from '../../engine/words/pattern';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
+import { RadialScoreMeter } from './RadialScoreMeter';
 
 export interface ResultsProps {
   readonly score: GameScore | null;
@@ -286,13 +287,17 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
   return (
     <Stack spacing={1.5} sx={{ width: '100%' }}>
       <Stack spacing={0.5} sx={{ textAlign: 'center' }}>
-        <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+        <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
           {words.title}
         </Typography>
-        <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1 }}>
-          {score.total.toFixed(1)}
-        </Typography>
-        <Typography variant="body2">
+        <Box sx={{ my: 0.5 }}>
+          <RadialScoreMeter
+            score={score.total}
+            par={score.par ?? PAR}
+            animated={variant === 'own'}
+          />
+        </Box>
+        <Typography variant="body2" sx={{ mt: 0.5 }}>
           {skillPhrase(score.skill)}, {parPhrase(score.guessesUsed, score.par ?? PAR, score.solved)}
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
