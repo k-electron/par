@@ -67,3 +67,51 @@ export function zoneForScore(score: number): ZoneDefinition {
   if (score >= 75) return SCORE_ZONES[1]!;
   return SCORE_ZONES[0]!;
 }
+
+export interface HorizontalZoneSegment extends ZoneDefinition {
+  readonly widthPct: number;
+  readonly startPct: number;
+  readonly endPct: number;
+}
+
+/**
+ * Option B: Tuned proportional widths.
+ * Troll (15 pts) & Bad (15 pts) are the widest (22% each),
+ * Meh (8 pts) is 16%, Good (6 pts) is 14%, Ultra (6 pts) is 13%, and Godlike (5 pts) is 13%.
+ * Sum = 100%. Ensures all zone labels and breakpoint ticks are readable on mobile.
+ */
+export const HORIZONTAL_ZONES: readonly HorizontalZoneSegment[] = [
+  { ...SCORE_ZONES[0]!, widthPct: 22, startPct: 0, endPct: 22 },
+  { ...SCORE_ZONES[1]!, widthPct: 22, startPct: 22, endPct: 44 },
+  { ...SCORE_ZONES[2]!, widthPct: 16, startPct: 44, endPct: 60 },
+  { ...SCORE_ZONES[3]!, widthPct: 14, startPct: 60, endPct: 74 },
+  { ...SCORE_ZONES[4]!, widthPct: 13, startPct: 74, endPct: 87 },
+  { ...SCORE_ZONES[5]!, widthPct: 13, startPct: 87, endPct: 100 },
+];
+
+export interface BreakpointMarker {
+  readonly score: number;
+  readonly pct: number;
+}
+
+export const BREAKPOINT_MARKERS: readonly BreakpointMarker[] = [
+  { score: 60, pct: 0 },
+  { score: 75, pct: 22 },
+  { score: 90, pct: 44 },
+  { score: 98, pct: 60 },
+  { score: 104, pct: 74 },
+  { score: 110, pct: 87 },
+  { score: 115, pct: 100 },
+];
+
+export function scoreToPositionPct(score: number): number {
+  const clamped = Math.max(METER_MIN_SCORE, Math.min(METER_MAX_SCORE, score));
+  for (const seg of HORIZONTAL_ZONES) {
+    if (clamped <= seg.maxScore) {
+      const fraction = (clamped - seg.minScore) / (seg.maxScore - seg.minScore);
+      return seg.startPct + fraction * seg.widthPct;
+    }
+  }
+  return 100;
+}
+
