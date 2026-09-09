@@ -10,7 +10,17 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Added
 
-- **Word Selection v2 and Path A Weighted Scoring from Game 260 onwards**. Upgrades daily answer word selection
+- **`starters_v2` for Game 260+ and re-calibrated `PAR_V2`** ([#26](https://github.com/k-electron/par/pull/26)).
+  Derives a dedicated house starter pool for the v2 era (`starters_v2`) dynamically from `answers_v2` using
+  Option B: the top 5,000 words ordered by frequency that do not contain triple letters (Philosophy §9).
+  Solves an issue in Word Selection v2 where legacy starters contained regular plurals (such as `MASKS` in Game 300)
+  that were filtered out of `answers_v2`, making it obvious that the house starter had a 0% chance of being a hole-in-one.
+  Guarantees: 100% of starters are valid answers in `answers_v2`, 0% regular plurals ending in 's', and 0% triple letters,
+  with zero bundle overhead (~3.5ms module-load filter). Historical games 0–259 remain bit-identical on legacy `starters`.
+  Empirically recomputes `PAR_V2` to **3.9800** across 300 simulated days, and verifies the Philosophy position 5 incentive
+  ordering (+2.76 pts house starter advantage vs own opener). Adds `tools/par/simulate-game.ts` CLI tool for turn-by-turn
+  game inspection.
+- **Word Selection v2 and Path A Weighted Scoring from Game 260 onwards** ([#25](https://github.com/k-electron/par/pull/25)). Upgrades daily answer word selection
   from uniform random draw across the top 3,000 words to deterministic weighted selection across an expanded candidate pool of
   9,570 words ([`src/data/answers_v2.generated.ts`](src/data/answers_v2.generated.ts)), and evolves the scoring engine
   under **Path A** to evaluate moves against the candidate prior distribution rather than assuming uniform likelihood.
