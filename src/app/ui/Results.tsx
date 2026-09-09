@@ -31,7 +31,7 @@ import { PAR } from '../../engine/config/constants';
 import { WIN_PATTERN } from '../../engine/words/pattern';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
-import { RadialScoreMeter } from './RadialScoreMeter';
+import { HorizontalScoreMeter } from './HorizontalScoreMeter';
 
 export interface ResultsProps {
   readonly score: GameScore | null;
@@ -290,8 +290,8 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
         <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
           {words.title}
         </Typography>
-        <Box sx={{ my: 0.5 }}>
-          <RadialScoreMeter
+        <Box sx={{ my: 0.5, width: '100%' }}>
+          <HorizontalScoreMeter
             score={score.total}
             par={score.par ?? PAR}
             animated={variant === 'own'}
