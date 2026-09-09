@@ -497,3 +497,40 @@ describe('golden totals', () => {
     }).toMatchSnapshot();
   });
 });
+
+describe('maxScore calculation', () => {
+  it('computes 2-guess ceiling for Own Opener (100 skill + par - 2 outcome)', () => {
+    const game = {
+      guesses: ['shirt', 'drone', 'crane'],
+      answer: 'crane',
+      tookHouseStarter: false,
+    };
+    const score = scoreGame(game, scorerFor());
+    const expected = 100 + outcomePoints(2, true, PAR);
+    expect(score.maxScore).toBeCloseTo(expected, 4);
+  });
+
+  it('computes dynamic 2/3-guess ceiling for House Starter', () => {
+    const game = {
+      guesses: ['plumb', 'crane'],
+      answer: 'crane',
+      tookHouseStarter: true,
+    };
+    const score = scoreGame(game, scorerFor());
+    // maxScore must be at least the 3-guess ceiling (100 skill + 4*(PAR-3) + 3)
+    const floor3Guess = 100 + outcomePoints(3, true, PAR) + EPSILON;
+    expect(score.maxScore).toBeGreaterThanOrEqual(floor3Guess - 1e-6);
+  });
+
+  it('computes 1-guess ceiling for House Starter when opener was the answer', () => {
+    const game = {
+      guesses: ['crane'],
+      answer: 'crane',
+      tookHouseStarter: true,
+    };
+    const score = scoreGame(game, scorerFor());
+    const expected = 100 + outcomePoints(1, true, PAR) + EPSILON;
+    expect(score.maxScore).toBeCloseTo(expected, 4);
+  });
+});
+

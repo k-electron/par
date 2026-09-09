@@ -4,11 +4,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { HorizontalScoreMeter } from '../../src/app/ui/HorizontalScoreMeter';
 import {
-  BREAKPOINT_MARKERS,
   HORIZONTAL_ZONES,
   METER_MAX_SCORE,
   METER_MIN_SCORE,
   SCORE_ZONES,
+  computeDynamicZones,
   scoreToPositionPct,
   zoneForScore,
 } from '../../src/app/ui/radialScore';
@@ -64,6 +64,122 @@ describe('zoneForScore', () => {
   });
 });
 
+describe('computeDynamicZones', () => {
+  it('computes percentage-based curve fitting for Own Opener (Normal or Hard)', () => {
+    const dyn = computeDynamicZones({
+      maxScore: 107.92,
+      par: 3.9733,
+      starterBonus: 0,
+      guessesUsed: 4,
+      totalScore: 99.5,
+    });
+
+    expect(dyn.isBlindLuck).toBe(false);
+    expect(dyn.meterMinScore).toBe(60);
+    expect(dyn.parScore).toBe(100);
+    expect(dyn.meterMaxScore).toBe(107.92);
+    expect(dyn.zones).toHaveLength(6);
+
+    // Thresholds: DeltaBelow = 40 (60 -> 100)
+    // Troll: 60 -> 72 (30%)
+    // Bad: 72 -> 84 (30%)
+    // Meh: 84 -> 92 (20%)
+    // Good: 92 -> 100 (20%)
+    expect(dyn.zones[0]?.id).toBe('troll');
+    expect(dyn.zones[0]?.minScore).toBe(60);
+    expect(dyn.zones[0]?.maxScore).toBeCloseTo(72, 1);
+
+    expect(dyn.zones[1]?.id).toBe('bad');
+    expect(dyn.zones[1]?.minScore).toBeCloseTo(72, 1);
+    expect(dyn.zones[1]?.maxScore).toBeCloseTo(84, 1);
+
+    expect(dyn.zones[2]?.id).toBe('meh');
+    expect(dyn.zones[2]?.minScore).toBeCloseTo(84, 1);
+    expect(dyn.zones[2]?.maxScore).toBeCloseTo(92, 1);
+
+    expect(dyn.zones[3]?.id).toBe('good');
+    expect(dyn.zones[3]?.minScore).toBeCloseTo(92, 1);
+    expect(dyn.zones[3]?.maxScore).toBe(100);
+
+    // DeltaAbove = 7.92 (100 -> 107.92)
+    // Ultra: 100 -> 104.75 (60%)
+    // Godlike: 104.75 -> 107.92 (40%)
+    expect(dyn.zones[4]?.id).toBe('ultra');
+    expect(dyn.zones[4]?.minScore).toBe(100);
+    expect(dyn.zones[4]?.maxScore).toBeCloseTo(104.75, 1);
+
+    expect(dyn.zones[5]?.id).toBe('godlike');
+    expect(dyn.zones[5]?.minScore).toBeCloseTo(104.75, 1);
+    expect(dyn.zones[5]?.maxScore).toBe(107.92);
+
+    // Proportional visual widths sum to 100%
+    const totalWidth = dyn.horizontalZones.reduce((acc, z) => acc + z.widthPct, 0);
+    expect(totalWidth).toBe(100);
+  });
+
+  it('computes curve fitting for House Starter with starterBonus', () => {
+    const dyn = computeDynamicZones({
+      maxScore: 108.5,
+      par: 3.9733,
+      starterBonus: 3,
+      guessesUsed: 3,
+      totalScore: 105.0,
+    });
+
+    expect(dyn.isBlindLuck).toBe(false);
+    expect(dyn.parScore).toBe(103);
+    expect(dyn.meterMaxScore).toBe(108.5);
+    expect(dyn.zones).toHaveLength(6);
+
+    // Good zone ends at 103 (parScore)
+    expect(dyn.zones[3]?.maxScore).toBe(103);
+    // Ultra begins at 103
+    expect(dyn.zones[4]?.minScore).toBe(103);
+    // Godlike ends at 108.5
+    expect(dyn.zones[5]?.maxScore).toBe(108.5);
+  });
+
+  it('reveals secret "Blind luck" 7th zone when player achieves a 1-guess hole-in-one', () => {
+    const dyn = computeDynamicZones({
+      maxScore: 107.92,
+      par: 3.9733,
+      starterBonus: 0,
+      guessesUsed: 1, // 1-guess hole-in-one!
+      totalScore: 111.89,
+    });
+
+    expect(dyn.isBlindLuck).toBe(true);
+    expect(dyn.zones).toHaveLength(7);
+    expect(dyn.horizontalZones).toHaveLength(7);
+
+    const blindLuckZone = dyn.zones[6];
+    expect(blindLuckZone?.id).toBe('blind_luck');
+    expect(blindLuckZone?.label).toBe('Blind luck');
+    expect(blindLuckZone?.minScore).toBe(107.92);
+    expect(blindLuckZone?.maxScore).toBeCloseTo(111.89, 1);
+
+    // All 7 widths sum to 100%
+    const totalWidth = dyn.horizontalZones.reduce((acc, z) => acc + z.widthPct, 0);
+    expect(totalWidth).toBe(100);
+
+    // zoneForScore maps hole-in-one score to 'blind_luck'
+    expect(zoneForScore(111.89, dyn.zones).id).toBe('blind_luck');
+  });
+
+  it('allows players to achieve Godlike without needing a hole-in-one', () => {
+    const dyn = computeDynamicZones({
+      maxScore: 107.92,
+      par: 3.9733,
+      starterBonus: 0,
+      guessesUsed: 2,
+      totalScore: 106.5,
+    });
+
+    // Score 106.5 is in Godlike zone [104.75, 107.92]
+    expect(zoneForScore(106.5, dyn.zones).id).toBe('godlike');
+  });
+});
+
 describe('HORIZONTAL_ZONES and scoreToPositionPct', () => {
   it('sums to 100% and maintains contiguous start/end percentages', () => {
     const totalWidth = HORIZONTAL_ZONES.reduce((acc, z) => acc + z.widthPct, 0);
@@ -109,10 +225,17 @@ describe('HorizontalScoreMeter', () => {
   const lightTheme = createTheme({ palette: { mode: 'light' } });
   const darkTheme = createTheme({ palette: { mode: 'dark' } });
 
-  it('renders meter with semantic h3 score and all zone names', () => {
+  it('renders meter with semantic h3 score and standard 6 zones for normal games', () => {
     render(
       <ThemeProvider theme={lightTheme}>
-        <HorizontalScoreMeter score={102.4} par={100} animated={false} />
+        <HorizontalScoreMeter
+          score={102.4}
+          par={3.9733}
+          maxScore={107.9}
+          starterBonus={0}
+          guessesUsed={3}
+          animated={false}
+        />
       </ThemeProvider>,
     );
 
@@ -120,7 +243,7 @@ describe('HorizontalScoreMeter', () => {
     expect(meter).toBeInTheDocument();
     expect(meter).toHaveAttribute('aria-valuenow', '102.4');
     expect(meter).toHaveAttribute('aria-valuemin', '60');
-    expect(meter).toHaveAttribute('aria-valuemax', '115');
+    expect(meter).toHaveAttribute('aria-valuemax', '107.9');
 
     // Score in h3
     const heading = screen.getByRole('heading', { level: 3 });
@@ -134,13 +257,35 @@ describe('HorizontalScoreMeter', () => {
     expect(screen.getByText('Ultra')).toBeInTheDocument();
     expect(screen.getByText('Godlike')).toBeInTheDocument();
 
-    // Breakpoints
-    for (const bp of BREAKPOINT_MARKERS) {
-      expect(screen.getByText(String(bp.score))).toBeInTheDocument();
-    }
+    // "Blind luck" is HIDDEN for normal games
+    expect(screen.queryByText('Blind luck')).toBeNull();
 
     // PAR marker
     expect(screen.getByText('▲ PAR')).toBeInTheDocument();
+  });
+
+  it('renders the 7th "Blind luck" zone when a hole-in-one is achieved (n = 1)', () => {
+    render(
+      <ThemeProvider theme={lightTheme}>
+        <HorizontalScoreMeter
+          score={111.9}
+          par={3.9733}
+          maxScore={107.9}
+          starterBonus={0}
+          guessesUsed={1}
+          animated={false}
+        />
+      </ThemeProvider>,
+    );
+
+    const meter = screen.getByRole('meter');
+    expect(meter).toBeInTheDocument();
+    expect(meter).toHaveAttribute('aria-valuenow', '111.9');
+
+    // "Blind luck" zone label is present!
+    expect(screen.getByText('Blind luck')).toBeInTheDocument();
+    expect(screen.getByText('Godlike')).toBeInTheDocument();
+    expect(screen.getByText('Ultra')).toBeInTheDocument();
   });
 
   it('renders correctly in dark mode', () => {
@@ -180,3 +325,4 @@ describe('HorizontalScoreMeter', () => {
     expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('101.5');
   });
 });
+

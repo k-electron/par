@@ -6,18 +6,18 @@ import { useEffect, useId, useMemo, useState } from 'react';
 
 import { PAR } from '../../engine/config/constants';
 import {
-  BREAKPOINT_MARKERS,
-  HORIZONTAL_ZONES,
-  METER_MAX_SCORE,
-  METER_MIN_SCORE,
+  computeDynamicZones,
   scoreToPositionPct,
   zoneForScore,
 } from './radialScore';
 
 export interface HorizontalScoreMeterProps {
   readonly score: number;
-  readonly par?: number;
-  readonly animated?: boolean;
+  readonly par?: number | undefined;
+  readonly animated?: boolean | undefined;
+  readonly maxScore?: number | undefined;
+  readonly starterBonus?: number | undefined;
+  readonly guessesUsed?: number | undefined;
 }
 
 const visuallyHiddenStyle = {
@@ -32,14 +32,33 @@ const visuallyHiddenStyle = {
   border: 0,
 } as const;
 
-export function HorizontalScoreMeter({ score, par = PAR, animated = false }: HorizontalScoreMeterProps) {
+export function HorizontalScoreMeter({
+  score,
+  par = PAR,
+  animated = false,
+  maxScore,
+  starterBonus,
+  guessesUsed,
+}: HorizontalScoreMeterProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const labelId = useId();
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const shouldAnimate = animated && !prefersReducedMotion;
 
-  const [animatedScore, setAnimatedScore] = useState(METER_MIN_SCORE);
+  const dynamic = useMemo(
+    () =>
+      computeDynamicZones({
+        maxScore,
+        par,
+        starterBonus,
+        guessesUsed,
+        totalScore: score,
+      }),
+    [maxScore, par, starterBonus, guessesUsed, score],
+  );
+
+  const [animatedScore, setAnimatedScore] = useState(dynamic.meterMinScore);
 
   useEffect(() => {
     if (!shouldAnimate) return;
@@ -47,7 +66,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
     let frameId: number;
     const startTime = performance.now();
     const duration = 1200; // ms
-    const initialScore = METER_MIN_SCORE;
+    const initialScore = dynamic.meterMinScore;
     const delta = score - initialScore;
 
     function tick(now: number) {
@@ -68,23 +87,47 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
 
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);
-  }, [score, shouldAnimate]);
+  }, [score, shouldAnimate, dynamic.meterMinScore]);
 
   const currentScore = shouldAnimate ? animatedScore : score;
-  const activeZone = useMemo(() => zoneForScore(currentScore), [currentScore]);
-  const finalZone = useMemo(() => zoneForScore(score), [score]);
+  const activeZone = useMemo(
+    () => zoneForScore(currentScore, dynamic.zones),
+    [currentScore, dynamic.zones],
+  );
+  const finalZone = useMemo(
+    () => zoneForScore(score, dynamic.zones),
+    [score, dynamic.zones],
+  );
   const activeColor = isDark ? activeZone.color.dark : activeZone.color.light;
 
-  const currentPct = useMemo(() => scoreToPositionPct(currentScore), [currentScore]);
-  const parPct = useMemo(() => scoreToPositionPct(par), [par]);
+  const currentPct = useMemo(
+    () =>
+      scoreToPositionPct(
+        currentScore,
+        dynamic.horizontalZones,
+        dynamic.meterMinScore,
+        dynamic.meterMaxScore,
+      ),
+    [currentScore, dynamic.horizontalZones, dynamic.meterMinScore, dynamic.meterMaxScore],
+  );
+  const parPct = useMemo(
+    () =>
+      scoreToPositionPct(
+        dynamic.parScore,
+        dynamic.horizontalZones,
+        dynamic.meterMinScore,
+        dynamic.meterMaxScore,
+      ),
+    [dynamic.parScore, dynamic.horizontalZones, dynamic.meterMinScore, dynamic.meterMaxScore],
+  );
 
   return (
     <Box
       role="meter"
       aria-labelledby={labelId}
       aria-valuenow={Number(score.toFixed(1))}
-      aria-valuemin={METER_MIN_SCORE}
-      aria-valuemax={METER_MAX_SCORE}
+      aria-valuemin={dynamic.meterMinScore}
+      aria-valuemax={Number(dynamic.meterMaxScore.toFixed(1))}
       sx={{
         position: 'relative',
         width: '100%',
@@ -125,7 +168,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
             gap: '2px',
           }}
         >
-          {HORIZONTAL_ZONES.map((zone) => {
+          {dynamic.horizontalZones.map((zone) => {
             const isCurrent = zone.id === activeZone.id;
             const zoneColor = isDark ? zone.color.dark : zone.color.light;
             return (
@@ -179,7 +222,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
               gap: '2px',
             }}
           >
-            {HORIZONTAL_ZONES.map((zone, idx) => {
+            {dynamic.horizontalZones.map((zone, idx) => {
               const zoneColor = isDark ? zone.color.dark : zone.color.light;
               let fillPct = 0;
               if (currentScore >= zone.maxScore) {
@@ -198,8 +241,8 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
                     backgroundColor: isDark ? `${zoneColor}26` : `${zoneColor}1e`,
                     borderTopLeftRadius: idx === 0 ? 6 : 2,
                     borderBottomLeftRadius: idx === 0 ? 6 : 2,
-                    borderTopRightRadius: idx === HORIZONTAL_ZONES.length - 1 ? 6 : 2,
-                    borderBottomRightRadius: idx === HORIZONTAL_ZONES.length - 1 ? 6 : 2,
+                    borderTopRightRadius: idx === dynamic.horizontalZones.length - 1 ? 6 : 2,
+                    borderBottomRightRadius: idx === dynamic.horizontalZones.length - 1 ? 6 : 2,
                     overflow: 'hidden',
                   }}
                 >
@@ -219,7 +262,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
 
           {/* Benchmark PAR Notch */}
           <Box
-            title={`PAR: ${par.toFixed(1)}`}
+            title={`PAR: ${dynamic.parScore.toFixed(0)} pts`}
             sx={{
               position: 'absolute',
               top: -3,
@@ -266,7 +309,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
             mt: 0.5,
           }}
         >
-          {BREAKPOINT_MARKERS.map((bp) => {
+          {dynamic.breakpointMarkers.map((bp, idx) => {
             // Align left at 0%, right at 100%, center otherwise
             const transform =
               bp.pct === 0
@@ -277,7 +320,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
 
             return (
               <Box
-                key={bp.score}
+                key={`${bp.score}-${idx}`}
                 sx={{
                   position: 'absolute',
                   left: `${bp.pct}%`,
