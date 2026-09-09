@@ -32,6 +32,8 @@ export interface Lexicon {
    * uniformly — but the explainer will describe the wrong words as common.
    */
   readonly answers: readonly string[];
+  /** Optional candidate weights matching `answers`. Defaults to 1 (uniform). */
+  readonly answerWeights?: readonly number[] | Uint8Array;
 }
 
 /**
@@ -53,6 +55,8 @@ export interface CompiledLexicon {
   readonly answerLetterCounts: Uint8Array;
   /** Guess index of each answer, since answers are a subset of guesses. */
   readonly answerToGuess: Int32Array;
+  /** Weight of each answer index, for weighted candidate evaluation. */
+  readonly answerWeights: Uint8Array;
   /** Guess index of a word, or -1. */
   guessIndexOf(word: string): number;
   /** Answer index of a word, or -1. */
@@ -120,6 +124,20 @@ export function compileLexicon(lexicon: Lexicon): CompiledLexicon {
     answerToGuess[index] = inDictionary;
   }
 
+  const answerWeights = new Uint8Array(answerCount);
+  if (lexicon.answerWeights !== undefined) {
+    if (lexicon.answerWeights.length !== answerCount) {
+      throw new RangeError(
+        `answerWeights length (${lexicon.answerWeights.length}) does not match answerCount (${answerCount})`,
+      );
+    }
+    for (let index = 0; index < answerCount; index += 1) {
+      answerWeights[index] = lexicon.answerWeights[index]!;
+    }
+  } else {
+    answerWeights.fill(1);
+  }
+
   return {
     guessCount,
     answerCount,
@@ -129,6 +147,7 @@ export function compileLexicon(lexicon: Lexicon): CompiledLexicon {
     answerLetters,
     answerLetterCounts,
     answerToGuess,
+    answerWeights,
     guessIndexOf: (word) => guessIndex.get(word) ?? -1,
     answerIndexOf: (word) => answerIndex.get(word) ?? -1,
   };

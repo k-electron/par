@@ -14,6 +14,7 @@ export interface ScoreRequest {
   readonly answer: string;
   readonly tookHouseStarter: boolean;
   readonly hardMode: boolean;
+  readonly puzzleNumber?: number;
 }
 
 export type ScoreResponse =

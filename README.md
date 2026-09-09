@@ -114,6 +114,34 @@ the lists, so changing them leaves it stale.
 [`docs/wordlists.md`](docs/wordlists.md) covers the source, the licensing position, why the pool is
 sized as it is, and what the version identifier protects.
 
+## Word selection (v1 and v2)
+
+Par draws each day's puzzle deterministically from the puzzle number and a build-time salt, ensuring
+all players receive the same word worldwide:
+
+- **Word selection v1 (Puzzles 0–259)**: Daily answers were picked uniformly at random from the
+  top 3,000 words by frequency ([`src/data/answers.generated.ts`](src/data/answers.generated.ts)).
+- **Word selection v2 (Puzzle 260 onwards)**: Beginning at puzzle 260, answers are chosen using
+  weighted selection over an expanded candidate pool
+  ([`src/data/answers_v2.generated.ts`](src/data/answers_v2.generated.ts), 9,570 words):
+  - **The list**: Built from all 12,972 valid five-letter CSW19 words minus simple 4-letter + 's'
+    regular plurals. Words legitimately ending in 's' (such as `chaos`, `basis`, `focus`, `virus`,
+    `glass`, `bonus`) are retained. Pure 3rd-person singular verbs ending in 's' (`seems`, `wants`,
+    `knows`, `gives`, etc.) are placed specifically in their own block at the bottom of the list.
+    Both blocks are sorted by word frequency.
+  - **Deterministic weighted draw**:
+    - Tier 1 (top 2,500 words): weight 10 (~59.4% probability)
+    - Tier 2 (next 2,500 words): weight 4 (~23.8% probability)
+    - Tier 3 (next 2,500 words): weight 2 (~11.9% probability)
+    - Tier 4 (remaining 2,070 words, including pure verbs): weight 1 (~4.9% probability)
+  - **Backward compatibility and Path A scoring**: Puzzles 0 through 259 and all historical share links continue to use
+    v1 selection and score against the legacy lexicon with unweighted search (`SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`)
+    without divergence or version warnings. Games from puzzle 260 onward use Path A probability-weighted search
+    against the v2 candidate distribution (`SCORER_VERSION_V2 = 2`, `PAR_V2`), ensuring decision evaluation exactly matches
+    word probability. Replay links from both eras open cleanly with complete fidelity.
+
+See [`docs/wordlists.md`](docs/wordlists.md) and [`docs/scoring.md`](docs/scoring.md) for generation scripts, POS filtering, and scoring math.
+
 ## When the puzzle rolls over
 
 The day boundary is anchored to **US Eastern** (`America/New_York`), and puzzle 0 is
@@ -135,13 +163,14 @@ to, so existing share links will point at a different day's board.
 the word lists, so regenerating them leaves it stale and every total mis-centred:
 
 ```bash
-npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts
+npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts (defaults to v2, parallel workers)
+npm run compute-par -- --v1 --days 300 # recomputes legacy v1 PAR
 npm run check-incentives -- --days 120 # confirms the incentives still point the right way
 npm run check-lights -- --days 150     # confirms the progress light still says something
 ```
 
-The first takes a few minutes and prints the guess distribution plus what the house starter
-costs against a fixed strong opener. The second exits non-zero if taking the house starter
+The first runs multi-threaded across worker threads and prints the guess distribution plus what
+the house starter costs against a fixed strong opener (`PAR_V2 = 3.9100`). The second exits non-zero if taking the house starter
 stops being the mildly better habit, or if collecting the bonus and then ignoring the clues
 stops being the worst option. The third exits non-zero if the results table's progress light
 stops discriminating between guesses, or if its red band hardens from a hint into a proof

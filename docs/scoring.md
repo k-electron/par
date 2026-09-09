@@ -222,6 +222,52 @@ same day, so a higher value never makes the competition unfair. It shifts
 everybody's total by the same +0.84 points and keeps the golf framing honest for
 these lists rather than for someone else's.
 
+### Versioning: V1 (Games 0–259) vs V2 (Games 260+)
+
+Word Selection v2 introduces deterministic weighted word selection starting on **Game 260**.
+To maintain total consistency between how words are selected and how they are evaluated,
+Par implements **Path A: Probability-Weighted Scoring**:
+
+1. **Candidate Prior Distribution**:
+   Instead of assuming all remaining candidate words are equally likely (uniform distribution),
+   the search engine weights candidates according to their selection prior:
+   - Top 2,500 words: weight **10** (~59.4% probability mass)
+   - Next 2,500 words: weight **4** (~23.8% probability mass)
+   - Next 2,500 words: weight **2** (~11.9% probability mass)
+   - Remaining words (including pure verbs ending in 's'): weight **1** (~4.9% probability mass)
+
+2. **Weighted Search Formulation**:
+   - **Bucket Weight**: For pattern $p$, the bucket weight is $W_p = \sum_{c \in B_p} w_c$.
+   - **Cost of a Node**: $Q(g, S) = 1 + \frac{\sum_{p \neq \text{WIN}} W_p \cdot V(B_p)}{W_{\text{total}}}$, where $W_{\text{total}} = \sum_p W_p$.
+   - **Closed-Form 2-Candidate Endgame**: With two candidates left having weights $w_0$ and $w_1$, playing the heavier word first wins on turn 1 with probability $\frac{\max(w_0, w_1)}{w_0 + w_1}$ and turn 2 with probability $\frac{\min(w_0, w_1)}{w_0 + w_1}$, giving the exact closed form:
+     $$V = 1 + \frac{\min(w_0, w_1)}{w_0 + w_1}$$
+     When $w_0 = w_1$ (equal tier), this evaluates to exactly $1.5$ (the legacy unweighted coin flip).
+   - **Forced Move Semantics**: In a 2-candidate endgame, a candidate guess is only flagged as `forced` if $w_0 == w_1$ (a true 50/50 coin flip). If $w_0 \neq w_1$, playing the heavier candidate is uniquely optimal, and guessing the lighter candidate is penalized as a sub-optimal choice.
+   - **Weighted Information Entropy**: The `expectedBits` and luck figures compute Shannon entropy across weighted pattern buckets:
+     $$H = -\sum_p \frac{W_p}{W_{\text{total}}} \log_2 \frac{W_p}{W_{\text{total}}}$$
+
+3. **Dual Eras & Replay Compatibility**:
+   - **Games 0–259**: `SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`. Scored using the legacy unweighted engine over the 3,000 `answers` list.
+   - **Games 260+**: `SCORER_VERSION_V2 = 2`, `PAR_V2 = 3.9100`. Scored using the weighted engine over the 9,570 `answersV2` list.
+   - `scorerVersionFor(puzzleNumber)` stamps share links with version 1 or 2 according to the puzzle date. Historical replay links from games 0–259 open with version 1 and show zero mismatch warnings; new games from 260 onward open with version 2 and also show zero mismatch warnings. A replay only warns if a link's stamped version conflicts with the expected scorer version for that puzzle day.
+
+### What it measured for Word Lists v2 (Games 260+)
+
+Over 300 simulated days from Game 260 onward using `answersV2` under Path A weighted scoring:
+
+```
+mode                v2 (weighted, 260+)
+days simulated      300
+word lists          fc66685a12af
+PAR (house starter) 3.9100
+  from SLATE          3.6967
+  starter costs     0.2133 guesses
+unsolved            2
+distribution        2: 4   3: 76   4: 167   5: 49   6: 4
+```
+
+`PAR_V2` is 3.9100, up by 0.20 guesses from v1's 3.7100. This mirrors the expansion of the pool to 9,570 words: even with heavy frequency weighting towards the commonest words, a wider tail naturally presents slightly harder endgame decisions, moving the strong-play baseline from 3.71 to 3.91. The house starter penalty remains steady at 0.2133 guesses (about a fifth of a guess).
+
 ## Checking the incentives still point the right way
 
 Philosophy position 5 names the ordering the design targets:

@@ -88,13 +88,15 @@ The resulting tax on a bookmark player is a couple of points a day — small eno
 
 The answer pool is deliberately much narrower than what you're allowed to type. Losing to a word nobody has heard of isn't a challenge, it's an insult — and in a game where we compare scores, an obscure answer wrecks everyone's day equally and tells us nothing. Meanwhile the guess dictionary should be generous, because probing with an odd-but-real word is a legitimate tactic.
 
+*Word Selection v2 evolution (Game 260+):* A hard cut at 3,000 words created an artificial cliff where word #3,000 had 100% chance and word #3,001 had 0% chance. In v2, the pool expands to 9,570 words with a 4-tier weighted prior (10, 4, 2, 1). Common words (Tier 1) appear ~60% of the time, while rarer words appear proportionally less often. Simple 4-letter + 's' plurals are filtered, intrinsic 's' words (`basis`, `focus`) are preserved, and pure 3rd-person singular verbs (`seems`, `wants`) are assigned the lowest weight (1).
+
 ### 9. The starter should almost always be respectable, and rarely optimal.
 
 The daily starter is drawn from a pool much wider than the answer list but still filtered for real, reasonably common words — no XYLYL-tier junk. Mostly five distinct letters, since that's most of what makes an opener useful.
 
 The point of that shape: taking the house starter should never feel like a trap, but it should rarely feel like a gift either. If the pool were pristine, the choice would be boring; if it included garbage, taking the bonus would be a sucker's bet and nobody would. A small minority of days should have a doubled letter — those are the spicy ones, informationally weaker and worth a groan. Never a triple; that's past interesting and into unfair.
 
-*What testing showed:* with decent continuation play, starter quality barely affects outcomes — roughly a tenth of a guess between a random decent word and the theoretically best one. So the pool's exact composition isn't delicate, and duplicate-letter days need no compensation.
+*What testing showed:* with decent continuation play, starter quality barely affects outcomes — roughly a tenth of a guess between a random decent word and the theoretically best one. So the pool's exact composition isn't delicate, and duplicate-letter days need no compensation. In v2, the house starter penalty remains 0.2133 guesses, so `EPSILON = 3` continues to maintain the exact intended +2 point daily net tax on bookmark players.
 
 ---
 
@@ -106,6 +108,8 @@ Not "did you reuse the clues" — *did you use what the clues made possible*. Th
 
 *Implication:* the candidate set is the clue history, compressed. Scoring against it handles this automatically — no special rules, no heuristics about what "using the clues" looks like.
 
+*Under weighted priors (Path A):* Scoring evaluates candidate states with their prior weights. If three common words and one obscure word remain, playing a probe that isolates the common words is rewarded because Bayesian expectation $Q(g, S)$ weights partitions by their probability mass.
+
 ### 11. Price words in context. Never blacklist them.
 
 A generic word like ADIEU or STARE is sometimes genuinely a good *second* guess, when the starter revealed little. The scorer must be able to say so.
@@ -113,6 +117,8 @@ A generic word like ADIEU or STARE is sometimes genuinely a good *second* guess,
 *What testing showed:* exactly that. The same word scores anywhere from the low 70s to the mid 90s depending on the day, because it's evaluated against the actual position. A player with the judgment to revert *selectively* — only when the clues were thin — keeps most of their score. That judgment is real skill, so they should. The player who reverts blindly eats the average.
 
 *Implication:* there is no "reverting" concept in the code, and there shouldn't be. There are only guesses, priced against states.
+
+*Repeated letters and yellow-letter reuse:* The same principle holds for guesses with duplicate letters or guesses that do not reuse a yellow letter in a new slot. There are no manual penalties or heuristics for either. A guess with duplicate letters naturally yields lower Shannon entropy unless the live candidate pool actually contains words with those duplicate letters (e.g. `LLAMA`, `GEESE`), in which case it is appropriately rewarded. Similarly, bypassing a yellow letter to probe broad new consonants across all five slots is often mathematically superior; the search engine prices the tradeoff by its effect on expected turns to finish ($Q$), without needing rules about "proper" clue reuse.
 
 ### 12. Hard mode is a different constraint, not a different game.
 
@@ -179,6 +185,7 @@ Stated explicitly so they don't get re-litigated:
 - **I expected opener quality to matter more than it does.** With good continuation play, a random decent word costs about a tenth of a guess versus the best possible opener. That's *why* the bonus is the right tool for discouraging bookmark players — the game genuinely doesn't care much which reasonable word you open with, so suppressing luck wouldn't have achieved anything. The incentive does.
 - **I considered a separate scoring formula for hard mode**, then rejected it: same formula, different legal set (position 12).
 - **The jackpot risk is real but not delicate** (position 4).
+- **Word Selection v2 and Path A Scoring (Game 260+):** Replaced the flat, uniform 3,000-word cutoff with a 9,570-word candidate pool under a 4-tier weighted prior (10, 4, 2, 1). To keep the decision model aligned with reality, Path A evaluates candidate moves against Bayesian prior weights rather than uniform counts, lifting PAR to 3.9100 while keeping games 0–259 backwards-compatible under version 1.
 
 ---
 
@@ -191,6 +198,9 @@ Stated explicitly so they don't get re-litigated:
 - **A per-mode par, or any other compensation for hard mode's difficulty** — the badge tells the reader which mode was played; adjusting the scale would muddy what the number means.
 - **Any convex payout for fast finishes** — pays for variance (position 4).
 - **Special-casing particular words** as "reverting" or otherwise — context is the only fair judge (position 11).
+- **Penalizing guesses with duplicate letters** — repeated letters already reveal less information in expectation when candidates have distinct letters; in positions where candidate answers have duplicate letters (e.g. `LLAMA`, `GEESE`), guessing duplicate letters is optimal. Information theory and partition entropy price this naturally without ad-hoc rules.
+- **Penalizing the reuse or non-reuse of yellow letters** — a guess that does not reuse a yellow letter, or reuses it in an already-tried slot, often provides superior letter coverage across the remaining positions. As position 10 establishes, the candidate set is the clue history compressed; judging moves by $Q(g, S)$ prices words in context rather than enforcing artificial clue-reuse rules.
+- **Adjusting the starter bonus (`EPSILON`) for Word Selection v2** — the empirical starter penalty in v2 is 0.2133 guesses (vs 0.2400 in v1), preserving the target ~2 point net daily bookmark tax ($3 - 0.85 = +2.15$ pts) and maintaining the position 5 incentive ordering.
 - **A separate scoring formula for hard mode** — same formula, different legal set (position 12).
 - **Multiple simultaneous boards, or best-of-N averaging** — these reduce variance by dilution rather than pricing it correctly, and turn the game into something else.
 - **Revealing optimal play, hints, or suggestions** — teaches the meta and sours the tone (position 15).

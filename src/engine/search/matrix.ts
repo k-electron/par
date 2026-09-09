@@ -34,6 +34,8 @@ export interface PatternMatrix {
   readonly patterns: Uint8Array;
   /** Column of an answer index, or -1 if it is not in this matrix. */
   readonly columnOf: Int32Array;
+  /** Weight of each column, matching `answers`. */
+  readonly weights: Uint8Array;
 }
 
 /**
@@ -54,6 +56,7 @@ export function buildPatternMatrix(
 
   const patterns = new Uint8Array(lexicon.guessCount * width);
   const columnOf = new Int32Array(lexicon.answerCount).fill(-1);
+  const weights = new Uint8Array(width);
 
   for (let column = 0; column < width; column += 1) {
     const answer = answers[column]!;
@@ -61,6 +64,7 @@ export function buildPatternMatrix(
       throw new RangeError('A pattern matrix needs its answers ascending and distinct.');
     }
     columnOf[answer] = column;
+    weights[column] = lexicon.answerWeights[answer]!;
   }
 
   // Hoisted out of the answer loop: the guess's letters, its distinct letters,
@@ -133,5 +137,5 @@ export function buildPatternMatrix(
     }
   }
 
-  return { answers, width, patterns, columnOf };
+  return { answers, width, patterns, columnOf, weights };
 }

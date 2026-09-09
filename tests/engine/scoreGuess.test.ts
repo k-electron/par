@@ -289,3 +289,38 @@ describe('the approximate policy on these positions', () => {
     }
   });
 });
+
+describe('two candidates left with asymmetric weights', () => {
+  const weightedLexicon: Lexicon = {
+    ...TWO_CANDIDATE_LEXICON,
+    answerWeights: [10, 1, 1], // batch: 10, catch: 1, plumb: 1
+  };
+  const scorer = scorerFor(weightedLexicon);
+  const history = observationsFor('catch', ['match']);
+
+  it('leaves two candidates with unequal weights', () => {
+    expect(scorer.candidatesAfter(history)).toEqual(['batch', 'catch']);
+  });
+
+  it('scores 100 for the heavier candidate batch and penalizes the lighter candidate catch', () => {
+    // Q(batch) = 1 + 1/11 = 12/11
+    // Q(catch) = 1 + 10/11 = 21/11
+    // Skill(batch) = 100
+    // Skill(catch) = 100 * (12/11) / (21/11) = 100 * 4/7 ~ 57.142857
+    const batchScore = scorer.scoreGuess(history, 'batch');
+    const catchScore = scorer.scoreGuess(history, 'catch');
+
+    expect(batchScore.skill).toBe(100);
+    expect(batchScore.forced).toBe(false); // Not forced because it's not a 50/50 flip
+
+    expect(catchScore.skill).toBeCloseTo((100 * 4) / 7, 5);
+    expect(catchScore.forced).toBe(false);
+  });
+
+  it('computes weighted Shannon entropy for expectedBits', () => {
+    // P(batch) = 10/11, P(catch) = 1/11
+    // H = -(10/11)*log2(10/11) - (1/11)*log2(1/11) ~ 0.4395 bits
+    const batchScore = scorer.scoreGuess(history, 'batch');
+    expect(batchScore.expectedBits).toBeCloseTo(0.4395, 3);
+  });
+});

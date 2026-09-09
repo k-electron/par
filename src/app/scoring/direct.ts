@@ -6,7 +6,9 @@
  * compares the two is comparing the transport, not the arithmetic.
  */
 
-import { answers, guesses } from '../../data';
+import { answers, answersV2, answersV2Weights, guesses } from '../../data';
+import { parFor } from '../../engine/config/constants';
+import { CUTOVER_PUZZLE_NUMBER } from '../../engine/daily/puzzle';
 import { rulesetFor } from '../../engine/rules/ruleset';
 import { scoreGame } from '../../engine/score/scoreGame';
 import { createPositionScorer } from '../../engine/score/scoreGuess';
@@ -15,18 +17,32 @@ import { compileLexicon, type CompiledLexicon } from '../../engine/words/lexicon
 import type { ScoreQuery, ScoringClient } from './client';
 import type { GameScore } from './protocol';
 
-let lexicon: CompiledLexicon | undefined;
+let legacyLexicon: CompiledLexicon | undefined;
+let v2Lexicon: CompiledLexicon | undefined;
+
+function lexiconFor(puzzleNumber?: number): CompiledLexicon {
+  if (puzzleNumber !== undefined && puzzleNumber >= CUTOVER_PUZZLE_NUMBER) {
+    v2Lexicon ??= compileLexicon({
+      guesses,
+      answers: answersV2,
+      answerWeights: answersV2Weights,
+    });
+    return v2Lexicon;
+  }
+  legacyLexicon ??= compileLexicon({ guesses, answers });
+  return legacyLexicon;
+}
 
 export function scoreDirectly(query: ScoreQuery): GameScore {
-  lexicon ??= compileLexicon({ guesses, answers });
   return scoreGame(
     {
       guesses: query.guesses,
       answer: query.answer,
       tookHouseStarter: query.tookHouseStarter,
+      par: parFor(query.puzzleNumber),
     },
     createPositionScorer({
-      lexicon,
+      lexicon: lexiconFor(query.puzzleNumber),
       ruleset: rulesetFor(query.hardMode ? 'hard' : 'normal'),
       policy: validatedPolicy,
     }),

@@ -17,7 +17,7 @@
  * of it.
  */
 
-import { answers, guesses as dictionary, starters } from '../../src/data';
+import { answers, answersV2, answersV2Weights, guesses as dictionary, starters } from '../../src/data';
 import { MAX_GUESSES } from '../../src/engine/config/constants';
 import { log2 } from '../../src/engine/numeric/log2';
 import type { Constraints } from '../../src/engine/rules/constraints';
@@ -36,7 +36,14 @@ export const lexicon: CompiledLexicon = compileLexicon({
   answers: [...answers],
 });
 
+export const v2Lexicon: CompiledLexicon = compileLexicon({
+  guesses: [...dictionary],
+  answers: [...answersV2],
+  answerWeights: answersV2Weights,
+});
+
 export const lists = { answers: [...answers], starters: [...starters] };
+export const listsV2 = { answers: [...answers], starters: [...starters], answersV2: [...answersV2] };
 
 /**
  * How many guesses of each kind to weigh at a node.
@@ -62,6 +69,7 @@ export interface PlayOptions {
    */
   readonly continuation: Continuation;
   readonly bookmark?: string;
+  readonly activeLexicon?: CompiledLexicon | undefined;
 }
 
 export interface PlayResult {
@@ -76,9 +84,10 @@ export function play({
   ruleset,
   continuation,
   bookmark,
+  activeLexicon = lexicon,
 }: PlayOptions): PlayResult {
   const played: string[] = [];
-  let candidates = Int32Array.from({ length: lexicon.answerCount }, (_, index) => index);
+  let candidates = Int32Array.from({ length: activeLexicon.answerCount }, (_, index) => index);
   let constraints = ruleset.initialConstraints;
 
   // Built once, after the opener has cut the field to a few hundred, and reused
@@ -103,7 +112,7 @@ export function play({
       // question.
       guess = bookmark;
     } else {
-      table ??= createGameTable(candidates, ruleset);
+      table ??= createGameTable(candidates, ruleset, activeLexicon);
       guess = strongestGuess(table, candidates, constraints, ruleset);
     }
 
@@ -116,7 +125,7 @@ export function play({
 
     constraints = ruleset.accumulate(constraints, { guess, pattern });
     candidates = candidates.filter(
-      (index) => computePattern(guess, lexicon.answerWords[index]!) === pattern,
+      (index) => computePattern(guess, activeLexicon.answerWords[index]!) === pattern,
     );
   }
 
@@ -126,13 +135,19 @@ export function play({
 interface GameTable {
   readonly matrix: ReturnType<typeof buildPatternMatrix>;
   readonly searcher: ReturnType<typeof createSearcher>;
+  readonly lexicon: CompiledLexicon;
 }
 
-function createGameTable(candidates: Int32Array, ruleset: Ruleset): GameTable {
-  const matrix = buildPatternMatrix(lexicon, candidates);
+function createGameTable(
+  candidates: Int32Array,
+  ruleset: Ruleset,
+  activeLex: CompiledLexicon = lexicon,
+): GameTable {
+  const matrix = buildPatternMatrix(activeLex, candidates);
   return {
     matrix,
-    searcher: createSearcher({ lexicon, ruleset, policy: validatedPolicy }, matrix),
+    searcher: createSearcher({ lexicon: activeLex, ruleset, policy: validatedPolicy }, matrix),
+    lexicon: activeLex,
   };
 }
 
@@ -148,13 +163,14 @@ function strongestGuess(
   constraints: Constraints,
   ruleset: Ruleset,
 ): string {
+  const lex = table.lexicon;
   if (candidates.length === 1) {
-    return lexicon.answerWords[candidates[0]!]!;
+    return lex.answerWords[candidates[0]!]!;
   }
 
-  const ranked = rankByInformation(table.matrix, candidates, constraints, ruleset);
+  const ranked = rankByInformation(table.matrix, candidates, constraints, ruleset, lex);
   const candidateGuesses = new Set(
-    Array.from(candidates, (answer) => lexicon.answerToGuess[answer]!),
+    Array.from(candidates, (answer) => lex.answerToGuess[answer]!),
   );
 
   const considered = new Set<number>();
@@ -182,36 +198,38 @@ function strongestGuess(
     }
   }
 
-  return lexicon.guessWords[bestIndex]!;
+  return lex.guessWords[bestIndex]!;
 }
 
 /** Legal guesses ordered by one-step expected information, best first. */
 function rankByInformation(
-  matrix: { readonly patterns: Uint8Array; readonly width: number; readonly columnOf: Int32Array },
+  matrix: ReturnType<typeof buildPatternMatrix>,
   candidates: Int32Array,
   constraints: Constraints,
   ruleset: Ruleset,
+  lex: CompiledLexicon = lexicon,
 ): number[] {
   const counts = new Int32Array(PATTERN_COUNT);
   const touched = new Int32Array(PATTERN_COUNT);
   const columns = Int32Array.from(candidates, (answer) => matrix.columnOf[answer]!);
   const restricted = ruleset.restrictsLegalGuesses;
 
-  const keys = new Float64Array(lexicon.guessCount);
+  const keys = new Float64Array(lex.guessCount);
   const order: number[] = [];
 
-  for (let guessIndex = 0; guessIndex < lexicon.guessCount; guessIndex += 1) {
-    if (restricted && !ruleset.isLegal(constraints, lexicon.guessWords[guessIndex]!)) continue;
+  for (let guessIndex = 0; guessIndex < lex.guessCount; guessIndex += 1) {
+    if (restricted && !ruleset.isLegal(constraints, lex.guessWords[guessIndex]!)) continue;
 
     const row = guessIndex * matrix.width;
     let distinct = 0;
     for (let position = 0; position < columns.length; position += 1) {
-      const pattern = matrix.patterns[row + columns[position]!]!;
+      const col = columns[position]!;
+      const pattern = matrix.patterns[row + col]!;
       if (counts[pattern] === 0) {
         touched[distinct] = pattern;
         distinct += 1;
       }
-      counts[pattern]! += 1;
+      counts[pattern]! += matrix.weights[col]!;
     }
 
     // Σ n log2 n falls as expected information rises, so a lower key ranks
@@ -246,8 +264,8 @@ export function scorePlayed(
 }
 
 /** The puzzles for a run of consecutive days. */
-export function puzzlesFor(days: number, from = 0) {
-  return Array.from({ length: days }, (_, offset) => drawPuzzle(from + offset, lists));
+export function puzzlesFor(days: number, from = 0, puzzleLists = lists) {
+  return Array.from({ length: days }, (_, offset) => drawPuzzle(from + offset, puzzleLists));
 }
 
 export { rulesetFor };

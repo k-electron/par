@@ -4,8 +4,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useState } from 'react';
 
-import { guesses as dictionary, answers, starters, WORD_LIST_VERSION } from '../../data';
-import { MAX_GUESSES, SCORER_VERSION } from '../../engine/config/constants';
+import { guesses as dictionary, answers, answersV2, starters, WORD_LIST_VERSION } from '../../data';
+import { MAX_GUESSES, scorerVersionFor } from '../../engine/config/constants';
 import { OUTCOME, RESULTS } from '../copy/results';
 import { drawPuzzle } from '../../engine/daily/puzzle';
 import { rulesetFor } from '../../engine/rules/ruleset';
@@ -101,7 +101,7 @@ function RevealedReplay({
     const words = game.guessIndices.map((index) => dictionary[index]);
     if (words.some((word) => word === undefined)) return null;
 
-    const puzzle = drawPuzzle(game.puzzleNumber, { answers, starters });
+    const puzzle = drawPuzzle(game.puzzleNumber, { answers, starters, answersV2 });
     const session = replaySession(
       puzzle.answer,
       rulesetFor(game.hardMode ? 'hard' : 'normal'),
@@ -123,6 +123,7 @@ function RevealedReplay({
         answer: rebuilt.puzzle.answer,
         tookHouseStarter: game.tookHouseStarter,
         hardMode: game.hardMode,
+        puzzleNumber: game.puzzleNumber,
       })
       .then((result) => {
         if (current) setScore(result);
@@ -134,7 +135,7 @@ function RevealedReplay({
     return () => {
       current = false;
     };
-  }, [rebuilt, scoring, game.tookHouseStarter, game.hardMode]);
+  }, [rebuilt, scoring, game.tookHouseStarter, game.hardMode, game.puzzleNumber]);
 
   if (rebuilt === null) {
     return (
@@ -155,7 +156,7 @@ function RevealedReplay({
   // move the total, so both are stamped and both are checked.
   const staleLists =
     game.wordListVersion !== WORD_LIST_VERSION.slice(0, game.wordListVersion.length);
-  const staleScorer = game.scorerVersion !== SCORER_VERSION;
+  const staleScorer = game.scorerVersion !== scorerVersionFor(game.puzzleNumber);
 
   const settings = {
     hardMode: game.hardMode,

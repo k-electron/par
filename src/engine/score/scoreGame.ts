@@ -22,8 +22,7 @@
 import { C_PAR, EPSILON, PAR, UNSOLVED_GUESSES } from '../config/constants';
 import { log2 } from '../numeric/log2';
 import { luckBits } from '../numeric/information';
-import { patternCounts } from '../words/filter';
-import { WIN_PATTERN, computePattern } from '../words/pattern';
+import { PATTERN_COUNT, WIN_PATTERN, computePattern } from '../words/pattern';
 import type { Observation } from '../words/filter';
 import type { PositionScorer } from './scoreGuess';
 
@@ -39,9 +38,9 @@ import type { PositionScorer } from './scoreGuess';
  *
  * Celebrate fast finishes with a badge. Never with points.
  */
-export function outcomePoints(guessesUsed: number, solved: boolean): number {
+export function outcomePoints(guessesUsed: number, solved: boolean, par: number = PAR): number {
   const effective = solved ? Math.min(guessesUsed, UNSOLVED_GUESSES) : UNSOLVED_GUESSES;
-  return C_PAR * (PAR - effective);
+  return C_PAR * (par - effective);
 }
 
 export interface GuessBreakdown {
@@ -110,6 +109,7 @@ export interface GameScore {
   readonly guessesUsed: number;
   readonly solved: boolean;
   readonly breakdown: readonly GuessBreakdown[];
+  readonly par?: number;
 }
 
 export interface GameToScore {
@@ -125,6 +125,8 @@ export interface GameToScore {
    * exactly the bookmark habit the bonus exists to tax.
    */
   readonly tookHouseStarter: boolean;
+  /** The par value to score against. Defaults to PAR. */
+  readonly par?: number;
 }
 
 export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore {
@@ -142,8 +144,8 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
 
   for (let index = 0; index < guesses.length; index += 1) {
     const guess = guesses[index]!;
-    const before = scorer.candidatesAfter(history);
-    const candidateCount = before.length;
+    const beforeIndices = scorer.candidateIndicesAfter(history);
+    const candidateCount = beforeIndices.length;
     // Read while `history` still holds only what was known when the guess was
     // played. The push below is what makes that a real hazard rather than a
     // note: every other display figure here is computed from `before`.
@@ -176,7 +178,18 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     // partition the guess would have made of the position it faced, so
     // everything read off it describes the guess rather than the outcome — bar
     // `outcomeShare`, which is the outcome and says so.
-    const counts = patternCounts(guess, before);
+    const counts = new Int32Array(PATTERN_COUNT);
+    let totalCandidateWeight = 0;
+    for (let i = 0; i < candidateCount; i += 1) {
+      const answerIndex = beforeIndices[i]!;
+      const word = scorer.lexicon.answerWords[answerIndex]!;
+      const p = computePattern(guess, word);
+      const w = scorer.lexicon.answerWeights[answerIndex]!;
+      counts[p] = counts[p]! + w;
+      totalCandidateWeight += w;
+    }
+
+    const remainingWeight = counts[pattern]!;
     let likeliest = 0;
     for (const count of counts) {
       if (count > likeliest) {
@@ -194,11 +207,11 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
       weight,
       // Shown for guess 1 too: it is the honest explanation for a fast finish,
       // and never a grade on the opener choice.
-      luck: remaining > 0 ? luckBits(counts, candidateCount, remaining) : 0,
+      luck: remainingWeight > 0 ? luckBits(counts, totalCandidateWeight, remainingWeight) : 0,
       forced: assessment?.forced ?? false,
       standing,
-      outcomeShare: remaining / candidateCount,
-      likeliestOutcomeShare: likeliest / candidateCount,
+      outcomeShare: totalCandidateWeight > 0 ? remainingWeight / totalCandidateWeight : 0,
+      likeliestOutcomeShare: totalCandidateWeight > 0 ? likeliest / totalCandidateWeight : 0,
     });
 
     if (pattern === WIN_PATTERN) {
@@ -218,8 +231,9 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
   const mean = totalWeight > 0 ? weightedSkill / totalWeight : 100;
   const skill = mean > 100 ? 100 : mean;
 
+  const par = game.par ?? PAR;
   const guessesUsed = breakdown.length;
-  const outcome = outcomePoints(guessesUsed, solved);
+  const outcome = outcomePoints(guessesUsed, solved, par);
   const starterBonus = tookHouseStarter ? EPSILON : 0;
 
   return {
@@ -230,5 +244,6 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     guessesUsed,
     solved,
     breakdown,
+    par,
   };
 }

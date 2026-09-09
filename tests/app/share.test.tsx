@@ -18,7 +18,7 @@ import { App } from '../../src/app/ui/App';
 import { ShareButton } from '../../src/app/ui/ShareButton';
 import { isMobilePlatform } from '../../src/app/share/platform';
 import { WORD_LIST_VERSION, answers, guesses as dictionary, starters } from '../../src/data';
-import { SCORER_VERSION } from '../../src/engine/config/constants';
+import { SCORER_VERSION, SCORER_VERSION_V1, SCORER_VERSION_V2, scorerVersionFor } from '../../src/engine/config/constants';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
 
 const PUZZLE_NUMBER = 165;
@@ -330,6 +330,41 @@ describe('a version mismatch', () => {
 
     expect(await screen.findByText(/different word list/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /copy this round/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('cutover versioning (v1 vs v2)', () => {
+  it('assigns SCORER_VERSION_V1 to games < 260 and SCORER_VERSION_V2 to games >= 260', () => {
+    expect(scorerVersionFor(0)).toBe(SCORER_VERSION_V1);
+    expect(scorerVersionFor(259)).toBe(SCORER_VERSION_V1);
+    expect(scorerVersionFor(260)).toBe(SCORER_VERSION_V2);
+    expect(scorerVersionFor(500)).toBe(SCORER_VERSION_V2);
+  });
+
+  it('generates links with the expected scorer version for each era', () => {
+    const dummyScore = scoreDirectly({
+      guesses: ['crane', 'batch'],
+      answer: 'batch',
+      tookHouseStarter: false,
+      hardMode: false,
+    });
+    const base = {
+      score: dummyScore,
+      hardMode: false,
+      tookHouseStarter: false,
+      guessIndices: [0, 1],
+      wordListVersion: WORD_LIST_VERSION,
+      origin: 'https://par.pages.dev/',
+    };
+
+    const v1Link = replayLink({ ...base, puzzleNumber: 259 });
+    const v2Link = replayLink({ ...base, puzzleNumber: 260 });
+
+    const decodedV1 = decodeSharedGame(v1Link.split('#r=')[1]!);
+    const decodedV2 = decodeSharedGame(v2Link.split('#r=')[1]!);
+
+    expect(decodedV1.ok && decodedV1.game.scorerVersion).toBe(SCORER_VERSION_V1);
+    expect(decodedV2.ok && decodedV2.game.scorerVersion).toBe(SCORER_VERSION_V2);
   });
 });
 

@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { answers, starters } from '../../src/data';
+import { answers, answersV2, starters } from '../../src/data';
 import {
   PUZZLE_EPOCH,
   PUZZLE_TIME_ZONE,
@@ -17,9 +17,16 @@ import {
   daysFromCivil,
   puzzleNumberAt,
 } from '../../src/engine/daily/calendar';
-import { drawPuzzle } from '../../src/engine/daily/puzzle';
+import {
+  CUTOVER_PUZZLE_NUMBER,
+  drawPuzzle,
+  drawWeightedIndex,
+  V2_TOTAL_WEIGHT,
+  V2_TOTAL_WORDS,
+} from '../../src/engine/daily/puzzle';
 
 const lists = { answers, starters };
+const listsV2 = { answers, starters, answersV2 };
 
 describe('daysFromCivil', () => {
   it('places the Unix epoch at zero', () => {
@@ -168,7 +175,7 @@ describe('drawing the puzzle', () => {
   });
 });
 
-describe('golden puzzles', () => {
+describe('golden puzzles (legacy lists)', () => {
   // Pinned against word-list version fc66685a12af. If the lists are
   // regenerated these change, which is exactly why share links carry the
   // version stamp. Regenerate deliberately, never to make this pass.
@@ -182,3 +189,85 @@ describe('golden puzzles', () => {
     expect([puzzle.answer, puzzle.starter]).toEqual([answer, starter]);
   });
 });
+
+describe('word selection v2 (game 260+ cutover)', () => {
+  it('defines the cutover puzzle number at 260', () => {
+    expect(CUTOVER_PUZZLE_NUMBER).toBe(260);
+  });
+
+  it('draws identically for days < 260 whether v2 list is supplied or not', () => {
+    for (const day of [0, 1, 50, 100, 200, 259]) {
+      expect(drawPuzzle(day, listsV2)).toEqual(drawPuzzle(day, lists));
+    }
+  });
+
+  it('switches to v2 list from day 260 onwards', () => {
+    const day259 = drawPuzzle(259, listsV2);
+    expect(day259.answer).toBe('tuner');
+
+    const day260 = drawPuzzle(260, listsV2);
+    expect(day260.answer).toBe('sheen');
+    expect(day260.starter).toBe('swole');
+    // Without v2, legacy day 260 drew 'trade'
+    expect(drawPuzzle(260, lists).answer).toBe('trade');
+  });
+
+  it.each([
+    [260, 'sheen', 'swole'],
+    [261, 'frock', 'thang'],
+    [300, 'celeb', 'masks'],
+    [365, 'beard', 'clone'],
+  ])('day %i (v2) draws pinned golden words (%s, %s)', (day, answer, starter) => {
+    const puzzle = drawPuzzle(day, listsV2);
+    expect([puzzle.answer, puzzle.starter]).toEqual([answer, starter]);
+  });
+
+  it('maps every ticket to a valid word index with correct tier weights', () => {
+    expect(V2_TOTAL_WEIGHT).toBe(42_070);
+    expect(V2_TOTAL_WORDS).toBe(9_570);
+
+    const ticketCounts = new Int32Array(V2_TOTAL_WORDS);
+
+    // Simulate every possible ticket
+    for (let ticket = 0; ticket < V2_TOTAL_WEIGHT; ticket += 1) {
+      let wordIndex: number;
+      if (ticket < 25_000) {
+        wordIndex = Math.floor(ticket / 10);
+      } else if (ticket < 35_000) {
+        wordIndex = 2_500 + Math.floor((ticket - 25_000) / 4);
+      } else if (ticket < 40_000) {
+        wordIndex = 5_000 + Math.floor((ticket - 35_000) / 2);
+      } else {
+        wordIndex = 7_500 + (ticket - 40_000);
+      }
+      expect(wordIndex).toBeGreaterThanOrEqual(0);
+      expect(wordIndex).toBeLessThan(V2_TOTAL_WORDS);
+      ticketCounts[wordIndex] = (ticketCounts[wordIndex] ?? 0) + 1;
+    }
+
+    // Verify Tier 1: exactly 10 tickets each
+    for (let i = 0; i < 2_500; i += 1) {
+      expect(ticketCounts[i]).toBe(10);
+    }
+    // Verify Tier 2: exactly 4 tickets each
+    for (let i = 2_500; i < 5_000; i += 1) {
+      expect(ticketCounts[i]).toBe(4);
+    }
+    // Verify Tier 3: exactly 2 tickets each
+    for (let i = 5_000; i < 7_500; i += 1) {
+      expect(ticketCounts[i]).toBe(2);
+    }
+    // Verify Tier 4: exactly 1 ticket each
+    for (let i = 7_500; i < V2_TOTAL_WORDS; i += 1) {
+      expect(ticketCounts[i]).toBe(1);
+    }
+  });
+
+  it('drawWeightedIndex is deterministic across negative and positive days', () => {
+    expect(drawWeightedIndex(260, 0x5061_7241)).toBe(drawWeightedIndex(260, 0x5061_7241));
+    expect(drawWeightedIndex(-10, 0x5061_7241)).toBe(drawWeightedIndex(-10, 0x5061_7241));
+    expect(drawWeightedIndex(260, 0x5061_7241)).toBeGreaterThanOrEqual(0);
+    expect(drawWeightedIndex(260, 0x5061_7241)).toBeLessThan(V2_TOTAL_WORDS);
+  });
+});
+
