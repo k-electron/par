@@ -295,6 +295,9 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
             score={score.total}
             par={score.par ?? PAR}
             animated={variant === 'own'}
+            maxScore={score.maxScore}
+            starterBonus={score.starterBonus}
+            guessesUsed={score.guessesUsed}
           />
         </Box>
         <Typography variant="body2" sx={{ mt: 0.5 }}>

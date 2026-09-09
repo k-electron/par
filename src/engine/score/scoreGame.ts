@@ -110,6 +110,7 @@ export interface GameScore {
   readonly solved: boolean;
   readonly breakdown: readonly GuessBreakdown[];
   readonly par?: number;
+  readonly maxScore?: number;
 }
 
 export interface GameToScore {
@@ -236,6 +237,22 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
   const outcome = outcomePoints(guessesUsed, solved, par);
   const starterBonus = tookHouseStarter ? EPSILON : 0;
 
+  let maxScore: number;
+  if (tookHouseStarter) {
+    if (guesses[0] === answer) {
+      maxScore = 100 + outcomePoints(1, true, par) + starterBonus;
+    } else {
+      const p0 = computePattern(guesses[0]!, answer);
+      const s2 = scorer.scoreGuess([{ guess: guesses[0]!, pattern: p0 }], answer).skill;
+      maxScore = Math.max(
+        s2 + outcomePoints(2, true, par) + starterBonus,
+        100 + outcomePoints(3, true, par) + starterBonus,
+      );
+    }
+  } else {
+    maxScore = 100 + outcomePoints(2, true, par);
+  }
+
   return {
     skill,
     outcome,
@@ -245,5 +262,6 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     solved,
     breakdown,
     par,
+    maxScore,
   };
 }
