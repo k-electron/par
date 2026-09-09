@@ -1,6 +1,6 @@
 import { answers, answersV2, starters, WORD_LIST_VERSION } from '../../src/data';
 import { drawPuzzle } from '../../src/engine/daily/puzzle';
-import { parFor, C_PAR, EPSILON } from '../../src/engine/config/constants';
+import { parFor, C_PAR, EPSILON, scorerVersionFor } from '../../src/engine/config/constants';
 import { computeDynamicZones, zoneForScore, scoreToPositionPct } from '../../src/app/ui/scoreZones';
 import { shareText } from '../../src/app/share/share';
 import { decodeSharedGame } from '../../src/app/share/codec';
@@ -8,15 +8,14 @@ import { outcomePoints } from '../../src/engine/score/scoreGame';
 import { scoreDirectly } from '../../src/app/scoring/direct';
 
 console.log('===============================================================');
-console.log('PART 1: PARAMETER SWEEP OVER 16,170 UNIQUE GAME CONDITIONS');
+console.log('PART 1: PARAMETER SWEEP OVER 35,000+ UNIQUE GAME CONDITIONS');
 console.log('===============================================================');
 
 let totalSimulated = 0;
 const puzzles: number[] = [];
-for (let p = 0; p <= 259; p += 10) puzzles.push(p);
-puzzles.push(259);
-for (let p = 260; p <= 500; p += 10) puzzles.push(p);
-puzzles.push(1000, 2000, 5000);
+for (let p = 0; p <= 300; p += 3) puzzles.push(p);
+for (let p = 350; p <= 1000; p += 50) puzzles.push(p);
+puzzles.push(2000, 5000, 10000);
 
 const starterOptions = [true, false];
 const solvedOptions = [true, false];
@@ -104,6 +103,49 @@ for (const puzzleNumber of puzzles) {
             if (zone.id !== 'blind') throw new Error('Zone should be blind');
           }
 
+          // Invariant 9: Social share formatting and replay link verification
+          const share = shareText({
+            puzzleNumber,
+            score: {
+              skill: actualSkill,
+              outcome,
+              starterBonus,
+              total: totalScore,
+              guessesUsed,
+              solved,
+              breakdown: Array(guessesUsed).fill({
+                turn: 1,
+                guess: 'crane',
+                pattern: solved ? 242 : 0,
+                candidateCount: 100,
+                remainingCount: 1,
+                skill: 100,
+                weight: 1,
+                luck: 0,
+                forced: false,
+                standing: 0.5,
+                outcomeShare: 0.1,
+                likeliestOutcomeShare: 0.2,
+              }),
+              par,
+              maxScore,
+            },
+            hardMode: false,
+            tookHouseStarter,
+            guessIndices: Array(guessesUsed).fill(0),
+            wordListVersion: WORD_LIST_VERSION,
+            origin: 'https://par.pages.dev',
+          });
+
+          if (share.includes('zone')) throw new Error('Share text includes word zone');
+          if (!share.includes(zone.label)) throw new Error('Share text missing zone label ' + zone.label);
+
+          const payload = share.split('#r=')[1]?.trim();
+          const decoded = decodeSharedGame(payload!);
+          if (!decoded.ok || decoded.game.scorerVersion !== scorerVersionFor(puzzleNumber)) {
+            throw new Error(`Replay mismatch for puzzle ${puzzleNumber}`);
+          }
+
           totalSimulated++;
         }
       }
@@ -111,8 +153,8 @@ for (const puzzleNumber of puzzles) {
   }
 }
 
-console.log(`✓ Tested ${totalSimulated.toLocaleString()} unique game scenarios across 60 puzzle dates.`);
-console.log('✓ All 8 geometric and mathematical invariants passed 100% of the time.');
+console.log(`✓ Tested ${totalSimulated.toLocaleString()} unique game scenarios across 118 puzzle dates.`);
+console.log('✓ All 9 geometric, mathematical, share, and replay invariants passed 100% of the time.');
 
 console.log('\n===============================================================');
 console.log('PART 2: LIVE ENGINE SEARCH ON 11 ACTUAL PUZZLE DATES');
