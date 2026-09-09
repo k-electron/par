@@ -59,7 +59,9 @@ jobs:
       - run: npm ci
 
       - name: Install browsers
-        run: npx playwright install --with-deps chromium
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+          npx playwright install --with-deps chromium
 
       # Runs against the production build, because two of the things it checks
       # only exist in a built artefact: that the scoring worker bundles
