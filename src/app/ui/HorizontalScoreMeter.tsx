@@ -9,7 +9,7 @@ import {
   computeDynamicZones,
   scoreToPositionPct,
   zoneForScore,
-} from './radialScore';
+} from './scoreZones';
 
 export interface HorizontalScoreMeterProps {
   readonly score: number;

@@ -11,7 +11,7 @@ import { MAX_GUESSES, parFor, scorerVersionFor } from '../../engine/config/const
 import { Tile, tilesFromPattern } from '../../engine/words/pattern';
 import { celebratoryBadges, parPhrase, type CelebratoryBadge } from '../copy/results';
 import type { GameScore } from '../scoring/protocol';
-import { computeDynamicZones, zoneForScore } from '../ui/radialScore';
+import { computeDynamicZones, zoneForScore } from '../ui/scoreZones';
 import { encodeSharedGame } from './codec';
 
 const TILE_EMOJI: Record<Tile, string> = {

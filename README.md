@@ -72,7 +72,7 @@ taste, for the reason given under [deploying](#deploying-to-cloudflare-pages).
 | --- | --- |
 | [`docs/spec.md`](docs/spec.md) | The build specification. Normative. |
 | [`docs/philosophy.md`](docs/philosophy.md) | Why the game is designed this way. Governs judgement calls the spec leaves open. |
-| [`docs/scoring.md`](docs/scoring.md) | The scoring model as implemented, and what each constant trades. |
+| [`docs/scoring.md`](docs/scoring.md) | The scoring model as implemented, score meter zones, dynamic curve fitting, and what each constant trades. |
 | [`docs/determinism.md`](docs/determinism.md) | Why a score is bit-identical everywhere, and what would break it. |
 | [`docs/wordlists.md`](docs/wordlists.md) | Sources, licensing, generation, and the asserted properties. |
 | [`docs/architecture.md`](docs/architecture.md) | The module map, the ports, and the invariants enforced by shape. |

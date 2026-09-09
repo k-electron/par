@@ -417,6 +417,70 @@ by information and still score 94.6%, because skill is a ratio of expected *turn
 continued optimal play and information is one move deep. The magnitude in every sentence therefore
 comes from the skill score itself, restated as turns.
 
+## The Score Meter and Qualitative Zones
+
+Above the guess-by-guess table, the results card presents the player's total score along a horizontal multi-segment meter ([`src/app/ui/HorizontalScoreMeter.tsx`](../src/app/ui/HorizontalScoreMeter.tsx) and [`src/app/ui/scoreZones.ts`](../src/app/ui/scoreZones.ts)). The meter translates numeric scores into qualitative bands with color-coded segments, breakpoint ticks, and an active needle indicator.
+
+### The Standard Zones
+
+Under normal play ($60.0 \le \text{Score} \le S_{\text{max}}$), the meter displays six continuous zones:
+
+| Zone | Label | Light Color | Dark Color | Description |
+| --- | --- | --- | --- | --- |
+| `troll` | Troll | `#64748B` | `#94A3B8` | Erratic or intentionally sub-optimal moves |
+| `bad` | Bad | `#DC2626` | `#EF4444` | High mistake rate or missed deductions |
+| `meh` | Meh | `#D97706` | `#F59E0B` | Play below par expectation |
+| `good` | Good | `#16A34A` | `#22C55E` | Solid, disciplined play meeting or nearing par |
+| `ultra` | Ultra | `#0891B2` | `#06B6D4` | Outstanding decisions beating par |
+| `godlike` | Godlike | `#9333EA` | `#C084FC` | Near-perfect execution reaching the day's strategic ceiling |
+
+### Dynamic Per-Day Per-Mode Curve Fitting
+
+A static score scale (e.g. 60 to 115) fails because the reachable score ceiling varies across game configurations:
+- **Starter choice**: Taking the house starter awards $\epsilon = 3$ bonus points.
+- **Word lists and ruleset**: `PAR` varies between eras (`PAR_V1 = 3.7100`, `PAR_V2 = 3.9800`) and the daily board position.
+- **The hole-in-one paradox**: Finishing on guess 1 gives an outcome score of $C_{\text{PAR}} \times (\text{PAR} - 1)$ with a default 100 skill score. However, a hole-in-one is pure unearned opener luck where skill was not tested. If the scale ceiling were pegged to $n = 1$, Godlike would be mathematically unreachable for all strategic players (who require at least 2 guesses to deduce the word).
+
+To preserve fair calibration, [`computeDynamicZones`](../src/app/ui/scoreZones.ts) dynamically computes the strategic maximum $S_{\text{max}}$ for each specific game session:
+
+$$S_{\text{max}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2) + (\text{took house starter} ? \epsilon : 0)$$
+
+This represents the maximum score achievable through deliberate skill (finishing in 2 guesses with 100.0% skill).
+
+#### Threshold Interpolation
+
+- **Par Score**: $\text{parScore} = 100.0 + (\text{took house starter} ? \epsilon : 0)$.
+- **Below Par**: Interpolated over $\Delta_{\text{below}} = \text{parScore} - 60.0$:
+  - $t_1 = 60.0 + 0.30 \times \Delta_{\text{below}}$ (Troll $\to$ Bad)
+  - $t_2 = 60.0 + 0.60 \times \Delta_{\text{below}}$ (Bad $\to$ Meh)
+  - $t_3 = 60.0 + 0.80 \times \Delta_{\text{below}}$ (Meh $\to$ Good)
+- **Above Par**: Proportional interpolation over $\Delta_{\text{above}} = \max(0.1, S_{\text{max}} - \text{parScore})$:
+  - $t_4 = \text{parScore} + 0.60 \times \Delta_{\text{above}}$ (Ultra $\to$ Godlike)
+  - $S_{\text{max}}$ marks the upper bound of Godlike.
+
+### Secret Dynamic Edge Zones
+
+Two hidden zones handle extreme outliers without distorting standard play:
+
+1. **`blind_luck` (Radiant Gold, `#CA8A04` / `#FACC15`)**:
+   - Revealed **only** when a hole-in-one ($n = 1$) is achieved.
+   - Spans $(S_{\text{max}}, \; 100 + C_{\text{PAR}} \times (\text{PAR} - 1) + \text{bonus}]$.
+   - Renders across two lines (`Blind` / `luck`) on the meter header.
+   - Keeps guess-1 luck strictly isolated so standard players can achieve Godlike through strong play.
+2. **`blind` (Deep Charcoal, `#334155` / `#64748B`)**:
+   - Revealed **only** when a round scores below Troll ($< 60.0$), such as an unsolved game with low skill.
+   - Dynamically extends the meter floor to $S_{\text{floor}} = \min(0, \lfloor \text{score}/10 \rfloor \times 10)$.
+   - Prevents the score needle from dropping off the bar while remaining hidden during normal play ($\ge 60.0$).
+
+### Sharing
+
+The clipboard share text formats line 1 with the exact zone name, omitting the word "zone" for clean brevity:
+```text
+Par 42 4/6 — 100.4 · Good
+Par 42 1/6 — 114.9 · Blind luck
+Par 42 X/6 — 42.5 · Blind
+```
+
 ## Determinism
 
 A shared result has to re-score to the identical number on someone else's
