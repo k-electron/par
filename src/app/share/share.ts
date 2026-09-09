@@ -7,7 +7,7 @@
  * whole game one click deeper.
  */
 
-import { MAX_GUESSES, PAR, SCORER_VERSION } from '../../engine/config/constants';
+import { MAX_GUESSES, parFor, scorerVersionFor } from '../../engine/config/constants';
 import { Tile, tilesFromPattern } from '../../engine/words/pattern';
 import { celebratoryBadges, parPhrase, type CelebratoryBadge } from '../copy/results';
 import type { GameScore } from '../scoring/protocol';
@@ -45,7 +45,7 @@ export function replayLink(input: ShareInput): string {
     tookHouseStarter: input.tookHouseStarter,
     guessIndices: input.guessIndices,
     wordListVersion: input.wordListVersion,
-    scorerVersion: SCORER_VERSION,
+    scorerVersion: scorerVersionFor(input.puzzleNumber),
   });
 
   // The fragment, not the query string: it is never sent to a server, and there
@@ -84,7 +84,7 @@ export function shareText(input: ShareInput): string {
 
   const lines = [
     `Par ${input.puzzleNumber} ${attempts} \u2014 ${score.total.toFixed(1)}`,
-    `${score.skill.toFixed(0)}% \u00B7 ${parPhrase(score.guessesUsed, PAR, score.solved)}`,
+    `${score.skill.toFixed(0)}% \u00B7 ${parPhrase(score.guessesUsed, score.par ?? parFor(input.puzzleNumber), score.solved)}`,
     ...(badges.length > 0 ? [badges.join(' \u00B7 ')] : []),
     '',
     grid,

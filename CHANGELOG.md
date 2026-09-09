@@ -10,6 +10,21 @@ here landed afterwards, each behind a pull request and a green quality gate.
 
 ### Added
 
+- **Word Selection v2 and Path A Weighted Scoring from Game 260 onwards**. Upgrades daily answer word selection
+  from uniform random draw across the top 3,000 words to deterministic weighted selection across an expanded candidate pool of
+  9,570 words ([`src/data/answers_v2.generated.ts`](src/data/answers_v2.generated.ts)), and evolves the scoring engine
+  under **Path A** to evaluate moves against the candidate prior distribution rather than assuming uniform likelihood.
+  The new candidate list is derived from all five-letter CSW19 words minus simple 4-letter + 's' plurals, preserving words
+  legitimately ending in 's' (e.g. `chaos`, `basis`, `focus`, `virus`, `glass`), plus 221 pure 3rd-person
+  singular verbs ending in 's' (`seems`, `wants`, `knows`, `gives`, etc.) placed in their own frequency-sorted
+  block at the bottom. Selection weights common words more heavily across four frequency tiers: top 2,500 (weight 10,
+  ~59.4%), next 2,500 (weight 4, ~23.8%), next 2,500 (weight 2, ~11.9%), and remaining 2,070 words including
+  the pure verbs (weight 1, ~4.9%). The scoring engine accumulates candidate weights across pattern matrix buckets, uses
+  weighted Shannon entropy for expected information and luck, implements a closed-form weighted 2-candidate endgame
+  ($V = 1 + \min(w_0, w_1)/(w_0 + w_1)$), and reserves forced-move status in two-candidate positions strictly for equal-weight
+  coin flips ($w_0 == w_1$). The cutover begins cleanly on Game 260 (`CUTOVER_PUZZLE_NUMBER = 260`): games 0–259 use
+  `SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`, and the legacy unweighted 3k lexicon; games 260+ use `SCORER_VERSION_V2 = 2`,
+  `PAR_V2`, and the weighted 9.5k lexicon. Replays from both eras open with complete fidelity and zero mismatch warnings.
 - **Native share sheet on Android and iOS**
   ([#24](https://github.com/k-electron/par/pull/24)). Tapping the share button on
   mobile devices now invokes `navigator.share` rather than only copying to the

@@ -7,7 +7,7 @@
  * they may move if one has to.
  */
 
-import { GENERATED_PAR } from './par.generated';
+import { GENERATED_PAR, GENERATED_PAR_V1, GENERATED_PAR_V2 } from './par.generated';
 
 /**
  * Points per guess relative to par.
@@ -51,7 +51,17 @@ export const EPSILON = 3;
  * compensate would muddy what the number means. The share badge says which mode
  * was played.
  */
+export const PAR_V1 = GENERATED_PAR_V1;
+export const PAR_V2 = GENERATED_PAR_V2;
 export const PAR = GENERATED_PAR;
+
+/** Return the appropriate PAR value for a given puzzle number (cutover at 260). */
+export function parFor(puzzleNumber?: number): number {
+  if (puzzleNumber !== undefined && puzzleNumber >= 260) {
+    return PAR_V2;
+  }
+  return PAR_V1;
+}
 
 /** An unsolved game is priced as this many guesses. */
 export const UNSOLVED_GUESSES = 7;
@@ -96,15 +106,17 @@ export const MAX_GUESSES = 6;
  * different total. Silent divergence is the failure that priority 2 ranks second
  * only to being wrong.
  *
- * **Bump this whenever anything that can move a score changes.** That includes:
- *
- * - the search bands in `search/policy.ts`, or the endgame shortcut
- * - the ranking key or any accumulation order in `search/value.ts`
- * - `SERIES_TERMS` or anything else in `numeric/log2.ts`
- * - `C_PAR`, `EPSILON`, or a regenerated `PAR`
- * - the aggregation or the outcome term in `score/scoreGame.ts`
- *
- * Regenerating the word lists does **not** need a bump: that already changes
- * `WORD_LIST_VERSION`, which is stamped separately.
+ * Version 1: Puzzles 0-259 with unweighted search and PAR 3.71.
+ * Version 2: Puzzles 260+ with weighted search and PAR_V2.
  */
-export const SCORER_VERSION = 1;
+export const SCORER_VERSION_V1 = 1;
+export const SCORER_VERSION_V2 = 2;
+export const SCORER_VERSION = SCORER_VERSION_V1;
+
+/** Return the expected scorer version for a given puzzle number (cutover at 260). */
+export function scorerVersionFor(puzzleNumber?: number): number {
+  if (puzzleNumber !== undefined && puzzleNumber >= 260) {
+    return SCORER_VERSION_V2;
+  }
+  return SCORER_VERSION_V1;
+}

@@ -60,6 +60,7 @@ export interface RoundToExplain {
   readonly guessesUsed: number;
   readonly solved: boolean;
   readonly breakdown: readonly GuessToExplain[];
+  readonly par?: number;
 }
 
 export interface ExplainedGuess {
@@ -476,7 +477,7 @@ function skillShares(rows: readonly GuessToExplain[]): number[] {
 }
 
 function parStory(round: RoundToExplain): string {
-  const par = guesses(PAR);
+  const par = guesses(round.par ?? PAR);
   const charged = round.solved ? round.guessesUsed : UNSOLVED_GUESSES;
   const took = round.solved
     ? `This round took ${round.guessesUsed}.`

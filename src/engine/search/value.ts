@@ -73,30 +73,12 @@ export interface Searcher {
 /** Scratch that has to survive while a node's children are being evaluated. */
 interface Frame {
   readonly bucketCount: Int32Array;
+  readonly bucketWeight: Int32Array;
   readonly bucketStart: Int32Array;
   readonly bucketCursor: Int32Array;
   readonly order: Int32Array;
   readonly selected: Int32Array;
   readonly legal: Int32Array;
-}
-
-/**
- * The value of an endgame, settled by argument rather than by search.
- *
- * A candidate is always legal (see `rules/ruleset.ts`), so with one candidate left
- * it can be played and wins: `V = 1`. With two, playing either wins outright half
- * the time and leaves a single candidate otherwise, so `V = 1 + 1/2` — and nothing
- * beats that, because no guess wins more than half the time from here.
- *
- * These are shortcuts for speed, not assumptions the rest of the search rests on.
- * Delete both call sites and the recursion derives the same two numbers unaided;
- * they exist because endgames are where the node count concentrates, and ranking
- * the whole dictionary at each of them to rediscover the same answer cost seconds
- * per guess. `tests/engine/scoreGuess.test.ts` pins them from the outside anyway:
- * spec §10's exact 100, 75 and 60 all rest on `V = 3/2` being right.
- */
-function endgameValue(count: number): number {
-  return count === 1 ? 1 : 1.5;
 }
 
 /** A node's legal set, and the constraints that produced it. */
@@ -115,7 +97,30 @@ export function createSearcher(
   const { patterns, width } = matrix;
 
   const memo = createValueMemo();
-  const weighted = weightedLog2Table(width);
+  let totalMatrixWeight = 0;
+  for (let column = 0; column < width; column += 1) {
+    totalMatrixWeight += matrix.weights[column]!;
+  }
+  const weighted = weightedLog2Table(totalMatrixWeight);
+
+  /**
+   * The value of an endgame with weights.
+   *
+   * With 1 candidate, playing it wins: V = 1.
+   * With 2 candidates with weights w0 and w1, playing the heavier candidate
+   * wins with probability max(w0, w1) / (w0 + w1) on turn 1, and with probability
+   * min(w0, w1) / (w0 + w1) finishes on turn 2:
+   * V = 1 + min(w0, w1) / (w0 + w1).
+   * When w0 == w1 (such as unweighted candidates), this is exactly 1.5.
+   */
+  function endgameValueOf(order: Int32Array, offset: number, count: number): number {
+    if (count === 1) {
+      return 1;
+    }
+    const w0 = matrix.weights[order[offset]!]!;
+    const w1 = matrix.weights[order[offset + 1]!]!;
+    return 1 + Math.min(w0, w1) / (w0 + w1);
+  }
 
   // Shared scratch. Safe to share across depths because ranking and selection
   // both finish before a node recurses into anything.
@@ -136,6 +141,7 @@ export function createSearcher(
     if (frame === undefined) {
       frame = {
         bucketCount: new Int32Array(PATTERN_COUNT),
+        bucketWeight: new Int32Array(PATTERN_COUNT),
         bucketStart: new Int32Array(PATTERN_COUNT),
         bucketCursor: new Int32Array(PATTERN_COUNT),
         order: new Int32Array(width),
@@ -182,12 +188,13 @@ export function createSearcher(
 
       let touched = 0;
       for (let member = 0; member < count; member += 1) {
-        const pattern = patterns[row + locals[offset + member]!]!;
+        const local = locals[offset + member]!;
+        const pattern = patterns[row + local]!;
         if (histogram[pattern] === 0) {
           occupiedPatterns[touched] = pattern;
           touched += 1;
         }
-        histogram[pattern] = histogram[pattern]! + 1;
+        histogram[pattern] = histogram[pattern]! + matrix.weights[local]!;
       }
 
       let cost = 0;
@@ -310,12 +317,17 @@ export function createSearcher(
     depth: number,
   ): number {
     const frame = frameAt(depth);
-    const { bucketCount, bucketStart, bucketCursor, order } = frame;
+    const { bucketCount, bucketWeight, bucketStart, bucketCursor, order } = frame;
     const row = guess * width;
 
+    let totalWeight = 0;
     for (let member = 0; member < count; member += 1) {
-      const pattern = patterns[row + locals[offset + member]!]!;
+      const local = locals[offset + member]!;
+      const pattern = patterns[row + local]!;
+      const w = matrix.weights[local]!;
       bucketCount[pattern] = bucketCount[pattern]! + 1;
+      bucketWeight[pattern] = bucketWeight[pattern]! + w;
+      totalWeight += w;
     }
 
     let running = 0;
@@ -334,6 +346,7 @@ export function createSearcher(
     // the guess told us nothing: Q would recurse on the same state forever.
     if (occupied === 1 && bucketCount[WIN_PATTERN] === 0) {
       bucketCount.fill(0);
+      bucketWeight.fill(0);
       return Number.POSITIVE_INFINITY;
     }
 
@@ -360,26 +373,28 @@ export function createSearcher(
         continue;
       }
 
+      const bWeight = bucketWeight[pattern]!;
       // Settled without recursing, and — the reason the check is here rather than
       // only inside `valueOfNode` — without building the child's legal set. Most
       // buckets of a large position are endgames, and narrowing the dictionary for
       // each of them was costing seconds per guess in hard mode.
       if (size <= 2) {
-        total += size * endgameValue(size);
+        total += bWeight * endgameValueOf(order, bucketStart[pattern]!, size);
         continue;
       }
 
       // Guard clause 3.
       const child = childLegality(legality, guess, pattern, depth + 1);
       total +=
-        size * valueOfNode(order, bucketStart[pattern]!, size, child, depth + 1);
+        bWeight * valueOfNode(order, bucketStart[pattern]!, size, child, depth + 1);
     }
 
     bucketCount.fill(0);
+    bucketWeight.fill(0);
 
     // Divided once at the end rather than per bucket: fewer roundings, and the
     // exact halves spec §10 expects come out exactly.
-    return 1 + total / count;
+    return 1 + total / totalWeight;
   }
 
   function valueOfNode(
@@ -390,7 +405,7 @@ export function createSearcher(
     depth: number,
   ): number {
     if (count <= 2) {
-      return endgameValue(count);
+      return endgameValueOf(locals, offset, count);
     }
 
     for (let member = 0; member < count; member += 1) {

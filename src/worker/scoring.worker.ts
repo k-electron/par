@@ -11,7 +11,9 @@
  * rulesets mean two scorers; both are cached for the same reason.
  */
 
-import { answers, guesses } from '../data';
+import { answers, answersV2, answersV2Weights, guesses } from '../data';
+import { parFor } from '../engine/config/constants';
+import { CUTOVER_PUZZLE_NUMBER } from '../engine/daily/puzzle';
 import { rulesetFor } from '../engine/rules/ruleset';
 import { scoreGame } from '../engine/score/scoreGame';
 import { createPositionScorer, type PositionScorer } from '../engine/score/scoreGuess';
@@ -19,11 +21,20 @@ import { validatedPolicy } from '../engine/search/policy';
 import { compileLexicon, type CompiledLexicon } from '../engine/words/lexicon';
 import type { ScoreRequest, ScoreResponse } from '../app/scoring/protocol';
 
-let lexicon: CompiledLexicon | undefined;
+let legacyLexicon: CompiledLexicon | undefined;
+let v2Lexicon: CompiledLexicon | undefined;
 
-function lexiconOnce(): CompiledLexicon {
-  lexicon ??= compileLexicon({ guesses, answers });
-  return lexicon;
+function lexiconFor(puzzleNumber?: number): CompiledLexicon {
+  if (puzzleNumber !== undefined && puzzleNumber >= CUTOVER_PUZZLE_NUMBER) {
+    v2Lexicon ??= compileLexicon({
+      guesses,
+      answers: answersV2,
+      answerWeights: answersV2Weights,
+    });
+    return v2Lexicon;
+  }
+  legacyLexicon ??= compileLexicon({ guesses, answers });
+  return legacyLexicon;
 }
 
 /**
@@ -34,9 +45,9 @@ function lexiconOnce(): CompiledLexicon {
  * matrix for the wrong position. The lexicon underneath is what is worth
  * keeping, and it is.
  */
-function scorerFor(hardMode: boolean): PositionScorer {
+function scorerFor(hardMode: boolean, puzzleNumber?: number): PositionScorer {
   return createPositionScorer({
-    lexicon: lexiconOnce(),
+    lexicon: lexiconFor(puzzleNumber),
     ruleset: rulesetFor(hardMode ? 'hard' : 'normal'),
     policy: validatedPolicy,
   });
@@ -55,17 +66,16 @@ self.addEventListener('message', (event: MessageEvent<ScoreRequest>) => {
           guesses: request.guesses,
           answer: request.answer,
           tookHouseStarter: request.tookHouseStarter,
+          par: parFor(request.puzzleNumber),
         },
-        scorerFor(request.hardMode),
+        scorerFor(request.hardMode, request.puzzleNumber),
       ),
     };
-  } catch (cause) {
-    // A failure here is a bug, not a score. Report it rather than leaving the
-    // caller waiting on a promise that never settles.
+  } catch (error) {
     response = {
       id: request.id,
       ok: false,
-      error: cause instanceof Error ? cause.message : String(cause),
+      error: error instanceof Error ? error.message : 'Scoring failed.',
     };
   }
 

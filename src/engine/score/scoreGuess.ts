@@ -21,11 +21,12 @@
 import { expectedInformationBits } from '../numeric/information';
 import type { Constraints } from '../rules/constraints';
 import type { Ruleset } from '../rules/ruleset';
-import { isConsistent, type Observation, patternCounts } from '../words/filter';
+import { isConsistent, type Observation } from '../words/filter';
 import type { CompiledLexicon } from '../words/lexicon';
 import { buildPatternMatrix, type PatternMatrix } from '../search/matrix';
 import type { SearchPolicy } from '../search/policy';
 import { createSearcher, type Searcher } from '../search/value';
+import { PATTERN_COUNT, computePattern } from '../words/pattern';
 
 export interface ScoringDependencies {
   readonly lexicon: CompiledLexicon;
@@ -96,6 +97,10 @@ export interface PositionScorer {
   standingOf(history: readonly Observation[], guess: string): number;
   /** The candidates a history leaves, as words, for the UI's own stats. */
   candidatesAfter(history: readonly Observation[]): string[];
+  /** The candidates a history leaves, as answer indices. */
+  candidateIndicesAfter(history: readonly Observation[]): Int32Array;
+  /** The compiled lexicon used by this scorer. */
+  readonly lexicon: CompiledLexicon;
   /** How many positions the search has solved, for the performance tests. */
   readonly solved: number;
 }
@@ -189,16 +194,29 @@ export function createPositionScorer(dependencies: ScoringDependencies): Positio
       const skill = (100 * benchmark) / cost;
 
       const candidateCount = candidates.length;
+      const isCoinFlip =
+        candidateCount === 2 &&
+        lexicon.answerWeights[candidates[0]!] === lexicon.answerWeights[candidates[1]!];
       const forced =
-        skill === 100 && (candidateCount <= 2 || search.legalCount(constraints) === 1);
+        skill === 100 &&
+        (candidateCount === 1 || isCoinFlip || search.legalCount(constraints) === 1);
 
-      const words = Array.from(candidates, (answer) => lexicon.answerWords[answer]!);
+      const counts = new Int32Array(PATTERN_COUNT);
+      let totalCandidateWeight = 0;
+      for (let i = 0; i < candidates.length; i += 1) {
+        const answer = candidates[i]!;
+        const word = lexicon.answerWords[answer]!;
+        const pattern = computePattern(guess, word);
+        const w = lexicon.answerWeights[answer]!;
+        counts[pattern] = counts[pattern]! + w;
+        totalCandidateWeight += w;
+      }
 
       return {
         skill,
         candidateCount,
         forced,
-        expectedBits: expectedInformationBits(patternCounts(guess, words), candidateCount),
+        expectedBits: expectedInformationBits(counts, totalCandidateWeight),
       };
     },
 
@@ -250,6 +268,12 @@ export function createPositionScorer(dependencies: ScoringDependencies): Positio
         (answer) => lexicon.answerWords[answer]!,
       );
     },
+
+    candidateIndicesAfter(history) {
+      return candidateIndices(history);
+    },
+
+    lexicon,
 
     get solved() {
       return searcher?.solved ?? 0;

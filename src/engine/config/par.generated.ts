@@ -6,4 +6,6 @@
 // Regenerate whenever the word lists change: PAR is derived from them, and a
 // stale value leaves every total mis-centred. See docs/scoring.md.
 
-export const GENERATED_PAR = 3.7100;
+export const GENERATED_PAR_V1 = 3.7100;
+export const GENERATED_PAR_V2 = 3.9100;
+export const GENERATED_PAR = GENERATED_PAR_V1;

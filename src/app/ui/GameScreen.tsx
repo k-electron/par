@@ -198,6 +198,7 @@ export function GameScreen({
         answer,
         tookHouseStarter: settings.useHouseStarter,
         hardMode: settings.hardMode,
+        puzzleNumber,
       })
       .then((result) => {
         if (!current) return;
@@ -218,7 +219,7 @@ export function GameScreen({
     return () => {
       current = false;
     };
-  }, [over, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode, onScored]);
+  }, [over, scoring, session.guesses, answer, settings.useHouseStarter, settings.hardMode, onScored, puzzleNumber]);
 
   const [showingStats, setShowingStats] = useState(false);
 

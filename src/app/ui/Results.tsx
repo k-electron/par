@@ -293,7 +293,7 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
           {score.total.toFixed(1)}
         </Typography>
         <Typography variant="body2">
-          {skillPhrase(score.skill)}, {parPhrase(score.guessesUsed, PAR, score.solved)}
+          {skillPhrase(score.skill)}, {parPhrase(score.guessesUsed, score.par ?? PAR, score.solved)}
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {headline(score.skill, score.solved)}

@@ -8,7 +8,17 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { WORD_LIST_VERSION, answers, guesses, starters } from '../../src/data';
+import {
+  ANSWERS_V2_MAIN_COUNT,
+  ANSWERS_V2_TOTAL_COUNT,
+  ANSWERS_V2_VERBS_COUNT,
+  ANSWERS_V2_VERBS_START_INDEX,
+  WORD_LIST_VERSION,
+  answers,
+  answersV2,
+  guesses,
+  starters,
+} from '../../src/data';
 
 const FIVE_LOWERCASE = /^[a-z]{5}$/;
 
@@ -119,5 +129,29 @@ describe('version identifier', () => {
       digest.update('\n', 'utf8');
     }
     expect(WORD_LIST_VERSION).toBe(digest.digest('hex').slice(0, 12));
+  });
+});
+
+describe('answersV2 (word selection v2)', () => {
+  it('is lowercase five-letter words', () => {
+    const offenders = answersV2.filter((word) => !FIVE_LOWERCASE.test(word));
+    expect(offenders).toEqual([]);
+  });
+
+  it('has no duplicates', () => {
+    expect(new Set(answersV2).size).toBe(answersV2.length);
+  });
+
+  it('draws every answer from the guess dictionary', () => {
+    const dictionary = new Set(guesses);
+    expect(answersV2.filter((word) => !dictionary.has(word))).toEqual([]);
+  });
+
+  it('satisfies boundary constant relationships', () => {
+    expect(answersV2.length).toBe(ANSWERS_V2_TOTAL_COUNT);
+    expect(ANSWERS_V2_MAIN_COUNT).toBe(9349);
+    expect(ANSWERS_V2_VERBS_COUNT).toBe(221);
+    expect(ANSWERS_V2_VERBS_START_INDEX).toBe(9349);
+    expect(ANSWERS_V2_MAIN_COUNT + ANSWERS_V2_VERBS_COUNT).toBe(ANSWERS_V2_TOTAL_COUNT);
   });
 });

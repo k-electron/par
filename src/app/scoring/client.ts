@@ -18,6 +18,7 @@ export interface ScoreQuery {
   readonly answer: string;
   readonly tookHouseStarter: boolean;
   readonly hardMode: boolean;
+  readonly puzzleNumber?: number;
 }
 
 export interface ScoringClient {
@@ -27,6 +28,7 @@ export interface ScoringClient {
 
 function cacheKey(query: ScoreQuery): string {
   return [
+    query.puzzleNumber !== undefined ? String(query.puzzleNumber) : '',
     query.hardMode ? 'h' : 'n',
     query.tookHouseStarter ? 's' : 'o',
     query.answer,

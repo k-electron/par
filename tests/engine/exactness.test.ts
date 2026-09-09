@@ -126,6 +126,34 @@ describe('the validated ladder against brute force', () => {
       );
     }
   });
+
+  it('gives identical scores under weighted answers against brute force', () => {
+    const weights = FIXTURE_LEXICON.answers.map((_, i) => [10, 4, 2, 1][i % 4]!);
+    const weightedLexicon = compileLexicon({
+      ...FIXTURE_LEXICON,
+      answerWeights: weights,
+    });
+    const scorerBrute = createPositionScorer({
+      lexicon: weightedLexicon,
+      ruleset: normalRuleset,
+      policy: bruteForcePolicy,
+    });
+    const scorerVal = createPositionScorer({
+      lexicon: weightedLexicon,
+      ruleset: normalRuleset,
+      policy: validatedPolicy,
+    });
+
+    for (const { answer, played } of POSITIONS) {
+      if (played.some((guess) => isWinPattern(computePattern(guess, answer)))) continue;
+      const history = observationsFor(answer, played);
+      for (const guess of GUESSES) {
+        const expected = scorerBrute.scoreGuess(history, guess);
+        const actual = scorerVal.scoreGuess(history, guess);
+        expect(float64Bits(actual.skill)).toBe(float64Bits(expected.skill));
+      }
+    }
+  });
 });
 
 describe('every score is a score', () => {

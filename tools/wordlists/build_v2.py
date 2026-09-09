@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Generate the candidate word list (v2) into src/data/answers_v2.generated.ts.
+
+Structure:
+- Section 1: All valid 5-letter words from Collins Scrabble Words (CSW19),
+             minus simple 4-letter + 's' plurals and 3rd-person verbs.
+             Sorted by English word frequency (wordfreq Zipf) descending.
+- Section 2 (appended at bottom): Pure 3rd-person singular verbs ending in 's'
+             (e.g. 'seems', 'wants', 'knows', 'gives', 'feels', 'tells').
+             Sorted by English word frequency descending within the section.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+TOOL_DIR = Path(__file__).resolve().parent
+REPO_ROOT = TOOL_DIR.parents[1]
+DATA_DIR = REPO_ROOT / "src" / "data"
+CACHE_DIR = TOOL_DIR / ".cache"
+PYDEPS_DIR = TOOL_DIR / ".pydeps"
+
+if str(PYDEPS_DIR) not in sys.path:
+    sys.path.insert(0, str(PYDEPS_DIR))
+if str(CACHE_DIR / "nltk") not in sys.path:
+    sys.path.insert(0, str(TOOL_DIR))
+
+try:
+    from wordfreq import zipf_frequency
+except ImportError:
+    print("Error: wordfreq is not installed in tools/wordlists/.pydeps.", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    import lemminflect
+except ImportError:
+    print("Error: lemminflect is not installed in tools/wordlists/.pydeps.", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    import nltk
+    nltk.data.path.append(str(CACHE_DIR / "nltk"))
+    from nltk.corpus import wordnet as wn
+except ImportError:
+    print("Error: nltk is not installed or wordnet not found in cache.", file=sys.stderr)
+    sys.exit(1)
+
+# Words that legitimately end in 's' (or single 's') but are NOT plurals
+KNOWN_NON_PLURALS = {
+    "chaos", "basis", "oasis", "focus", "virus", "fetus", "sinus", "bonus", "mucus",
+    "kudos", "ethos", "genus", "bogus", "minus", "alias", "atlas", "corps", "pious",
+    "lupus", "lotus", "humus", "rebus", "hiatus", "status", "cactus", "chorus",
+    "walrus", "fungus", "penis", "nexus", "visus", "torus", "bolus", "modus",
+    "locus", "vagus", "ileus", "ascus", "callus", "tarsus", "ficus", "pelvis",
+    "aegis", "arris", "hubris", "debris", "news", "maths", "papas", "mamas",
+}
+
+
+def load_csw_words() -> tuple[set[str], list[str]]:
+    """Load 4-letter and 5-letter CSW19 words."""
+    cache_file = CACHE_DIR / "CSW19.txt"
+    if not cache_file.exists():
+        import build
+        build.fetch_lexicon(False)
+
+    lines = cache_file.read_text(encoding="utf-8").splitlines()
+    four_letter: set[str] = set()
+    five_letter: set[str] = set()
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        entry = line.split()[0].lower()
+        if entry.isascii() and entry.isalpha():
+            if len(entry) == 4:
+                four_letter.add(entry)
+            elif len(entry) == 5:
+                five_letter.add(entry)
+    return four_letter, sorted(five_letter)
+
+
+def is_simple_4plus_s_inflection(word: str, csw_4: set[str]) -> bool:
+    """Check if word is a 4-letter base word + 's' (plural or 3rd-person verb)."""
+    if not word.endswith("s") or word.endswith("ss"):
+        return False
+    if word in KNOWN_NON_PLURALS:
+        return False
+
+    stem = word[:4]
+    if stem not in csw_4:
+        return False
+
+    lemmas = lemminflect.getAllLemmas(word)
+    if "NOUN" in lemmas and stem in lemmas["NOUN"]:
+        return True
+    if wn.morphy(word, wn.NOUN) == stem:
+        return True
+    if wn.synsets(stem, pos=wn.NOUN):
+        return True
+
+    return True
+
+
+def is_pure_3rd_person_verb(word: str) -> bool:
+    """Check if word is strictly a 3rd person singular verb with no noun plural role."""
+    lemmas = lemminflect.getAllLemmas(word)
+    return "VERB" in lemmas and "NOUN" not in lemmas
+
+
+def main() -> None:
+    csw_4, csw_5 = load_csw_words()
+    print(f"Loaded {len(csw_5)} five-letter words and {len(csw_4)} four-letter stems from CSW19.")
+
+    main_candidates: list[str] = []
+    pure_verbs: list[str] = []
+    excluded_plurals: list[str] = []
+
+    for word in csw_5:
+        if not is_simple_4plus_s_inflection(word, csw_4):
+            main_candidates.append(word)
+        else:
+            if is_pure_3rd_person_verb(word):
+                pure_verbs.append(word)
+            else:
+                excluded_plurals.append(word)
+
+    # Compute Zipf frequencies
+    zipf_scores = {w: zipf_frequency(w, "en") for w in csw_5}
+
+    # Sort main list: frequency descending, then alphabetical
+    main_ranked = sorted(main_candidates, key=lambda w: (-zipf_scores[w], w))
+
+    # Sort pure verbs: frequency descending, then alphabetical
+    verbs_ranked = sorted(pure_verbs, key=lambda w: (-zipf_scores[w], w))
+
+    # Combined list: main words first, pure verbs appended at the bottom
+    combined = main_ranked + verbs_ranked
+    verbs_start_index = len(main_ranked)
+
+    # Format output
+    output_path = DATA_DIR / "answers_v2.generated.ts"
+    body = "\n".join(combined)
+    content = f"""// Generated by tools/wordlists/build_v2.py. Do not edit by hand.
+//
+// Master candidate word list (v2):
+// - Indices 0 to {verbs_start_index - 1} ({len(main_ranked)} words):
+//   Valid 5-letter CSW19 words minus simple 4-letter + 's' plurals and 3rd-person verbs.
+//   Sorted by English frequency (wordfreq Zipf scale) descending.
+//
+// - Indices {verbs_start_index} to {len(combined) - 1} ({len(verbs_ranked)} words):
+//   Pure 3rd-person singular verbs ending in 's' (e.g. 'seems', 'wants', 'knows', 'gives').
+//   Specifically placed at the bottom of the list, sorted by frequency descending.
+//
+// Total words: {len(combined)}.
+
+export const ANSWERS_V2_PACKED = `{body}`;
+
+/** Total count of standard non-inflectional candidate words. */
+export const ANSWERS_V2_MAIN_COUNT = {len(main_ranked)};
+
+/** The 0-based index where pure 3rd-person verbs begin at the bottom. */
+export const ANSWERS_V2_VERBS_START_INDEX = {verbs_start_index};
+
+/** The number of pure 3rd-person verbs appended at the bottom. */
+export const ANSWERS_V2_VERBS_COUNT = {len(verbs_ranked)};
+
+/** Total words in the combined list. */
+export const ANSWERS_V2_TOTAL_COUNT = {len(combined)};
+"""
+    output_path.write_text(content, encoding="utf-8")
+
+    print("\n" + "=" * 60)
+    print("WORD LIST GENERATION SUMMARY (V2)")
+    print("=" * 60)
+    print(f"Original CSW19 5-letter words:          {len(csw_5):>6}")
+    print(f"Excluded noun plurals:                  {len(excluded_plurals):>6}")
+    print(f"Main candidate words (top section):     {len(main_ranked):>6}  (indices 0..{verbs_start_index - 1})")
+    print(f"Pure 3rd-person verbs (bottom section): {len(verbs_ranked):>6}  (indices {verbs_start_index}..{len(combined) - 1})")
+    print(f"Total words in answers_v2:              {len(combined):>6}")
+    print("-" * 60)
+    print(f"Verbs boundary begins at index:         {verbs_start_index}")
+    print(f"First 5 pure verbs at index {verbs_start_index}:   {verbs_ranked[:5]}")
+    print(f"Last 5 pure verbs at end:               {verbs_ranked[-5:]}")
+    print("=" * 60)
+    print(f"Wrote generated file to: {output_path.relative_to(REPO_ROOT)}")
+
+
+if __name__ == "__main__":
+    main()
