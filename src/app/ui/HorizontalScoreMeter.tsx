@@ -100,7 +100,7 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
         Score: {score.toFixed(1)}, Level: {finalZone.label}
       </Box>
 
-      {/* 1. Score Number */}
+      {/* Score Number */}
       <Typography
         variant="h3"
         sx={{
@@ -108,54 +108,11 @@ export function HorizontalScoreMeter({ score, par = PAR, animated = false }: Hor
           lineHeight: 1,
           letterSpacing: '-0.02em',
           color: 'text.primary',
+          mb: 1.25,
         }}
       >
         {score.toFixed(1)}
       </Typography>
-
-      {/* 2. Active Zone Badge */}
-      <Box
-        sx={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 0.75,
-          px: 1.25,
-          py: 0.35,
-          borderRadius: 999,
-          border: `1px solid ${activeColor}55`,
-          backgroundColor: isDark ? `${activeColor}20` : `${activeColor}15`,
-          color: activeColor,
-          fontWeight: 700,
-          fontSize: '0.78rem',
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase',
-          mt: 0.75,
-          mb: 1.5,
-          transition: 'border-color 0.2s, background-color 0.2s, color 0.2s',
-        }}
-      >
-        <Box
-          sx={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            backgroundColor: activeColor,
-          }}
-        />
-        <span>{activeZone.label} Zone</span>
-        <Typography
-          component="span"
-          sx={{
-            fontSize: '0.72rem',
-            fontWeight: 500,
-            color: 'text.secondary',
-            textTransform: 'none',
-            ml: 0.25,
-          }}
-        >
-          ({activeZone.minScore}–{activeZone.maxScore})
-        </Typography>
-      </Box>
 
       {/* 3. Multi-Segment Bar Meter Section */}
       <Box sx={{ width: '100%', px: 0.5 }}>
