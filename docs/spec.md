@@ -90,7 +90,7 @@ Use these values. Incentives were validated across `C_PAR ∈ [3,5]` and `EPSILO
 
 `PAR` is a single global constant — **not** per-mode. Hard-mode players will sit slightly over par for equivalent decision quality, and that's accepted: inflating one mode's scores to compensate for its difficulty would muddy what the number means. The share badge tells the reader which mode was played.
 
-*(Note on measured constants: For the shipped 3,000-word list in games 0–259, `PAR_V1` measured 3.7100. For Word Selection v2 from game 260 onwards with 9,570 candidates under Path A weighted scoring, `PAR_V2` measured 3.9100. See [`docs/scoring.md`](scoring.md).)*
+*(Note on measured constants: For the shipped 3,000-word list in games 0–259, `PAR_V1` measured 3.7100. For Word Selection v2 from game 260 onwards with 9,570 candidates under Path A weighted scoring and `startersV2`, `PAR_V2` measured 3.9800. See [`docs/scoring.md`](scoring.md).)*
 
 ### Invariants that must hold
 

@@ -9,7 +9,8 @@ testing and running the app never require Python — only regenerating them does
 | guess dictionary | 12,972 | every word a player may type |
 | answer list (v1) | 3,000 | the original possible answers (puzzles 0–259) |
 | answers v2 (v2) | 9,570 | candidate answer pool for weighted selection (puzzle 260+) |
-| starter pool | 5,000 | the pool the daily house starter is drawn from |
+| starter pool (v1) | 5,000 | legacy pool for the daily house starter (puzzles 0–259) |
+| starters v2 (v2) | 5,000 | house starter pool derived from answers v2 (puzzle 260+) |
 
 The answer list is deliberately far narrower than the dictionary. Losing to a word nobody has
 heard of is not a challenge, and in a game where friends compare scores an obscure answer
@@ -185,10 +186,31 @@ The draw function `drawWeightedIndex(puzzleNumber, salt)` in
 [`src/engine/daily/puzzle.ts`](../src/engine/daily/puzzle.ts) maps a deterministic ticket
 $t \in [0, 42070)$ generated via SplitMix32 into a word index in $O(1)$ time.
 
+### House starters v2 (`starters_v2`)
+
+In v1, the starter pool was 5,000 words drawn from the broader dictionary, which included regular plurals
+(`MASKS`, `BOATS`, etc.) and words not present in the v2 answer list. Once plural filtering was applied to
+`answers_v2`, drawing a word like `MASKS` in Game 300 made it immediately obvious to the player that the house starter
+had a 0% chance of being a hole-in-one.
+
+To guarantee that every house starter in the v2 era is a legitimate candidate answer with positive probability,
+`starters_v2` is derived dynamically from `answers_v2`:
+
+1. **Top 5,000 of `answers_v2`**: Starters are drawn from the most frequent words in `answers_v2`.
+2. **No Triple Letters (Option B)**: In accordance with Philosophy §9 (*"Never a triple; that's past interesting and into unfair"*),
+   any word containing $\ge 3$ of the same letter (such as `eerie`, `geese`, `mummy`, `error`) is skipped.
+3. **Zero Bundle Overhead**: Rather than shipping a separate generated TS file, `startersV2` is filtered from `answersV2`
+   at module initialization in ~3.5ms. It scans to index 5,061 in `answersV2` to collect exactly 5,000 valid starters.
+4. **Properties**:
+   - 100% of starters are valid answers in `answers_v2`.
+   - 0% simple regular 4-letter + `'s'` plurals.
+   - 0% triple-letter words.
+   - 3,207 distinct-letter words (64.1%), 1,665 single-pair words (33.3%), 128 two-pair words (2.6%).
+
 ### Cutover and compatibility
 
-- **Puzzles 0 to 259**: `drawPuzzle` uses the uniform draw from the original 3,000 `answers` list.
-- **Puzzle 260 onwards**: `drawPuzzle` uses the weighted draw from `answersV2`.
+- **Puzzles 0 to 259**: `drawPuzzle` uses the uniform draw from the original 3,000 `answers` list and the legacy 5,000 `starters` pool.
+- **Puzzle 260 onwards**: `drawPuzzle` uses the weighted draw from `answersV2` and draws house starters from `startersV2`.
 - **Dual Lexicon & Path A Weighted Scoring**: The scoring worker maintains both `legacyLexicon` (3,000 answers) and
   `v2Lexicon` (9,570 answers with weights `answersV2Weights`). Puzzles $\ge 260$ score against `v2Lexicon` with
   probability-weighted search (`SCORER_VERSION_V2 = 2` and `PAR_V2`), ensuring candidate expectations match

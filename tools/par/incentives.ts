@@ -19,9 +19,9 @@
  *   npm run check-incentives -- --days 150
  */
 
-import { EPSILON, C_PAR } from '../../src/engine/config/constants';
+import { EPSILON, C_PAR, parFor } from '../../src/engine/config/constants';
 import { WORD_LIST_VERSION } from '../../src/data';
-import { play, puzzlesFor, rulesetFor, scorePlayed } from './simulate';
+import { lists, listsV2, play, puzzlesFor, rulesetFor, scorePlayed, v2Lexicon } from './simulate';
 
 /** A memorised opener, replayed regardless of what the clues said. */
 const BOOKMARK = 'adieu';
@@ -34,20 +34,23 @@ interface Tally {
   games: number;
 }
 
-function parseDays(argv: readonly string[]): number {
+function parseArgs(argv: readonly string[]): { days: number; isV2: boolean } {
+  const isV1 = argv.includes('--v1');
+  const isV2 = argv.includes('--v2') || !isV1;
   const flag = argv.indexOf('--days');
-  if (flag < 0) return 150;
-  const value = Number(argv[flag + 1]);
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new RangeError(`--days needs a positive integer, got ${argv[flag + 1]}`);
+  const days = flag >= 0 ? Number(argv[flag + 1]) : 150;
+  if (!Number.isSafeInteger(days) || days <= 0) {
+    throw new RangeError(`--days needs a positive integer, got ${days}`);
   }
-  return value;
+  return { days, isV2 };
 }
 
 function main(): void {
-  const days = parseDays(process.argv.slice(2));
+  const { days, isV2 } = parseArgs(process.argv.slice(2));
   const ruleset = rulesetFor('normal');
-  const puzzles = puzzlesFor(days);
+  const puzzles = isV2 ? puzzlesFor(days, 260, listsV2) : puzzlesFor(days, 0, lists);
+  const activeLexicon = isV2 ? v2Lexicon : undefined;
+  const activePar = parFor(isV2 ? 260 : 0);
 
   const houseWell: Tally = { label: 'house starter + play well', total: 0, guesses: 0, skill: 0, games: 0 };
   const ownWell: Tally = { label: 'own opener + play well', total: 0, guesses: 0, skill: 0, games: 0 };
@@ -67,16 +70,18 @@ function main(): void {
       answer: puzzle.answer,
       ruleset,
       continuation: 'strong',
+      activeLexicon,
     });
-    record(houseWell, scorePlayed(house, puzzle.answer, ruleset, true));
+    record(houseWell, scorePlayed(house, puzzle.answer, ruleset, true, activeLexicon, activePar));
 
     const own = play({
       opener: BOOKMARK,
       answer: puzzle.answer,
       ruleset,
       continuation: 'strong',
+      activeLexicon,
     });
-    record(ownWell, scorePlayed(own, puzzle.answer, ruleset, false));
+    record(ownWell, scorePlayed(own, puzzle.answer, ruleset, false, activeLexicon, activePar));
 
     const reverted = play({
       opener: puzzle.starter,
@@ -84,15 +89,18 @@ function main(): void {
       ruleset,
       continuation: 'bookmark',
       bookmark: BOOKMARK,
+      activeLexicon,
     });
-    record(houseThenBookmark, scorePlayed(reverted, puzzle.answer, ruleset, true));
+    record(houseThenBookmark, scorePlayed(reverted, puzzle.answer, ruleset, true, activeLexicon, activePar));
 
     if ((index + 1) % 10 === 0) process.stdout.write(`  ${index + 1}/${days} days\r`);
   }
 
   process.stdout.write('\n');
+  console.log(`mode            ${isV2 ? 'v2 (weighted, 260+)' : 'v1 (unweighted, 0-259)'}`);
   console.log(`days simulated  ${days}`);
   console.log(`word lists      ${WORD_LIST_VERSION}`);
+  console.log(`PAR             ${activePar.toFixed(4)}`);
   console.log(`C_PAR ${C_PAR}, EPSILON ${EPSILON}, bookmark ${BOOKMARK.toUpperCase()}\n`);
 
   const ordered = [houseWell, ownWell, houseThenBookmark];

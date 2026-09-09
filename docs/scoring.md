@@ -248,25 +248,25 @@ Par implements **Path A: Probability-Weighted Scoring**:
 
 3. **Dual Eras & Replay Compatibility**:
    - **Games 0–259**: `SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`. Scored using the legacy unweighted engine over the 3,000 `answers` list.
-   - **Games 260+**: `SCORER_VERSION_V2 = 2`, `PAR_V2 = 3.9100`. Scored using the weighted engine over the 9,570 `answersV2` list.
+   - **Games 260+**: `SCORER_VERSION_V2 = 2`, `PAR_V2 = 3.9800`. Scored using the weighted engine over the 9,570 `answersV2` list with house starters drawn from `startersV2`.
    - `scorerVersionFor(puzzleNumber)` stamps share links with version 1 or 2 according to the puzzle date. Historical replay links from games 0–259 open with version 1 and show zero mismatch warnings; new games from 260 onward open with version 2 and also show zero mismatch warnings. A replay only warns if a link's stamped version conflicts with the expected scorer version for that puzzle day.
 
 ### What it measured for Word Lists v2 (Games 260+)
 
-Over 300 simulated days from Game 260 onward using `answersV2` under Path A weighted scoring:
+Over 300 simulated days from Game 260 onward using `answersV2` and `startersV2` under Path A weighted scoring:
 
 ```
 mode                v2 (weighted, 260+)
 days simulated      300
 word lists          fc66685a12af
-PAR (house starter) 3.9100
+PAR (house starter) 3.9800
   from SLATE          3.6967
-  starter costs     0.2133 guesses
-unsolved            2
-distribution        2: 4   3: 76   4: 167   5: 49   6: 4
+  starter costs     0.2833 guesses
+unsolved            1
+distribution        2: 2   3: 69   4: 170   5: 51   6: 8
 ```
 
-`PAR_V2` is 3.9100, up by 0.20 guesses from v1's 3.7100. This mirrors the expansion of the pool to 9,570 words: even with heavy frequency weighting towards the commonest words, a wider tail naturally presents slightly harder endgame decisions, moving the strong-play baseline from 3.71 to 3.91. The house starter penalty remains steady at 0.2133 guesses (about a fifth of a guess).
+`PAR_V2` is 3.9800, up by 0.27 guesses from v1's 3.7100. This mirrors the expansion of the pool to 9,570 words and the curated starter pool drawn from the top 5,000 words of `answersV2` without triple letters: even with heavy frequency weighting towards the commonest words, a wider tail naturally presents slightly harder endgame decisions, moving the strong-play baseline from 3.71 to 3.98. The house starter penalty is 0.2833 guesses (about a quarter of a guess), which corresponds to ~1.13 points — well covered by the 3-point starter bonus (`EPSILON = 3`).
 
 ## Checking the incentives still point the right way
 

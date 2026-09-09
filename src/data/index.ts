@@ -52,8 +52,39 @@ export const answersV2Weights: Uint8Array = (() => {
 })();
 
 /**
- * The house-starter pool. Frequency-ranked, letter-filtered, a subset of
- * `guesses`. Never used as the candidate set — only to draw the day's starter.
+ * The house-starter pool for v1 (puzzles < 260). Frequency-ranked, letter-filtered,
+ * a subset of `guesses`.
  */
 export const starters: readonly string[] = unpack(STARTERS_PACKED);
+
+export const STARTERS_V2_COUNT = 5_000;
+
+/**
+ * The house-starter pool for v2 (puzzles >= 260).
+ *
+ * Drawn from the top 5,000 words of answersV2 excluding words with three or more
+ * occurrences of the same letter (Philosophy §9: "Never a triple; that's past
+ * interesting and into unfair"). Every starter is guaranteed to be a legitimate
+ * answer candidate with zero simple 4-letter + 's' regular plurals.
+ */
+export const startersV2: readonly string[] = (() => {
+  const result: string[] = [];
+  for (const word of answersV2) {
+    let hasTriple = false;
+    const counts = new Uint8Array(26);
+    for (let i = 0; i < word.length; i += 1) {
+      const idx = word.charCodeAt(i) - 97;
+      counts[idx] = (counts[idx] ?? 0) + 1;
+      if (counts[idx]! >= 3) {
+        hasTriple = true;
+        break;
+      }
+    }
+    if (!hasTriple) {
+      result.push(word);
+      if (result.length === STARTERS_V2_COUNT) break;
+    }
+  }
+  return Object.freeze(result);
+})();
 

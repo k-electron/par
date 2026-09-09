@@ -17,7 +17,7 @@
  * of it.
  */
 
-import { answers, answersV2, answersV2Weights, guesses as dictionary, starters } from '../../src/data';
+import { answers, answersV2, answersV2Weights, guesses as dictionary, starters, startersV2 } from '../../src/data';
 import { MAX_GUESSES } from '../../src/engine/config/constants';
 import { log2 } from '../../src/engine/numeric/log2';
 import type { Constraints } from '../../src/engine/rules/constraints';
@@ -43,7 +43,12 @@ export const v2Lexicon: CompiledLexicon = compileLexicon({
 });
 
 export const lists = { answers: [...answers], starters: [...starters] };
-export const listsV2 = { answers: [...answers], starters: [...starters], answersV2: [...answersV2] };
+export const listsV2 = {
+  answers: [...answers],
+  starters: [...starters],
+  answersV2: [...answersV2],
+  startersV2: [...startersV2],
+};
 
 /**
  * How many guesses of each kind to weigh at a node.
@@ -258,9 +263,19 @@ export function scorePlayed(
   answer: string,
   ruleset: Ruleset,
   tookHouseStarter: boolean,
+  activeLexicon: CompiledLexicon = lexicon,
+  par?: number,
 ): GameScore {
-  const scorer = createPositionScorer({ lexicon, ruleset, policy: validatedPolicy });
-  return scoreGame({ guesses: result.guesses, answer, tookHouseStarter }, scorer);
+  const scorer = createPositionScorer({ lexicon: activeLexicon, ruleset, policy: validatedPolicy });
+  return scoreGame(
+    {
+      guesses: result.guesses,
+      answer,
+      tookHouseStarter,
+      ...(par !== undefined ? { par } : {}),
+    },
+    scorer,
+  );
 }
 
 /** The puzzles for a run of consecutive days. */
