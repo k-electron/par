@@ -13,11 +13,13 @@ import {
   ANSWERS_V2_TOTAL_COUNT,
   ANSWERS_V2_VERBS_COUNT,
   ANSWERS_V2_VERBS_START_INDEX,
+  STARTERS_V2_COUNT,
   WORD_LIST_VERSION,
   answers,
   answersV2,
   guesses,
   starters,
+  startersV2,
 } from '../../src/data';
 
 const FIVE_LOWERCASE = /^[a-z]{5}$/;
@@ -153,5 +155,32 @@ describe('answersV2 (word selection v2)', () => {
     expect(ANSWERS_V2_VERBS_COUNT).toBe(221);
     expect(ANSWERS_V2_VERBS_START_INDEX).toBe(9349);
     expect(ANSWERS_V2_MAIN_COUNT + ANSWERS_V2_VERBS_COUNT).toBe(ANSWERS_V2_TOTAL_COUNT);
+  });
+});
+
+describe('startersV2 (starter pool for word selection v2)', () => {
+  it('has exactly STARTERS_V2_COUNT words', () => {
+    expect(startersV2.length).toBe(STARTERS_V2_COUNT);
+    expect(startersV2.length).toBe(5_000);
+  });
+
+  it('has no duplicates', () => {
+    expect(new Set(startersV2).size).toBe(startersV2.length);
+  });
+
+  it('is a subset of answersV2', () => {
+    const answerSet = new Set(answersV2);
+    expect(startersV2.filter((word) => !answerSet.has(word))).toEqual([]);
+  });
+
+  it('contains no words with 3 or more of any letter', () => {
+    const triples = startersV2.filter((word) => {
+      const counts = new Map<string, number>();
+      for (const char of word) {
+        counts.set(char, (counts.get(char) ?? 0) + 1);
+      }
+      return Math.max(...counts.values()) >= 3;
+    });
+    expect(triples).toEqual([]);
   });
 });

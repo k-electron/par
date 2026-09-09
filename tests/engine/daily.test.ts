@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { answers, answersV2, starters } from '../../src/data';
+import { answers, answersV2, starters, startersV2 } from '../../src/data';
 import {
   PUZZLE_EPOCH,
   PUZZLE_TIME_ZONE,
@@ -26,7 +26,7 @@ import {
 } from '../../src/engine/daily/puzzle';
 
 const lists = { answers, starters };
-const listsV2 = { answers, starters, answersV2 };
+const listsV2 = { answers, starters, answersV2, startersV2 };
 
 describe('daysFromCivil', () => {
   it('places the Unix epoch at zero', () => {
@@ -207,19 +207,32 @@ describe('word selection v2 (game 260+ cutover)', () => {
 
     const day260 = drawPuzzle(260, listsV2);
     expect(day260.answer).toBe('sheen');
-    expect(day260.starter).toBe('swole');
-    // Without v2, legacy day 260 drew 'trade'
+    expect(day260.starter).toBe('thole');
+    // Without v2, legacy day 260 drew 'trade' and 'swole'
     expect(drawPuzzle(260, lists).answer).toBe('trade');
+    expect(drawPuzzle(260, lists).starter).toBe('swole');
   });
 
   it.each([
-    [260, 'sheen', 'swole'],
-    [261, 'frock', 'thang'],
-    [300, 'celeb', 'masks'],
-    [365, 'beard', 'clone'],
+    [260, 'sheen', 'thole'],
+    [261, 'frock', 'korma'],
+    [300, 'celeb', 'pylon'],
+    [365, 'beard', 'lynch'],
   ])('day %i (v2) draws pinned golden words (%s, %s)', (day, answer, starter) => {
     const puzzle = drawPuzzle(day, listsV2);
     expect([puzzle.answer, puzzle.starter]).toEqual([answer, starter]);
+  });
+
+  it('draws starters from startersV2 for puzzles >= 260 and all starters belong to answersV2', () => {
+    const starterSet = new Set(startersV2);
+    const answerSet = new Set(answersV2);
+    expect(startersV2.length).toBe(5_000);
+
+    for (let day = 260; day < 360; day += 1) {
+      const puzzle = drawPuzzle(day, listsV2);
+      expect(starterSet.has(puzzle.starter)).toBe(true);
+      expect(answerSet.has(puzzle.starter)).toBe(true);
+    }
   });
 
   it('maps every ticket to a valid word index with correct tier weights', () => {

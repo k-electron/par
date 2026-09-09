@@ -118,6 +118,8 @@ export interface PuzzleLists {
   readonly starters: readonly string[];
   /** The v2 master candidate word list (9,570 words). Used from CUTOVER_PUZZLE_NUMBER onwards. */
   readonly answersV2?: readonly string[];
+  /** The v2 house-starter pool (5,000 words). Used from CUTOVER_PUZZLE_NUMBER onwards. */
+  readonly startersV2?: readonly string[];
 }
 
 /** The puzzle for a given day. Pure, total, and identical on every machine. */
@@ -130,7 +132,12 @@ export function drawPuzzle(puzzleNumber: number, lists: PuzzleLists): DailyPuzzl
     answer = lists.answers[drawIndex(puzzleNumber, ANSWER_SALT, lists.answers.length)];
   }
 
-  const starter = lists.starters[drawIndex(puzzleNumber, STARTER_SALT, lists.starters.length)];
+  let starter: string | undefined;
+  if (puzzleNumber >= CUTOVER_PUZZLE_NUMBER && lists.startersV2 !== undefined) {
+    starter = lists.startersV2[drawIndex(puzzleNumber, STARTER_SALT, lists.startersV2.length)];
+  } else {
+    starter = lists.starters[drawIndex(puzzleNumber, STARTER_SALT, lists.starters.length)];
+  }
 
   if (answer === undefined || starter === undefined) {
     throw new RangeError(`Puzzle ${puzzleNumber} drew outside the word lists.`);

@@ -3,7 +3,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 import { useCallback, useMemo, useState } from 'react';
 
-import { answers, answersV2, guesses as dictionary, starters } from '../../data';
+import { answers, answersV2, guesses as dictionary, starters, startersV2 } from '../../data';
 import { rulesetFor } from '../../engine/rules/ruleset';
 import { puzzleNumberAt } from '../../engine/daily/calendar';
 import { drawPuzzle } from '../../engine/daily/puzzle';
@@ -75,7 +75,7 @@ export function App({ repository, now, scoring, initialHash, reveal }: AppProps 
   const scorer = scoring ?? ownScoring ?? undefined;
 
   const puzzle = useMemo(
-    () => drawPuzzle(puzzleNumberAt(now ?? new Date()), { answers, starters, answersV2 }),
+    () => drawPuzzle(puzzleNumberAt(now ?? new Date()), { answers, starters, answersV2, startersV2 }),
     [now],
   );
 
