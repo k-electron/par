@@ -11,6 +11,7 @@ import { MAX_GUESSES, parFor, scorerVersionFor } from '../../engine/config/const
 import { Tile, tilesFromPattern } from '../../engine/words/pattern';
 import { celebratoryBadges, parPhrase, type CelebratoryBadge } from '../copy/results';
 import type { GameScore } from '../scoring/protocol';
+import { computeDynamicZones, zoneForScore } from '../ui/radialScore';
 import { encodeSharedGame } from './codec';
 
 const TILE_EMOJI: Record<Tile, string> = {
@@ -82,8 +83,17 @@ export function shareText(input: ShareInput): string {
 
   const attempts = `${score.solved ? score.guessesUsed : 'X'}/${MAX_GUESSES}`;
 
+  const dynamic = computeDynamicZones({
+    maxScore: score.maxScore,
+    par: score.par ?? parFor(input.puzzleNumber),
+    starterBonus: score.starterBonus,
+    guessesUsed: score.guessesUsed,
+    totalScore: score.total,
+  });
+  const zone = zoneForScore(score.total, dynamic.zones);
+
   const lines = [
-    `Par ${input.puzzleNumber} ${attempts} \u2014 ${score.total.toFixed(1)}`,
+    `Par ${input.puzzleNumber} ${attempts} \u2014 ${score.total.toFixed(1)} \u00B7 ${zone.label}`,
     `${score.skill.toFixed(0)}% \u00B7 ${parPhrase(score.guessesUsed, score.par ?? parFor(input.puzzleNumber), score.solved)}`,
     ...(badges.length > 0 ? [badges.join(' \u00B7 ')] : []),
     '',

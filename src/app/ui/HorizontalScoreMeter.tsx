@@ -166,6 +166,8 @@ export function HorizontalScoreMeter({
             width: '100%',
             mb: 0.5,
             gap: '2px',
+            alignItems: 'flex-end',
+            minHeight: 28,
           }}
         >
           {dynamic.horizontalZones.map((zone) => {
@@ -178,23 +180,33 @@ export function HorizontalScoreMeter({
                   width: `${zone.widthPct}%`,
                   textAlign: 'center',
                   overflow: 'hidden',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-end',
                 }}
               >
                 <Typography
                   variant="caption"
                   sx={{
                     display: 'block',
-                    fontSize: '0.72rem',
+                    fontSize: '0.70rem',
                     fontWeight: isCurrent ? 800 : 500,
                     color: isCurrent ? zoneColor : 'text.secondary',
                     opacity: isCurrent ? 1 : 0.65,
-                    whiteSpace: 'nowrap',
-                    textOverflow: 'ellipsis',
-                    overflow: 'hidden',
+                    lineHeight: 1.15,
+                    whiteSpace: 'normal',
                     letterSpacing: '-0.01em',
                   }}
                 >
-                  {zone.label}
+                  {zone.id === 'blind_luck' ? (
+                    <>
+                      Blind
+                      <br />
+                      luck
+                    </>
+                  ) : (
+                    zone.label
+                  )}
                 </Typography>
               </Box>
             );

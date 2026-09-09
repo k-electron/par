@@ -1,6 +1,6 @@
 import { C_PAR, PAR } from '../../engine/config/constants';
 
-export type ScoreZone = 'troll' | 'bad' | 'meh' | 'good' | 'ultra' | 'godlike' | 'blind_luck';
+export type ScoreZone = 'blind' | 'troll' | 'bad' | 'meh' | 'good' | 'ultra' | 'godlike' | 'blind_luck';
 
 export interface ZoneDefinition {
   readonly id: ScoreZone;
@@ -14,6 +14,7 @@ export interface ZoneDefinition {
 }
 
 export const ZONE_COLORS: Record<ScoreZone, { readonly light: string; readonly dark: string }> = {
+  blind: { light: '#334155', dark: '#64748B' }, // Deep Charcoal
   troll: { light: '#64748B', dark: '#94A3B8' }, // Slate
   bad: { light: '#DC2626', dark: '#EF4444' }, // Red / Coral
   meh: { light: '#D97706', dark: '#F59E0B' }, // Warm Amber
@@ -118,6 +119,7 @@ export interface DynamicZonesOptions {
 }
 
 export interface DynamicZonesResult {
+  readonly isBlind: boolean;
   readonly isBlindLuck: boolean;
   readonly meterMinScore: number;
   readonly meterMaxScore: number;
@@ -144,20 +146,25 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
   // Hole-in-one theoretical maximum (Option 2B)
   const holeInOneScore = 100 + C_PAR * (parStrokes - 1) + starterBonus;
 
+  // Reveal secret "Blind" zone if player scored below Troll (< 60)
+  const isBlind = options.totalScore !== undefined && options.totalScore < METER_MIN_SCORE;
+
   // Reveal secret "Blind luck" zone if player scored a 1-guess finish or exceeded sMax
   const isBlindLuck =
     options.guessesUsed === 1 ||
     (options.totalScore !== undefined && options.totalScore > sMax + 0.05);
 
-  const meterMinScore = METER_MIN_SCORE;
+  const meterMinScore = isBlind
+    ? Math.min(0, Math.floor((options.totalScore ?? 0) / 10) * 10)
+    : METER_MIN_SCORE;
   const meterMaxScore = isBlindLuck ? holeInOneScore : sMax;
 
   // Below PAR: proportional interpolation of (parScore - 60)
   // Troll (30%), Bad (30%), Meh (20%), Good (20%)
-  const deltaBelow = parScore - meterMinScore;
-  const t1 = meterMinScore + 0.30 * deltaBelow;
-  const t2 = meterMinScore + 0.60 * deltaBelow;
-  const t3 = meterMinScore + 0.80 * deltaBelow;
+  const deltaBelow = parScore - METER_MIN_SCORE;
+  const t1 = METER_MIN_SCORE + 0.30 * deltaBelow;
+  const t2 = METER_MIN_SCORE + 0.60 * deltaBelow;
+  const t3 = METER_MIN_SCORE + 0.80 * deltaBelow;
   const tPar = parScore;
 
   // Above PAR: proportional interpolation of (sMax - parScore)
@@ -165,14 +172,26 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
   const deltaAbove = Math.max(0.1, sMax - parScore);
   const t4 = parScore + 0.60 * deltaAbove;
 
-  const zones: ZoneDefinition[] = [
-    { id: 'troll', label: 'Troll', minScore: meterMinScore, maxScore: t1, color: ZONE_COLORS.troll },
+  const zones: ZoneDefinition[] = [];
+
+  if (isBlind) {
+    zones.push({
+      id: 'blind',
+      label: 'Blind',
+      minScore: meterMinScore,
+      maxScore: METER_MIN_SCORE,
+      color: ZONE_COLORS.blind,
+    });
+  }
+
+  zones.push(
+    { id: 'troll', label: 'Troll', minScore: METER_MIN_SCORE, maxScore: t1, color: ZONE_COLORS.troll },
     { id: 'bad', label: 'Bad', minScore: t1, maxScore: t2, color: ZONE_COLORS.bad },
     { id: 'meh', label: 'Meh', minScore: t2, maxScore: t3, color: ZONE_COLORS.meh },
     { id: 'good', label: 'Good', minScore: t3, maxScore: tPar, color: ZONE_COLORS.good },
     { id: 'ultra', label: 'Ultra', minScore: tPar, maxScore: t4, color: ZONE_COLORS.ultra },
     { id: 'godlike', label: 'Godlike', minScore: t4, maxScore: sMax, color: ZONE_COLORS.godlike },
-  ];
+  );
 
   if (isBlindLuck) {
     zones.push({
@@ -185,9 +204,16 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
   }
 
   // Visual segment widths (sum = 100%)
-  const widths = isBlindLuck
-    ? [18, 18, 14, 13, 12, 12, 13]
-    : [22, 22, 16, 14, 13, 13];
+  let widths: number[];
+  if (isBlind && isBlindLuck) {
+    widths = [12, 16, 16, 13, 12, 10, 10, 11];
+  } else if (isBlind) {
+    widths = [13, 18, 18, 14, 13, 12, 12];
+  } else if (isBlindLuck) {
+    widths = [18, 18, 14, 13, 12, 12, 13];
+  } else {
+    widths = [22, 22, 16, 14, 13, 13];
+  }
 
   let currentStart = 0;
   const horizontalZones: HorizontalZoneSegment[] = zones.map((zone, i) => {
@@ -204,25 +230,24 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
   });
 
   // Breakpoint ticks below the bar
-  const breakpointMarkers: BreakpointMarker[] = [
-    { score: Math.round(meterMinScore), pct: 0 },
-    { score: Math.round(t1), pct: horizontalZones[1]!.startPct },
-    { score: Math.round(t2), pct: horizontalZones[2]!.startPct },
-    { score: Math.round(t3), pct: horizontalZones[3]!.startPct },
-    { score: Math.round(tPar), pct: horizontalZones[4]!.startPct },
-    { score: Math.round(t4), pct: horizontalZones[5]!.startPct },
-  ];
+  const breakpointMarkers: BreakpointMarker[] = horizontalZones.map((seg, i) => {
+    const scoreVal = i === 0
+      ? Math.round(meterMinScore)
+      : seg.id === 'blind_luck'
+        ? Number(seg.minScore.toFixed(1))
+        : Math.round(seg.minScore);
+    return { score: scoreVal, pct: seg.startPct };
+  });
 
-  if (isBlindLuck) {
-    breakpointMarkers.push(
-      { score: Number(sMax.toFixed(1)), pct: horizontalZones[6]!.startPct },
-      { score: Number(holeInOneScore.toFixed(1)), pct: 100 },
-    );
-  } else {
-    breakpointMarkers.push({ score: Number(sMax.toFixed(1)), pct: 100 });
-  }
+  const lastSeg = horizontalZones[horizontalZones.length - 1]!;
+  const endScoreVal =
+    lastSeg.id === 'blind_luck' || lastSeg.id === 'godlike'
+      ? Number(lastSeg.maxScore.toFixed(1))
+      : Math.round(lastSeg.maxScore);
+  breakpointMarkers.push({ score: endScoreVal, pct: 100 });
 
   return {
+    isBlind,
     isBlindLuck,
     meterMinScore,
     meterMaxScore,

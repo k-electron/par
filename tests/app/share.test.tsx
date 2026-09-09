@@ -196,6 +196,15 @@ describe('the shared text', () => {
     expect(text).toContain('house starter');
   });
 
+  it('carries the zone name in the copy clip without appending zone', () => {
+    const text = shareText(input);
+    expect(text).toMatch(/Par \d+ \d+\/\d+ — \d+\.\d+ · (Good|Ultra|Godlike|Blind luck|Meh|Bad|Troll|Blind)/);
+    expect(text).not.toContain('Good zone');
+    expect(text).not.toContain('Ultra zone');
+    expect(text).not.toContain('Godlike zone');
+    expect(text).not.toContain('Blind luck zone');
+  });
+
   it('marks an unsolved game X/6 without naming the answer', () => {
     const lost = scoreDirectly({
       guesses: ['crane', 'slate', 'plumb', 'shirt', 'grove', 'stomp'],
