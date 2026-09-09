@@ -54,7 +54,9 @@ export function createDirectScoringClient(): ScoringClient {
 
   return {
     async score(query) {
+      const era = query.puzzleNumber !== undefined && query.puzzleNumber >= 260 ? 'v2' : 'v1';
       const key = [
+        era,
         query.hardMode ? 'h' : 'n',
         query.tookHouseStarter ? 's' : 'o',
         query.answer,

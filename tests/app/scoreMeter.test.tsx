@@ -207,6 +207,37 @@ describe('computeDynamicZones', () => {
     // Score 106.5 is in Godlike zone [104.75, 107.92]
     expect(zoneForScore(106.5, dyn.zones).id).toBe('godlike');
   });
+
+  it('correctly maintains 2-guess ceiling for Godlike and creates non-zero Blind luck range for v2 hole-in-one with house starter', () => {
+    // In v2 with house starter:
+    // par = 3.98, starterBonus = 3
+    // hole-in-one score = 100 + 4*(3.98 - 1) + 3 = 114.92
+    // 2-guess ceiling = 100 + 4*(3.98 - 2) + 3 = 110.92
+    const dyn = computeDynamicZones({
+      maxScore: 114.92, // passed from scoreGame when guesses[0] === answer
+      par: 3.98,
+      starterBonus: 3,
+      guessesUsed: 1,
+      totalScore: 114.92,
+    });
+
+    expect(dyn.isBlindLuck).toBe(true);
+    expect(dyn.zones).toHaveLength(7);
+
+    // Godlike must end at 2-guess ceiling (110.92), NOT at 114.92
+    const godlikeZone = dyn.zones[5];
+    expect(godlikeZone?.id).toBe('godlike');
+    expect(godlikeZone?.maxScore).toBeCloseTo(110.92, 2);
+
+    // Blind luck must span from 110.92 to 114.92 (a full 4-point range)
+    const blindLuckZone = dyn.zones[6];
+    expect(blindLuckZone?.id).toBe('blind_luck');
+    expect(blindLuckZone?.minScore).toBeCloseTo(110.92, 2);
+    expect(blindLuckZone?.maxScore).toBeCloseTo(114.92, 2);
+
+    // Total score 114.92 must map to blind_luck
+    expect(zoneForScore(114.92, dyn.zones).id).toBe('blind_luck');
+  });
 });
 
 describe('HORIZONTAL_ZONES and scoreToPositionPct', () => {
