@@ -174,6 +174,7 @@ npm run compute-par -- --v1 --days 300 # recomputes legacy v1 PAR
 npm run check-incentives -- --days 120 # confirms the incentives still point the right way (defaults to v2)
 npm run check-incentives -- --v1 --days 120 # confirms v1 legacy incentives
 npm run check-lights -- --days 150     # confirms the progress light still says something
+npm run simulate-zones                 # validates 16,000+ game scenarios across dynamic score zones
 ```
 
 The first runs multi-threaded across worker threads and prints the guess distribution plus what
