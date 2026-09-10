@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Portal from '@mui/material/Portal';
 import { useTheme } from '@mui/material/styles';
 import confetti from 'canvas-confetti';
 import { useEffect, useRef, useState } from 'react';
@@ -74,19 +75,21 @@ export function Confetti() {
   }, [colors]);
 
   return (
-    <Box
-      aria-hidden
-      data-testid="confetti"
-      component="canvas"
-      ref={canvas}
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: (theme) => theme.zIndex.modal - 1,
-      }}
-    />
+    <Portal>
+      <Box
+        aria-hidden
+        data-testid="confetti"
+        component="canvas"
+        ref={canvas}
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: (theme) => theme.zIndex.modal - 1,
+        }}
+      />
+    </Portal>
   );
 }

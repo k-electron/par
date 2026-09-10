@@ -233,7 +233,7 @@ export function GameScreen({
       if (typeof resultsRef.current?.scrollIntoView === 'function') {
         resultsRef.current.scrollIntoView({
           behavior: stillness ? 'auto' : 'smooth',
-          block: 'center',
+          block: 'nearest',
         });
       }
     }, 60);
@@ -250,8 +250,7 @@ export function GameScreen({
         // Once the results appear the content is legitimately taller than the
         // screen, so the height has to be released or the board and the
         // results overlap instead of stacking.
-        minHeight: '100dvh',
-        ...(finished ? {} : { height: '100dvh' }),
+        ...(finished ? {} : { height: '100dvh', minHeight: '100dvh' }),
         px: 1,
         py: 1.5,
         maxWidth: 520,
