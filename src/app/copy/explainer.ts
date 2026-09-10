@@ -494,7 +494,8 @@ function explainZones(round: RoundToExplain): ExplainedZones {
   const activeZone = zoneForScore(round.total, dynamic.zones);
   const par = guesses(round.par ?? PAR);
 
-  const zones: ExplainedZoneThreshold[] = dynamic.zones.map((zone) => ({
+  // Order zones vertically from highest tier (Godlike) to lowest tier (Troll/Blind)
+  const zones: ExplainedZoneThreshold[] = [...dynamic.zones].reverse().map((zone) => ({
     id: zone.id,
     label: zone.label,
     minScore: zone.minScore,

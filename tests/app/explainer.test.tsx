@@ -748,6 +748,12 @@ describe('scorer version support and dynamic zones in the explainer', () => {
     expect(labels).toContain('Godlike');
   });
 
+  it('orders performance zones vertically inverted so that Godlike is on top', () => {
+    const explained = explainRound(ROUNDS.solved);
+    expect(explained.zones.zones[0]!.label).toBe('Godlike');
+    expect(explained.zones.zones.at(-1)!.label).toBe('Troll');
+  });
+
   it('uses direct phrasing for score zones instead of "landed in"', () => {
     const explained = explainRound(ROUNDS.solved);
     expect(explained.zones.story).toMatch(/^Your score was [a-z]+/);
