@@ -32,6 +32,7 @@
  */
 
 import { C_PAR, PAR, UNSOLVED_GUESSES } from '../../engine/config/constants';
+import { computeDynamicZones, zoneForScore, type ScoreZone, type ZoneDefinition } from '../ui/scoreZones';
 import { LUCK_NOTICEABLE, NEAR_BEST } from './results';
 
 /** A guess, as this module is allowed to see it. No count of anything. */
@@ -61,6 +62,7 @@ export interface RoundToExplain {
   readonly solved: boolean;
   readonly breakdown: readonly GuessToExplain[];
   readonly par?: number;
+  readonly maxScore?: number;
 }
 
 export interface ExplainedGuess {
@@ -86,6 +88,26 @@ export interface ExplainedFigure {
   readonly story: string;
 }
 
+export interface ExplainedZoneThreshold {
+  readonly id: ScoreZone;
+  readonly label: string;
+  readonly minScore: number;
+  readonly maxScore: number;
+  readonly color: { readonly light: string; readonly dark: string };
+  readonly isCurrent: boolean;
+}
+
+export interface ExplainedZones {
+  readonly activeZone: ZoneDefinition;
+  readonly parScore: number;
+  readonly meterMinScore: number;
+  readonly meterMaxScore: number;
+  readonly isBlind: boolean;
+  readonly isBlindLuck: boolean;
+  readonly zones: readonly ExplainedZoneThreshold[];
+  readonly story: string;
+}
+
 export interface ExplainedRound {
   readonly lead: string;
   readonly guesses: readonly ExplainedGuess[];
@@ -96,6 +118,7 @@ export interface ExplainedRound {
   readonly par: ExplainedFigure;
   readonly bonus: ExplainedFigure;
   readonly total: ExplainedFigure;
+  readonly zones: ExplainedZones;
 }
 
 const MINUS = '\u2212';
@@ -189,22 +212,6 @@ function moreTurns(skill: number): string {
 /**
  * How the tiles ran, on one four-step scale.
  *
- * The sign of the luck figure has to land before any explanation of it does,
- * because a reader who has not yet worked out which way is good cannot read the
- * clause that follows. Hot and cold are the two words everybody already has for
- * this, and the table beside it says `ran hot` and `ran cold` at the same two
- * thresholds — `luckNote` owns them, and this shares its boundary constant.
- *
- * Deliberately not `luckNote`'s middle pair, which is second person: `broke
- * against you` is wrong above somebody else's replayed round, and this file is
- * read on both.
- */
-function temperature(luck: number): string {
-  if (luck > 1) return 'ran hot';
-  if (luck > LUCK_NOTICEABLE) return 'ran warm';
-  if (luck < -1) return 'ran cold';
-  return 'ran cool';
-}
 
 /**
  * The luck figure as a size, rather than in bits.
@@ -309,21 +316,22 @@ const WELL_DOWN = 0.55;
 
 function placeOnTheList(row: GuessToExplain): string {
   const word = row.guess.toUpperCase();
-  const likeliest = 'the likeliest words that still fitted';
 
-  if (row.standing <= LIKELIEST) return `${word} was the likeliest word that still fitted`;
-  if (row.standing < NEAR_THE_TOP) return `${word} was up among ${likeliest}`;
-  if (row.standing < MIDDLING) return `${word} was a little below ${likeliest}`;
-  if (row.standing < WELL_DOWN) return `${word} was well below ${likeliest}`;
-  return `${word} was way below ${likeliest}`;
+  if (row.standing <= LIKELIEST) return `${word} was the top candidate among words that fit the clues`;
+  if (row.standing < NEAR_THE_TOP) return `${word} was a strong candidate among words that fit the clues`;
+  if (row.standing < MIDDLING) return `${word} was a plausible candidate among words that fit the clues`;
+  if (row.standing < WELL_DOWN) return `${word} was an outside candidate among words that fit the clues`;
+  return `${word} was a low-probability candidate among words that fit the clues`;
 }
 
-/** The placement, and what it made the guess, on the rows where that lands. */
+/** The placement, and what it made the guess, in plain English. */
 function standingOnTheList(row: GuessToExplain): string {
   const placed = placeOnTheList(row);
 
-  if (row.standing < NEAR_THE_TOP) return `${placed}, so it was a real bet on the answer`;
-  if (row.standing >= WELL_DOWN) return `${placed}, so it was a question rather than a bet`;
+  if (row.standing < NEAR_THE_TOP) return `${placed}, aiming to solve the puzzle directly`;
+  if (row.standing >= WELL_DOWN) {
+    return `${placed} — an exploratory probe to test letters rather than a direct shot at the answer`;
+  }
   return placed;
 }
 
@@ -332,128 +340,92 @@ function skillStory(row: GuessToExplain): string {
 
   if (row.skill === null) {
     return (
-      `Not scored ${DASH} openers never are. What an opener is worth shows up in par instead, ` +
-      'through the position it leaves.'
+      `Not scored ${DASH} openers are not scored for skill. An opener's value is reflected in par instead, ` +
+      'through the board position it leaves you.'
     );
   }
 
   const score = percent(row.skill);
 
-  // A single-word field weighs log2 1 = 0, so such a row sits on screen with a
-  // score that cannot reach the average. Saying so is the difference between a
-  // reader thinking the figure above is wrong and understanding why it is right.
-  // Full marks there can only mean the one word was the one played, which the
-  // row it sits on already says out loud by winning.
   if (row.weight === 0) {
     return row.skill >= ROUNDS_TO_FULL_MARKS
-      ? `Skill ${score} ${DASH} the clues had narrowed to one word, and ${word} was it. It counts ` +
-          'for nothing in the average either way.'
+      ? `Skill ${score} ${DASH} The clues had narrowed to one word, and ${word} was it. It counts ` +
+          'for none of the skill average either way.'
       : `Skill ${score} ${DASH} ${placeOnTheList(row)}, and by then the clues had settled on the ` +
-          'likeliest word. It counts for nothing in the average either way.';
+          'top candidate. It counts for none of the skill average either way.';
   }
 
   if (row.forced) {
     return (
-      `Skill ${score} ${DASH} ${placeOnTheList(row)}, and the position offered no real choice: ` +
+      `Skill ${score} ${DASH} ${placeOnTheList(row)}, and the position offered no real alternative: ` +
       'nothing available would have finished sooner.'
     );
   }
-  // Where a guess sat on the list and how well it played are different
-  // questions, and the two rows where they answer differently are the two rows
-  // a reader is most likely to misread as cause and effect. Both get a word
-  // that says the second figure is not a consequence of the first.
-  //
-  // The bottom case is the whole thesis of the game: measured over 35 real
-  // midgame positions, betting the commonest word still fitting was *never* the
-  // best play available, and a word far down the list regularly is. The top
-  // case is its mirror — a sound bet can still cost turns.
+
   const surprising = row.standing >= WELL_DOWN && row.skill >= NEAR_BEST;
-  const evenSo = surprising ? 'Even so, i' : 'I';
+  const connector = surprising ? 'Despite being an exploratory move, i' : 'I';
 
   if (row.skill >= ROUNDS_TO_FULL_MARKS) {
     return (
       `Skill ${score} ${DASH} ${standingOnTheList(row)}. ` +
-      `${surprising ? 'Even so, nothing' : 'Nothing'} available would have finished sooner.`
+      `${surprising ? 'Despite being an exploratory move, no' : 'No'} available move would have solved the puzzle in fewer turns.`
     );
   }
   if (row.skill >= NEAR_BEST) {
-    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. ${evenSo}t was close to the quickest way home from there.`;
+    return `Skill ${score} ${DASH} ${standingOnTheList(row)}. ${connector}t was close to the fastest mathematical path to the answer.`;
   }
 
-  // Below the table's own "near best" band, the gap is worth pricing rather
-  // than describing, and what the guess was risking is worth naming: a reader
-  // asking why this row is the low one wants the reason, not the ratio.
   const risk =
     row.likeliestOutcomeShare >= NOTABLE_RISK
-      ? ` At its most likely it would have left ${fieldShare(row.likeliestOutcomeShare)} of what still fitted standing.`
+      ? ` Even with favorable feedback, it would still leave ${fieldShare(row.likeliestOutcomeShare)} of remaining candidate words untested.`
       : '';
-  const despite = row.standing < NEAR_THE_TOP ? 'it was still heading' : 'from there it was heading';
+  const despite = row.standing < NEAR_THE_TOP ? 'even as a direct attempt, it' : 'from this position, it';
 
   return (
     `Skill ${score} ${DASH} ${standingOnTheList(row)}.${risk} ` +
-    `${despite.charAt(0).toUpperCase()}${despite.slice(1)} for ${moreTurns(row.skill)} the best play available.`
+    `${despite.charAt(0).toUpperCase()}${despite.slice(1)} averaged ${moreTurns(row.skill)} the best play available.`
   );
 }
 
 function luckStory(row: GuessToExplain, won: boolean): string {
   const word = row.guess.toUpperCase();
 
-  // A field already down to one word has nothing left to decide, so the tiles
-  // could not have been kind or cruel. The old line said they broke as expected,
-  // which is true and says nothing.
-  //
-  // This is checked before the winning row below, not after: a round that walks
-  // in the last possible word wins on a dead field, where the luck figure is
-  // exactly zero and "finishing turns over everything" would be captioning a
-  // 0.0 as though it were the round's big number.
-  //
-  // `skill !== null` is load-bearing rather than defensive: the opener also
-  // weighs zero, because guess 1 is never scored whatever it faced, and it is
-  // the one row of the round facing the whole answer list.
   if (row.skill !== null && row.weight === 0) {
-    return `Luck ${bits(row.luck)} ${DASH} nothing left for the tiles to decide by then.`;
+    return `Luck ${bits(row.luck)} ${DASH} Only one candidate remained, so tile feedback had no uncertainty left to resolve.`;
   }
 
-  // The winning row's luck is otherwise always positive, because finishing is
-  // the most informative thing that can happen to a guess. Left unsaid, that
-  // number reads as a second helping of praise for the guess that happened to
-  // land, which is the one reading the whole separation of skill from luck
-  // exists to prevent.
   if (won) {
     return (
-      `Luck ${bits(row.luck)} ${DASH} ${word} came home. Finishing is the biggest break there ` +
-      'is, since it settles everything at once.'
+      `Luck ${bits(row.luck)} ${DASH} Solved! ${word} was the answer, clearing away all remaining possibilities instantly.`
     );
   }
 
   if (Math.abs(row.luck) <= LUCK_NOTICEABLE) {
-    return `Luck ${bits(row.luck)} ${DASH} the tiles broke about as expected for a guess like ${word}.`;
+    return `Luck ${bits(row.luck)} ${DASH} Expected feedback: the tiles eliminated about as many words as typical for ${word}.`;
   }
 
-  // Landing in the guess's biggest bucket is the least informative thing that
-  // could have happened to it, and it is also the most probable — which is why
-  // this branch can never fire on a warm row: realized bits are at their
-  // minimum there, so the luck figure cannot be positive.
   if (row.outcomeShare >= row.likeliestOutcomeShare) {
     return (
-      `Luck ${bits(row.luck)} ${DASH} the tiles ${temperature(row.luck)}: no break could have ` +
-      `ruled out fewer, leaving ${fieldShare(row.outcomeShare)} of what still fitted.`
+      `Luck ${bits(row.luck)} ${DASH} The tiles were stubborn: this feedback eliminated the fewest possible words, ` +
+      `leaving ${fieldShare(row.outcomeShare)} of candidate words untested.`
+    );
+  }
+
+  if (row.luck > 0) {
+    return (
+      `Luck ${bits(row.luck)} ${DASH} The tiles were ${row.luck > 1 ? 'very generous' : 'helpful'}: ` +
+      `they eliminated more possibilities than average, leaving ${sizeGap(row.luck)} typical.`
     );
   }
 
   return (
-    `Luck ${bits(row.luck)} ${DASH} the tiles ${temperature(row.luck)}: they left ` +
-    `${sizeGap(row.luck)} ${word} normally leaves.`
+    `Luck ${bits(row.luck)} ${DASH} The tiles were unhelpful: they left ${sizeGap(row.luck)} typical.`
   );
 }
 
 /**
  * Each scored guess's share of the skill average, as whole percentages that sum
  * to a hundred.
- *
- * Largest remainder rather than rounding each share on its own, which would
- * leave a reader adding the column up to 99 and wondering which line was lying
- * to them. Rows weighing nothing are held at zero and take no remainder.
  */
 function skillShares(rows: readonly GuessToExplain[]): number[] {
   const total = rows.reduce((sum, row) => sum + row.weight, 0);
@@ -480,26 +452,24 @@ function parStory(round: RoundToExplain): string {
   const par = guesses(round.par ?? PAR);
   const charged = round.solved ? round.guessesUsed : UNSOLVED_GUESSES;
   const took = round.solved
-    ? `This round took ${round.guessesUsed}.`
-    : `This round did not solve it, and an unsolved round is priced at ${UNSOLVED_GUESSES} guesses.`;
+    ? `You solved this round in ${round.guessesUsed} guesses.`
+    : `This round did not solve the puzzle, which is charged at ${UNSOLVED_GUESSES} guesses.`;
 
   return (
-    `Par is ${par} guesses ${DASH} what strong play averages, so most rounds sit over it. ` +
-    `${took} Every guess either side of par is worth the same ${C_PAR} points: ` +
+    `Today's benchmark par is ${par} guesses (the average for expert play). ` +
+    `${took} Every guess saved or spent adjusts your score by ${C_PAR} points: ` +
     `${C_PAR} ${TIMES} (${par} ${MINUS} ${charged}) = ${signedPoints(round.outcome)}.`
   );
 }
 
 function bonusStory(round: RoundToExplain): string {
   return round.starterBonus > 0
-    ? `For taking the day's house starter sight-unseen. It pays for the blind bet rather than ` +
-        'for the word, which is why declining it and typing the same word earns nothing.'
-    : `None here ${DASH} this round brought its own opener, so there was no blind bet to pay for.`;
+    ? `Starter bonus (+${points(round.starterBonus)} pts): awarded for accepting today's mystery house starter blind. ` +
+        'The bonus rewards the risk of starting blind; manually typing the same word does not qualify.'
+    : `None: this round used your own opener. The starter bonus is reserved for accepting the mystery house starter blind.`;
 }
 
 function totalStory(round: RoundToExplain): string {
-  // A zero bonus is left out rather than added as +0.00, which is also how the
-  // card shows it: a figure that changes nothing is noise in a sum.
   const sum = [
     points(round.skill),
     `${round.outcome < 0 ? MINUS : '+'} ${points(Math.abs(round.outcome))}`,
@@ -507,9 +477,61 @@ function totalStory(round: RoundToExplain): string {
   ].join(' ');
 
   return (
-    `The skill percentage joins the total as points, one for one, and par is added to it: ` +
+    `Your total score combines deduction skill, par adjustment, and starter bonus: ` +
     `${sum} = ${points(round.total)}.`
   );
+}
+
+function explainZones(round: RoundToExplain): ExplainedZones {
+  const dynamic = computeDynamicZones({
+    maxScore: round.maxScore,
+    par: round.par,
+    starterBonus: round.starterBonus,
+    guessesUsed: round.guessesUsed,
+    totalScore: round.total,
+  });
+
+  const activeZone = zoneForScore(round.total, dynamic.zones);
+  const par = guesses(round.par ?? PAR);
+
+  const zones: ExplainedZoneThreshold[] = dynamic.zones.map((zone) => ({
+    id: zone.id,
+    label: zone.label,
+    minScore: zone.minScore,
+    maxScore: zone.maxScore,
+    color: zone.color,
+    isCurrent: zone.id === activeZone.id,
+  }));
+
+  let story: string;
+  if (dynamic.isBlindLuck) {
+    story =
+      `You landed in the secret Blind luck zone! A hole-in-one on guess 1 is pure lottery luck, so Par ` +
+      `quarantines it in its own radiant gold tier rather than letting it distort the skill-based ` +
+      `Godlike zone.`;
+  } else if (dynamic.isBlind) {
+    story =
+      `You landed in the secret Blind zone. When an unsolved round scores below 60.0, Par ` +
+      `dynamically expands the meter floor so the score is displayed cleanly without overflowing.`;
+  } else {
+    story =
+      `You landed in the ${activeZone.label} zone (${activeZone.minScore.toFixed(1)} to ` +
+      `${activeZone.maxScore.toFixed(1)} pts). The score meter is calibrated specifically for ` +
+      `today's puzzle (benchmark par ${par}, strategic ceiling ${dynamic.meterMaxScore.toFixed(1)}). ` +
+      `A score of ${dynamic.parScore.toFixed(0)} represents meeting par expectation with 100% skill, ` +
+      `marking the boundary between Good and Ultra.`;
+  }
+
+  return {
+    activeZone,
+    parScore: dynamic.parScore,
+    meterMinScore: dynamic.meterMinScore,
+    meterMaxScore: dynamic.meterMaxScore,
+    isBlind: dynamic.isBlind,
+    isBlindLuck: dynamic.isBlindLuck,
+    zones,
+    story,
+  };
 }
 
 export function explainRound(round: RoundToExplain): ExplainedRound {
@@ -521,21 +543,16 @@ export function explainRound(round: RoundToExplain): ExplainedRound {
 
   return {
     lead:
-      `Every figure on the card comes out of the guesses below. After each round of tiles some ` +
-      `words still fit every clue, and the answer is always one of the likelier ones ${DASH} the ` +
-      `words people actually use ${DASH} so each guess below is placed among them, from the ` +
-      `likeliest down. Up there a guess is a bet on ending the round; below, it is a question. ` +
-      `Skill prefers neither, because it counts turns: how quickly the guess was heading for the ` +
-      `answer, against the quickest way home from the same position. Luck is what the tiles then ` +
-      `did with it, and it never reaches the total.`,
+      `Par doesn't just count how many guesses you took ${DASH} it scores how well you reasoned ` +
+      `through each position before the tiles turned over. Each guess is judged against the ` +
+      `quickest path to the answer, whether you aimed directly at a likely solution or played an ` +
+      `exploratory word to eliminate possibilities. Luck describes whether the tiles revealed ` +
+      `more or fewer clues than average, and never affects your total score.`,
 
     guesses: round.breakdown.map((row, index) => ({
       turn: row.turn,
       guess: row.guess,
       skillStory: skillStory(row),
-      // The last row of a solved round is the guess that finished it. Nothing
-      // else in the breakdown identifies the winner, and the winning row's luck
-      // needs saying differently — see `luckStory`.
       luckStory: luckStory(row, round.solved && index === round.breakdown.length - 1),
     })),
 
@@ -563,5 +580,6 @@ export function explainRound(round: RoundToExplain): ExplainedRound {
       story: bonusStory(round),
     },
     total: { figure: points(round.total), story: totalStory(round) },
+    zones: explainZones(round),
   };
 }

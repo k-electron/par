@@ -61,7 +61,6 @@ const ROUNDS = {
 
 const CASES = Object.entries(ROUNDS).map(([name, score]) => ({ name, score }));
 
-/** Every sentence the explainer would put on screen for a round. */
 function phrases(explained: ExplainedRound): string[] {
   return [
     explained.lead,
@@ -76,20 +75,17 @@ function phrases(explained: ExplainedRound): string[] {
     explained.bonus.story,
     explained.total.figure,
     explained.total.story,
+    explained.zones.story,
   ];
 }
 
 /**
  * How the two directions of the luck sentence read.
- *
- * Both can say "as many words", since half as many and twice as many are both
- * multiples, so the direction has to be read off the quantifier rather than off
- * the shape of the phrase.
  */
 const CROWDED =
-  /ran cold|ran cool|more words standing|(twice|three times|four times|five times|several times) as many/;
+  /stubborn|unhelpful|more words than|(twice|three times|four times|five times|several times) as many/;
 const CLEARED =
-  /ran hot|ran warm|fewer words standing|(half|a third|a quarter|a fifth) as many|a small fraction/;
+  /generous|\bhelpful\b|fewer words than|(half|a third|a quarter|a fifth) as many|a small fraction/;
 
 /** The first number in a fragment, however it is dressed: `64% of the average`. */
 function value(text: string): number {
@@ -248,11 +244,11 @@ describe('the guess by guess account', () => {
       const won = score.solved && index === score.breakdown.length - 1;
 
       if (deadField) {
-        expect(story, row.guess).toMatch(/nothing left for the tiles to decide/);
+        expect(story, row.guess).toMatch(/no uncertainty left to resolve/);
       } else if (won) {
-        expect(story, row.guess).toMatch(/came home/);
+        expect(story, row.guess).toMatch(/Solved!/i);
       } else if (note === 'broke as expected') {
-        expect(story, row.guess).toMatch(/broke about as expected/);
+        expect(story, row.guess).toMatch(/Expected feedback:/);
       } else if (row.luck > 0) {
         expect(story, row.guess).toMatch(CLEARED);
       } else {
@@ -318,7 +314,7 @@ describe('the guess by guess account', () => {
       const story = explained.guesses[index]!.skillStory;
       if (row.skill === null) return;
 
-      expect(story, row.guess).toMatch(/the likeliest word that still fitted|likeliest words that still fitted/);
+      expect(story, row.guess).toMatch(/words that fit the clues/);
     });
   });
 
@@ -351,13 +347,13 @@ describe('the guess by guess account', () => {
       }).guesses[0]!.skillStory;
 
     // Far down the list and near the best play there was: the lesson.
-    expect(story(0.9, 96)).toMatch(/question rather than a bet\. Even so, it was close/);
-    expect(story(0.9, 100)).toMatch(/Even so, nothing available would have finished sooner/);
-    // A sound bet that still cost turns: the same point from the other side.
-    expect(story(0.05, 80)).toMatch(/real bet on the answer\..*It was still heading for/);
+    expect(story(0.9, 96)).toMatch(/exploratory probe.*close to the fastest/);
+    expect(story(0.9, 100)).toMatch(/exploratory move, no available move would have solved/);
+    // A sound direct shot that still cost turns: the same point from the other side.
+    expect(story(0.05, 80)).toMatch(/aiming to solve.*averaged/);
     // And where they agree, no contrast is drawn, because there is none.
-    expect(story(0.05, 96)).not.toMatch(/Even so|still heading/);
-    expect(story(0.9, 80)).not.toMatch(/Even so|still heading/);
+    expect(story(0.05, 96)).not.toMatch(/Despite|averaged/);
+    expect(story(0.9, 80)).not.toMatch(/Despite/);
   });
 
   it('walks the whole scale as the standing moves, in order and without gaps', () => {
@@ -428,7 +424,7 @@ describe('the guess by guess account', () => {
     expect(dead.length).toBeGreaterThan(0);
     for (const { story } of dead) {
       expect(story).not.toMatch(/more turns|as many turns/);
-      expect(story).toMatch(/settled on the likeliest word|narrowed to one word/);
+      expect(story).toMatch(/settled on the top candidate|narrowed to one word/);
     }
   });
 
@@ -443,8 +439,8 @@ describe('the guess by guess account', () => {
     expect(walkIn.solved).toBe(true);
     expect(last.weight).toBe(0);
     expect(Math.abs(last.luck)).toBeLessThan(0.05);
-    expect(story).toMatch(/nothing left for the tiles to decide/);
-    expect(story).not.toMatch(/came home/);
+    expect(story).toMatch(/no uncertainty left to resolve/);
+    expect(story).not.toMatch(/came home|Solved!/);
   });
 });
 
@@ -688,5 +684,67 @@ describe('reaching it from a finished game', () => {
     const { left, right } = equation(explainRound(sender).total.story);
     expect(addUp(left)).toBeCloseTo(sender.total, 1);
     expect(section).toHaveTextContent(`${right.toFixed(2)}`);
+  });
+});
+
+describe('scorer version support and dynamic zones in the explainer', () => {
+  it('explains Scorer V1 rounds with PAR 3.71 and V1 zone calibration', () => {
+    const v1Round = {
+      ...ROUNDS.solved,
+      par: 3.7100,
+      maxScore: 109.84, // 100 + 4 * (3.71 - 2) + 3
+    };
+    const explained = explainRound(v1Round);
+
+    expect(explained.par.story).toContain('3.71');
+    expect(explained.zones.story).toContain('3.71');
+    expect(explained.zones.parScore).toBe(103);
+    expect(explained.zones.meterMaxScore).toBeCloseTo(109.84, 1);
+    expect(explained.zones.activeZone.id).toBeDefined();
+  });
+
+  it('explains Scorer V2 rounds with PAR 3.98 and V2 zone calibration', () => {
+    const v2Round = {
+      ...ROUNDS.solved,
+      par: 3.9800,
+      maxScore: 110.92, // 100 + 4 * (3.98 - 2) + 3
+    };
+    const explained = explainRound(v2Round);
+
+    expect(explained.par.story).toContain('3.98');
+    expect(explained.zones.story).toContain('3.98');
+    expect(explained.zones.parScore).toBe(103);
+    expect(explained.zones.meterMaxScore).toBeCloseTo(110.92, 1);
+  });
+
+  it('explains the secret Blind luck zone for a 1-guess finish', () => {
+    const explained = explainRound(ROUNDS.holeInOne);
+    expect(explained.zones.isBlindLuck).toBe(true);
+    expect(explained.zones.activeZone.id).toBe('blind_luck');
+    expect(explained.zones.story).toMatch(/Blind luck/i);
+    expect(explained.zones.story).toMatch(/hole-in-one/i);
+  });
+
+  it('explains the secret Blind zone when score drops below 60', () => {
+    const strugglingRound = {
+      ...ROUNDS.lost,
+      total: 42.5,
+    };
+    const explained = explainRound(strugglingRound);
+    expect(explained.zones.isBlind).toBe(true);
+    expect(explained.zones.activeZone.id).toBe('blind');
+    expect(explained.zones.story).toMatch(/Blind zone/i);
+  });
+
+  it('includes all zones with thresholds in the explanation', () => {
+    const explained = explainRound(ROUNDS.solved);
+    expect(explained.zones.zones.length).toBeGreaterThanOrEqual(6);
+    const labels = explained.zones.zones.map((z) => z.label);
+    expect(labels).toContain('Troll');
+    expect(labels).toContain('Bad');
+    expect(labels).toContain('Meh');
+    expect(labels).toContain('Good');
+    expect(labels).toContain('Ultra');
+    expect(labels).toContain('Godlike');
   });
 });

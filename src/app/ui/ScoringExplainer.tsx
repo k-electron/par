@@ -1,12 +1,15 @@
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 
 import { explainRound, type ExplainedFigure, type RoundToExplain } from '../copy/explainer';
@@ -44,53 +47,69 @@ export function ScoringExplainer({
    */
   score?: RoundToExplain | null;
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const round = score === null ? null : explainRound(score);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth scroll="paper">
-      <DialogTitle>How this is scored</DialogTitle>
+      <DialogTitle sx={{ pb: 1 }}>How this is scored</DialogTitle>
       <DialogContent dividers>
-        <Stack spacing={2}>
-          <Typography variant="body2">
-            Ordinary word games score how few guesses you took, which is mostly a question of
-            whether your opener happened to land near the answer. Par scores what each guess was
-            worth <em>before</em> the tiles turned over, and then pays out the luck separately.
+        <Stack spacing={2.5}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+            Most word games only count how many guesses you used — which mostly rewards guessing
+            near the answer on turn 1. Par evaluates how well you reasoned through each position{' '}
+            <em>before</em> the tiles flipped, and accounts for turn-speed and luck separately.
           </Typography>
 
           {round !== null && (
-            <Stack spacing={1.5} data-testid="explainer-round">
+            <Stack spacing={2} data-testid="explainer-round">
+              {/* Hero Score & Active Zone Card */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+                  borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'),
+                }}
+              >
+                <Stack spacing={1}>
+                  <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                      <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                        Your Round Result
+                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
+                        {round.total.figure}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={round.zones.activeZone.label}
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        bgcolor: isDark ? round.zones.activeZone.color.dark : round.zones.activeZone.color.light,
+                        color: '#fff',
+                        px: 1,
+                      }}
+                    />
+                  </Stack>
+                  <Typography variant="body2" sx={{ fontWeight: 500, pt: 0.5 }}>
+                    {round.zones.story}
+                  </Typography>
+                </Stack>
+              </Paper>
+
               <Divider textAlign="left">
-                <Typography variant="overline" sx={{ color: 'text.secondary' }}>
-                  This round, number by number
+                <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
+                  Score Breakdown & Formula
                 </Typography>
               </Divider>
 
-              <Typography variant="body2">{round.lead}</Typography>
-
-              <Stack spacing={1.25}>
-                {round.guesses.map((guess) => (
-                  <Stack key={guess.turn} spacing={0}>
-                    <Box
-                      component="span"
-                      sx={{
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                      }}
-                    >
-                      {guess.guess}
-                    </Box>
-                    <Typography variant="body2">{guess.skillStory}</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      {guess.luckStory}
-                    </Typography>
-                  </Stack>
-                ))}
-              </Stack>
-
               <Figure name="Skill" figure={round.skill}>
                 {round.skill.shares.length > 0 && (
-                  <Stack spacing={0} sx={{ py: 0.5 }}>
+                  <Stack spacing={0.5} sx={{ py: 0.5 }}>
                     {round.skill.shares.map((share, index) => (
                       <Stack
                         key={`${share.guess}-${index}`}
@@ -98,11 +117,8 @@ export function ScoringExplainer({
                         spacing={1}
                         sx={{ justifyContent: 'space-between' }}
                       >
-                        <Box
-                          component="span"
-                          sx={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}
-                        >
-                          {share.guess}
+                        <Box component="span" sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+                          {share.guess.toUpperCase()}
                         </Box>
                         <Box component="span" sx={{ fontWeight: 700 }}>
                           {share.score}
@@ -120,16 +136,157 @@ export function ScoringExplainer({
               <Figure name="Par" figure={round.par} />
               <Figure name="Starter bonus" figure={round.bonus} />
               <Figure name="Total" figure={round.total} />
+
+              <Divider textAlign="left">
+                <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
+                  The Score Meter & Performance Zones
+                </Typography>
+              </Divider>
+
+              <Stack spacing={1}>
+                <Typography variant="body2">
+                  The meter on your results card organizes performance into qualitative tiers, calibrated specifically for today&rsquo;s puzzle:
+                </Typography>
+                <Stack spacing={0.75} sx={{ pt: 0.5 }}>
+                  {round.zones.zones.map((zone) => {
+                    const zoneColor = isDark ? zone.color.dark : zone.color.light;
+                    return (
+                      <Stack
+                        key={zone.id}
+                        direction="row"
+                        sx={{
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          px: 1.5,
+                          py: 0.75,
+                          borderRadius: 1.5,
+                          bgcolor: zone.isCurrent
+                            ? isDark
+                              ? 'rgba(255,255,255,0.08)'
+                              : 'rgba(0,0,0,0.05)'
+                            : 'transparent',
+                          border: zone.isCurrent ? `1.5px solid ${zoneColor}` : '1px solid transparent',
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          <Box
+                            sx={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: '50%',
+                              bgcolor: zoneColor,
+                            }}
+                          />
+                          <Typography variant="subtitle2" sx={{ fontWeight: zone.isCurrent ? 700 : 500 }}>
+                            {zone.label}
+                            {zone.isCurrent && ' (Your Zone)'}
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+                          {zone.minScore.toFixed(1)} &ndash; {zone.maxScore.toFixed(1)}
+                        </Typography>
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+                <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, lineHeight: 1.5 }}>
+                  <strong>Why 100 is the anchor:</strong> Finishing in benchmark par with 100% deduction skill scores exactly {round.zones.parScore.toFixed(0)}, separating Good from Ultra. Godlike marks the theoretical ceiling for solving the puzzle in 2 sharp moves.
+                </Typography>
+              </Stack>
+
+              <Divider textAlign="left">
+                <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
+                  Your Guess-by-Guess Walkthrough
+                </Typography>
+              </Divider>
+
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {round.lead}
+              </Typography>
+
+              <Stack spacing={1.5}>
+                {round.guesses.map((guess) => (
+                  <Paper
+                    key={guess.turn}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1.5,
+                      bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'),
+                    }}
+                  >
+                    <Stack spacing={0.5}>
+                      <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box
+                          component="span"
+                          sx={{
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                          }}
+                        >
+                          Turn {guess.turn}: {guess.guess.toUpperCase()}
+                        </Box>
+                      </Stack>
+                      <Typography variant="body2">{guess.skillStory}</Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        {guess.luckStory}
+                      </Typography>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
             </Stack>
           )}
 
           <Divider textAlign="left">
-            <Typography variant="overline" sx={{ color: 'text.secondary' }}>
-              Why the scoring works this way
+            <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
+              What the Numbers Mean
             </Typography>
           </Divider>
 
-          <Stack spacing={0.5}>
+          <Stack spacing={1.5}>
+            <Stack spacing={0.25}>
+              <Typography variant="subtitle2">Skill Percentage</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Measures how much each guess reduced remaining uncertainty compared to the best
+                possible move, calculated before tiles turn over. Earlier deductions carry more weight
+                than late-game clean-up.
+              </Typography>
+            </Stack>
+
+            <Stack spacing={0.25}>
+              <Typography variant="subtitle2">Par Adjustment</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Compares how many guesses you took against benchmark par (what expert play averages for
+                this board). Every guess saved awards +4.0 points; each additional guess subtracts 4.0 points.
+              </Typography>
+            </Stack>
+
+            <Stack spacing={0.25}>
+              <Typography variant="subtitle2">Progress Lights</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Shows how much of the remaining mystery the tile feedback eliminated. Striking 100
+                words off a wide-open field is easy, but narrowing 2 words to 1 settles everything.
+              </Typography>
+            </Stack>
+
+            <Stack spacing={0.25}>
+              <Typography variant="subtitle2">Luck</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Reflects whether tile flips broke in your favor (helpful clues) or against you (stubborn
+                patterns). Luck is displayed for interest only — it never enters your final score.
+              </Typography>
+            </Stack>
+          </Stack>
+
+          <Divider textAlign="left">
+            <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
+              Why the Scoring Works This Way
+            </Typography>
+          </Divider>
+
+          <Stack spacing={0.75}>
             <Typography variant="subtitle2">Why a word that cannot win can be the best play</Typography>
             <Typography variant="body2">
               Suppose you have it narrowed to three possibilities that differ only in their first
@@ -147,61 +304,12 @@ export function ScoringExplainer({
           </Stack>
 
           <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Skill cannot see what happened</Typography>
-            <Typography variant="body2">
-              Each guess is measured against the best that was available in that exact position, so
-              getting lucky cannot raise it and getting unlucky cannot lower it. Your opening guess
-              is never scored: whatever you open with, good or wild, expresses itself through the
-              position it leaves you, and that is priced by par instead. It is why a lucky opener is
-              a legitimate win here rather than a loophole.
+            <Typography variant="subtitle2">No Spoilers</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Par will never show you the word you should have played. Knowing it would not make you
+              better at reading a position, and memorising it is the opposite of the point.
             </Typography>
           </Stack>
-
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Par is set by strong play</Typography>
-            <Typography variant="body2">
-              Par is what a strong player averages, not what a typical player averages, so being
-              over it is the normal state of affairs rather than a telling-off. Every guess under
-              par is worth the same as every other, which is deliberate: it means a gamble can win
-              you a day but never a season. Finishing fast earns a badge, never extra points.
-            </Typography>
-          </Stack>
-
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2">The progress light</Typography>
-            <Typography variant="body2">
-              The light beside each guess is how much of what was still unknown it cleared away, so
-              striking a hundred words off a wide-open field counts for very little while narrowing
-              two possibilities down to one counts for everything. It describes what the tiles did,
-              not how well you chose &mdash; a well-judged guess can light red when the feedback
-              breaks badly. It is also why a perfectly good opener often shows amber: it does a
-              great deal of work and still leaves most of the guessing to do. A guess with only one
-              word left to play gets no light at all, because there was nothing left to clear.
-            </Typography>
-          </Stack>
-
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2">Luck counts for nothing</Typography>
-            <Typography variant="body2">
-              The luck figure says how the feedback broke against what your guess could reasonably
-              expect. Positive means the tiles were kind. It is there to talk about: it never enters
-              a total, and across every answer a guess could have faced it averages out to zero.
-            </Typography>
-          </Stack>
-
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2">The house starter</Typography>
-            <Typography variant="body2">
-              Everyone who takes it plays the same opener, chosen before you could see it, and
-              earns a small bonus for taking that bet blind. That is the whole reason your choice
-              locks for the day: a bet you could withdraw after peeking would not be one.
-            </Typography>
-          </Stack>
-
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Par will never show you the word you should have played. Knowing it would not make you
-            better at reading a position, and memorising it is the opposite of the point.
-          </Typography>
         </Stack>
       </DialogContent>
       <DialogActions>
