@@ -179,7 +179,6 @@ export function ScoringExplainer({
                           />
                           <Typography variant="subtitle2" sx={{ fontWeight: zone.isCurrent ? 700 : 500 }}>
                             {zone.label}
-                            {zone.isCurrent && ' (Your Zone)'}
                           </Typography>
                         </Stack>
                         <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
@@ -274,8 +273,8 @@ export function ScoringExplainer({
             <Stack spacing={0.25}>
               <Typography variant="subtitle2">Luck</Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Reflects whether tile flips broke in your favor (helpful clues) or against you (stubborn
-                patterns). Luck is displayed for interest only — it never enters your final score.
+                Shows whether you got lucky with helpful tile reveals or unlucky with unhelpful clues.
+                Luck is displayed for interest only — it never enters your final score.
               </Typography>
             </Stack>
           </Stack>

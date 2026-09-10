@@ -83,9 +83,9 @@ function phrases(explained: ExplainedRound): string[] {
  * How the two directions of the luck sentence read.
  */
 const CROWDED =
-  /stubborn|unhelpful|more words than|(twice|three times|four times|five times|several times) as many/;
+  /\bunlucky\b|stubborn|unhelpful|more words than|(twice|three times|four times|five times|several times) as many/;
 const CLEARED =
-  /generous|\bhelpful\b|fewer words than|(half|a third|a quarter|a fifth) as many|a small fraction/;
+  /\blucky\b|generous|\bhelpful\b|fewer words than|(half|a third|a quarter|a fifth) as many|a small fraction/;
 
 /** The first number in a fragment, however it is dressed: `64% of the average`. */
 function value(text: string): number {
@@ -733,7 +733,7 @@ describe('scorer version support and dynamic zones in the explainer', () => {
     const explained = explainRound(strugglingRound);
     expect(explained.zones.isBlind).toBe(true);
     expect(explained.zones.activeZone.id).toBe('blind');
-    expect(explained.zones.story).toMatch(/Blind zone/i);
+    expect(explained.zones.story).toMatch(/Your score was Blind\./i);
   });
 
   it('includes all zones with thresholds in the explanation', () => {
@@ -746,5 +746,37 @@ describe('scorer version support and dynamic zones in the explainer', () => {
     expect(labels).toContain('Good');
     expect(labels).toContain('Ultra');
     expect(labels).toContain('Godlike');
+  });
+
+  it('uses direct phrasing for score zones instead of "landed in"', () => {
+    const explained = explainRound(ROUNDS.solved);
+    expect(explained.zones.story).toMatch(/^Your score was [a-z]+/);
+    expect(explained.zones.story).not.toContain('landed in');
+  });
+
+  it('does not render "(Your Zone)" in the explainer dialog', async () => {
+    const user = userEvent.setup();
+    const store = new Repository(createMemoryStorage());
+    store.saveDay({
+      puzzleNumber: PUZZLE_NUMBER,
+      settings: { hardMode: false, useHouseStarter: true, confirmed: true },
+      guesses: [PUZZLE.starter, 'crane', PUZZLE.answer],
+      status: 'won',
+      completedAt: Date.now(),
+    });
+
+    render(
+      <ThemeProvider theme={theme}>
+        <App
+          repository={store}
+          now={FIXED_NOW}
+          scoring={createDirectScoringClient()}
+        />
+      </ThemeProvider>,
+    );
+
+    await user.click(await screen.findByRole('button', { name: /how is this scored/i }));
+    const section = await screen.findByTestId('explainer-round');
+    expect(section).not.toHaveTextContent('(Your Zone)');
   });
 });

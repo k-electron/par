@@ -406,20 +406,20 @@ function luckStory(row: GuessToExplain, won: boolean): string {
 
   if (row.outcomeShare >= row.likeliestOutcomeShare) {
     return (
-      `Luck ${bits(row.luck)} ${DASH} The tiles were stubborn: this feedback eliminated the fewest possible words, ` +
+      `Luck ${bits(row.luck)} ${DASH} You got unlucky: this feedback eliminated the fewest possible words, ` +
       `leaving ${fieldShare(row.outcomeShare)} of candidate words untested.`
     );
   }
 
   if (row.luck > 0) {
     return (
-      `Luck ${bits(row.luck)} ${DASH} The tiles were ${row.luck > 1 ? 'very generous' : 'helpful'}: ` +
-      `they eliminated more possibilities than average, leaving ${sizeGap(row.luck)} typical.`
+      `Luck ${bits(row.luck)} ${DASH} ${row.luck > 1 ? 'You got very lucky' : 'You got lucky'}: ` +
+      `the feedback eliminated more possibilities than average, leaving ${sizeGap(row.luck)} typical.`
     );
   }
 
   return (
-    `Luck ${bits(row.luck)} ${DASH} The tiles were unhelpful: they left ${sizeGap(row.luck)} typical.`
+    `Luck ${bits(row.luck)} ${DASH} You got unlucky: the feedback left ${sizeGap(row.luck)} typical.`
   );
 }
 
@@ -506,16 +506,16 @@ function explainZones(round: RoundToExplain): ExplainedZones {
   let story: string;
   if (dynamic.isBlindLuck) {
     story =
-      `You landed in the secret Blind luck zone! A hole-in-one on guess 1 is pure lottery luck, so Par ` +
+      `Your score was Blind luck. A hole-in-one on guess 1 is pure lottery luck, so Par ` +
       `quarantines it in its own radiant gold tier rather than letting it distort the skill-based ` +
       `Godlike zone.`;
   } else if (dynamic.isBlind) {
     story =
-      `You landed in the secret Blind zone. When an unsolved round scores below 60.0, Par ` +
+      `Your score was Blind. When an unsolved round scores below 60.0, Par ` +
       `dynamically expands the meter floor so the score is displayed cleanly without overflowing.`;
   } else {
     story =
-      `You landed in the ${activeZone.label} zone (${activeZone.minScore.toFixed(1)} to ` +
+      `Your score was ${activeZone.label.toLowerCase()} (${activeZone.minScore.toFixed(1)} to ` +
       `${activeZone.maxScore.toFixed(1)} pts). The score meter is calibrated specifically for ` +
       `today's puzzle (benchmark par ${par}, strategic ceiling ${dynamic.meterMaxScore.toFixed(1)}). ` +
       `A score of ${dynamic.parScore.toFixed(0)} represents meeting par expectation with 100% skill, ` +
@@ -546,8 +546,8 @@ export function explainRound(round: RoundToExplain): ExplainedRound {
       `Par doesn't just count how many guesses you took ${DASH} it scores how well you reasoned ` +
       `through each position before the tiles turned over. Each guess is judged against the ` +
       `quickest path to the answer, whether you aimed directly at a likely solution or played an ` +
-      `exploratory word to eliminate possibilities. Luck describes whether the tiles revealed ` +
-      `more or fewer clues than average, and never affects your total score.`,
+      `exploratory word to eliminate possibilities. Luck shows whether you got lucky or unlucky ` +
+      `with tile reveals, and never affects your total score.`,
 
     guesses: round.breakdown.map((row, index) => ({
       turn: row.turn,
