@@ -20,6 +20,7 @@ import { createBestAvailableStorage } from '../storage/storage';
 import { GameScreen } from './GameScreen';
 import { Replay } from './Replay';
 import { SettingsGate } from './SettingsGate';
+import { Starfield } from './Starfield';
 import type { RevealTiming } from './reveal';
 
 /** The replay payload in the current URL fragment, if there is one. */
@@ -199,6 +200,7 @@ export function App({ repository, now, scoring, initialHash, reveal }: AppProps 
   return (
     <ThemeProvider theme={activeTheme}>
       <CssBaseline />
+      <Starfield />
       <Box component="main">
         {replayPayload !== null ? (
           <Replay payload={replayPayload} store={store} scoring={scorer} onDismiss={leaveReplay} />

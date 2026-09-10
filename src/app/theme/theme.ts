@@ -42,22 +42,22 @@ export interface TileColours {
 const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
   dark: {
     classic: {
-      absent: '#3a3a3c',
-      present: '#b59f3b',
-      correct: '#538d4e',
-      text: '#ffffff',
-      emptyBorder: '#3a3a3c',
-      filledBorder: '#565758',
-      keyIdle: '#818384',
+      absent: '#141923',
+      present: '#FFB800',
+      correct: '#00FFA3',
+      text: '#FFFFFF',
+      emptyBorder: 'rgba(0, 240, 255, 0.18)',
+      filledBorder: 'rgba(0, 240, 255, 0.45)',
+      keyIdle: '#1E2536',
     },
     accessible: {
-      absent: '#3a3a3c',
-      present: '#cc7722',
-      correct: '#1b6ca8',
-      text: '#ffffff',
-      emptyBorder: '#3a3a3c',
-      filledBorder: '#565758',
-      keyIdle: '#818384',
+      absent: '#141923',
+      present: '#FF6B00',
+      correct: '#00D2FF',
+      text: '#FFFFFF',
+      emptyBorder: 'rgba(0, 210, 255, 0.25)',
+      filledBorder: 'rgba(0, 210, 255, 0.55)',
+      keyIdle: '#1E2536',
     },
   },
   light: {
@@ -92,17 +92,51 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
   return createTheme({
     palette: {
       mode: preferences.appearance,
-      ...(preferences.appearance === 'light' ? { background: { default: '#ffffff' } } : {}),
+      ...(preferences.appearance === 'light'
+        ? {
+            background: { default: '#ffffff', paper: '#f8fafc' },
+            text: { primary: '#0f172a', secondary: '#475569' },
+          }
+        : {
+            background: {
+              default: '#05070E',
+              paper: 'rgba(12, 17, 29, 0.85)',
+            },
+            text: {
+              primary: '#F1F5F9',
+              secondary: '#94A3B8',
+            },
+            primary: {
+              main: '#00FFA3',
+              contrastText: '#05070E',
+            },
+            secondary: {
+              main: '#00D2FF',
+              contrastText: '#05070E',
+            },
+            divider: 'rgba(0, 240, 255, 0.14)',
+          }),
     },
     typography: {
       fontFamily: [
+        'Space Grotesk',
         'system-ui',
         '-apple-system',
+        'BlinkMacSystemFont',
         'Segoe UI',
         'Roboto',
         'Helvetica',
         'Arial',
         'sans-serif',
+      ].join(','),
+      fontFamilyMonospace: [
+        'JetBrains Mono',
+        'ui-monospace',
+        'SFMono-Regular',
+        'Menlo',
+        'Monaco',
+        'Consolas',
+        'monospace',
       ].join(','),
     },
     components: {
@@ -115,8 +149,37 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
       MuiStack: {
         defaultProps: { useFlexGap: true },
       },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            ...(preferences.appearance === 'dark'
+              ? {
+                  backgroundColor: 'rgba(12, 17, 29, 0.85)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(0, 240, 255, 0.12)',
+                }
+              : {}),
+          },
+        },
+      },
       MuiCssBaseline: {
         styleOverrides: {
+          body: {
+            backgroundColor: preferences.appearance === 'dark' ? '#05070E' : '#ffffff',
+            color: preferences.appearance === 'dark' ? '#F1F5F9' : '#0f172a',
+          },
+          'code, kbd, samp, pre': {
+            fontFamily: [
+              'JetBrains Mono',
+              'ui-monospace',
+              'SFMono-Regular',
+              'Menlo',
+              'Monaco',
+              'Consolas',
+              'monospace',
+            ].join(','),
+          },
           // Respect a reduced-motion preference globally rather than per
           // component, so a new animation cannot forget to honour it.
           '@media (prefers-reduced-motion: reduce)': {
@@ -150,5 +213,11 @@ declare module '@mui/material/styles' {
   }
   interface ThemeOptions {
     tiles?: TileColours;
+  }
+  interface TypographyVariants {
+    fontFamilyMonospace: string;
+  }
+  interface TypographyVariantsOptions {
+    fontFamilyMonospace?: string;
   }
 }

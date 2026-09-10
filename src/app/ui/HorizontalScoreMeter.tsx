@@ -148,9 +148,14 @@ export function HorizontalScoreMeter({
         variant="h3"
         sx={{
           fontWeight: 800,
+          fontFamily: 'Space Grotesk, sans-serif',
+          fontVariantNumeric: 'tabular-nums',
           lineHeight: 1,
           letterSpacing: '-0.02em',
           color: 'text.primary',
+          textShadow: isDark
+            ? '0 0 20px rgba(0, 240, 255, 0.4), 0 0 40px rgba(0, 240, 255, 0.15)'
+            : undefined,
           mb: 1.25,
         }}
       >
@@ -192,10 +197,15 @@ export function HorizontalScoreMeter({
                     fontSize: '0.70rem',
                     fontWeight: isCurrent ? 800 : 500,
                     color: isCurrent ? zoneColor : 'text.secondary',
+                    textShadow:
+                      isCurrent && isDark
+                        ? `0 0 8px ${zoneColor}, 0 0 16px ${zoneColor}80`
+                        : undefined,
                     opacity: isCurrent ? 1 : 0.65,
                     lineHeight: 1.15,
                     whiteSpace: 'normal',
-                    letterSpacing: '-0.01em',
+                    letterSpacing: isCurrent ? '0.02em' : '-0.01em',
+                    transition: 'color 0.2s ease, text-shadow 0.2s ease',
                   }}
                 >
                   {zone.id === 'blind_luck' ? (
@@ -218,8 +228,15 @@ export function HorizontalScoreMeter({
           sx={{
             position: 'relative',
             width: '100%',
-            height: 14,
-            borderRadius: 1.5,
+            height: 16,
+            borderRadius: 2,
+            p: '2px',
+            backgroundColor: isDark ? 'rgba(8, 12, 22, 0.85)' : 'rgba(240, 244, 248, 0.85)',
+            border: '1px solid',
+            borderColor: isDark ? 'rgba(0, 240, 255, 0.28)' : 'rgba(0, 0, 0, 0.12)',
+            boxShadow: isDark
+              ? '0 0 14px rgba(0, 240, 255, 0.15), inset 0 0 10px rgba(0, 0, 0, 0.7)'
+              : 'inset 0 1px 3px rgba(0, 0, 0, 0.1)',
             overflow: 'visible',
           }}
         >
@@ -232,8 +249,23 @@ export function HorizontalScoreMeter({
               borderRadius: 1.5,
               overflow: 'hidden',
               gap: '2px',
+              position: 'relative',
             }}
           >
+            {/* Subtle segmented LED scanlines */}
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage:
+                  'repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0, 0, 0, 0.25) 3px, rgba(0, 0, 0, 0.25) 4px)',
+                pointerEvents: 'none',
+                zIndex: 1,
+                opacity: isDark ? 0.6 : 0.2,
+              }}
+            />
+
             {dynamic.horizontalZones.map((zone, idx) => {
               const zoneColor = isDark ? zone.color.dark : zone.color.light;
               let fillPct = 0;
@@ -250,11 +282,11 @@ export function HorizontalScoreMeter({
                     width: `${zone.widthPct}%`,
                     height: '100%',
                     position: 'relative',
-                    backgroundColor: isDark ? `${zoneColor}26` : `${zoneColor}1e`,
-                    borderTopLeftRadius: idx === 0 ? 6 : 2,
-                    borderBottomLeftRadius: idx === 0 ? 6 : 2,
-                    borderTopRightRadius: idx === dynamic.horizontalZones.length - 1 ? 6 : 2,
-                    borderBottomRightRadius: idx === dynamic.horizontalZones.length - 1 ? 6 : 2,
+                    backgroundColor: isDark ? `${zoneColor}22` : `${zoneColor}18`,
+                    borderTopLeftRadius: idx === 0 ? 4 : 1.5,
+                    borderBottomLeftRadius: idx === 0 ? 4 : 1.5,
+                    borderTopRightRadius: idx === dynamic.horizontalZones.length - 1 ? 4 : 1.5,
+                    borderBottomRightRadius: idx === dynamic.horizontalZones.length - 1 ? 4 : 1.5,
                     overflow: 'hidden',
                   }}
                 >
@@ -263,7 +295,10 @@ export function HorizontalScoreMeter({
                       sx={{
                         width: `${fillPct}%`,
                         height: '100%',
-                        backgroundColor: zoneColor,
+                        background: isDark
+                          ? `linear-gradient(90deg, ${zoneColor}b3, ${zoneColor})`
+                          : zoneColor,
+                        boxShadow: fillPct > 0 && isDark ? `0 0 10px ${zoneColor}99` : undefined,
                       }}
                     />
                   )}
@@ -277,13 +312,13 @@ export function HorizontalScoreMeter({
             title={`PAR: ${dynamic.parScore.toFixed(0)} pts`}
             sx={{
               position: 'absolute',
-              top: -3,
-              bottom: -3,
+              top: -4,
+              bottom: -4,
               left: `${parPct}%`,
               width: '2px',
-              backgroundColor: isDark ? '#ffffff' : '#0f172a',
+              backgroundColor: isDark ? '#00F0FF' : '#0f172a',
               boxShadow: isDark
-                ? '0 0 4px rgba(255,255,255,0.6)'
+                ? '0 0 8px #00F0FF, 0 0 16px rgba(0, 240, 255, 0.6)'
                 : '0 0 4px rgba(0,0,0,0.4)',
               transform: 'translateX(-50%)',
               zIndex: 2,
@@ -292,24 +327,62 @@ export function HorizontalScoreMeter({
             }}
           />
 
-          {/* Active Score Indicator Pip */}
+          {/* Active Score Indicator Laser Needle & Optical Reticle */}
           <Box
             sx={{
               position: 'absolute',
               top: '50%',
               left: `${currentPct}%`,
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              backgroundColor: activeColor,
-              border: isDark ? '2px solid #121212' : '2px solid #ffffff',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
               transform: 'translate(-50%, -50%)',
               zIndex: 3,
               pointerEvents: 'none',
-              transition: shouldAnimate ? 'none' : 'left 0.2s ease-out, background-color 0.2s',
+              transition: shouldAnimate ? 'none' : 'left 0.2s ease-out',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 16,
+              height: 24,
             }}
-          />
+          >
+            {/* Laser Needle Line */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                width: '2px',
+                backgroundColor: activeColor,
+                boxShadow: isDark
+                  ? `0 0 6px ${activeColor}, 0 0 12px ${activeColor}80`
+                  : `0 0 4px ${activeColor}80`,
+                borderRadius: 1,
+              }}
+            />
+            {/* Glowing Optics Reticle Core */}
+            <Box
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                backgroundColor: activeColor,
+                border: isDark ? '2px solid #05070E' : '2px solid #ffffff',
+                boxShadow: isDark
+                  ? `0 0 0 2px ${activeColor}40, 0 0 10px ${activeColor}, 0 0 18px ${activeColor}99`
+                  : `0 0 0 2px ${activeColor}30, 0 2px 6px rgba(0,0,0,0.3)`,
+                transition: shouldAnimate ? 'none' : 'background-color 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&::after': {
+                  content: '""',
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  backgroundColor: '#ffffff',
+                },
+              }}
+            />
+          </Box>
         </Box>
 
         {/* Breakpoints Ticks Row */}
@@ -350,18 +423,21 @@ export function HorizontalScoreMeter({
                 <Box
                   sx={{
                     width: 1,
-                    height: 3,
-                    backgroundColor: theme.palette.text.disabled,
-                    opacity: 0.6,
+                    height: 4,
+                    backgroundColor: isDark
+                      ? 'rgba(0, 240, 255, 0.4)'
+                      : theme.palette.text.disabled,
+                    opacity: 0.8,
                   }}
                 />
                 <Typography
                   variant="caption"
                   sx={{
+                    fontFamily: 'JetBrains Mono, monospace',
                     fontSize: '0.68rem',
                     fontWeight: 600,
                     color: 'text.secondary',
-                    opacity: 0.8,
+                    opacity: 0.85,
                     lineHeight: 1.2,
                   }}
                 >
@@ -387,10 +463,12 @@ export function HorizontalScoreMeter({
             <Typography
               variant="caption"
               sx={{
+                fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '0.65rem',
                 fontWeight: 800,
-                letterSpacing: '0.04em',
-                color: 'text.primary',
+                letterSpacing: '0.08em',
+                color: isDark ? '#00F0FF' : 'text.primary',
+                textShadow: isDark ? '0 0 8px rgba(0, 240, 255, 0.6)' : undefined,
                 lineHeight: 1,
               }}
             >

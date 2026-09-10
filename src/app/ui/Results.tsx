@@ -110,21 +110,60 @@ function ProgressPips({ level }: { level: ProgressLevel }) {
   const lit = PROGRESS_PIPS[level];
 
   return (
-    <Stack direction="row" spacing={0.25} sx={{ justifyContent: 'flex-end', py: 0.5 }}>
-      {PIPS.map((pip) => (
-        <Box
-          key={pip}
-          aria-hidden
-          sx={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            bgcolor: pip < lit ? (colour ?? 'transparent') : 'transparent',
-            border: pip < lit ? undefined : '1px solid',
-            borderColor: pip < lit ? undefined : 'divider',
-          }}
-        />
-      ))}
+    <Stack
+      direction="row"
+      spacing={0.35}
+      sx={{ justifyContent: 'flex-end', py: 0.5, alignItems: 'center' }}
+    >
+      {PIPS.map((pip) => {
+        const isLit = pip < lit;
+        return (
+          <Box
+            key={pip}
+            aria-hidden
+            sx={{
+              position: 'relative',
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              bgcolor: isLit
+                ? colour ?? 'transparent'
+                : (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.04)'
+                      : 'rgba(0, 0, 0, 0.05)',
+              border: '1px solid',
+              borderColor: isLit
+                ? colour ?? 'divider'
+                : (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.12)'
+                      : 'divider',
+              boxShadow: isLit
+                ? (theme) => {
+                    const isDark = theme.palette.mode === 'dark';
+                    if (!isDark) {
+                      return '0 1px 3px rgba(0,0,0,0.2)';
+                    }
+                    const glowHex =
+                      colour === 'success.main'
+                        ? '#00FFA3'
+                        : colour === 'warning.main'
+                          ? '#FFB800'
+                          : colour === 'error.main'
+                            ? '#FF3366'
+                            : '#FFFFFF';
+                    return `0 0 4px ${glowHex}, 0 0 8px ${glowHex}aa, inset 0 1px 1px rgba(255, 255, 255, 0.8)`;
+                  }
+                : (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? 'inset 0 1px 2px rgba(0, 0, 0, 0.7)'
+                      : 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.2s ease',
+            }}
+          />
+        );
+      })}
       <Box component="span" sx={HIDDEN}>
         {PROGRESS[level]}
       </Box>
@@ -150,7 +189,7 @@ function SkillMeter({
   note: string;
 }) {
   return (
-    <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
+    <Stack spacing={0.3} sx={{ alignItems: 'flex-end' }}>
       {/*
         An unscored row is outlined rather than filled. Flooring the track means
         a row at the floor draws nothing, and a solid empty track would then read
@@ -163,10 +202,28 @@ function SkillMeter({
           width: METER_WIDTH,
           height: METER_HEIGHT,
           borderRadius: METER_HEIGHT,
-          bgcolor: skill === null ? 'transparent' : 'action.hover',
-          border: skill === null ? '1px dashed' : undefined,
-          borderColor: skill === null ? 'divider' : undefined,
+          bgcolor:
+            skill === null
+              ? 'transparent'
+              : (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(8, 12, 22, 0.85)' : 'action.hover',
+          border: skill === null ? '1px dashed' : '1px solid',
+          borderColor:
+            skill === null
+              ? 'divider'
+              : (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(0, 240, 255, 0.2)'
+                    : 'rgba(0, 0, 0, 0.08)',
+          boxShadow:
+            skill === null
+              ? undefined
+              : (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'inset 0 1px 3px rgba(0, 0, 0, 0.8)'
+                    : undefined,
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
         {skill !== null && (
@@ -182,11 +239,33 @@ function SkillMeter({
                   : skill >= REASONABLE
                     ? 'warning.main'
                     : 'error.main',
+              boxShadow: forced
+                ? undefined
+                : (theme) => {
+                    const isDark = theme.palette.mode === 'dark';
+                    if (!isDark) return undefined;
+                    const c =
+                      skill >= NEAR_BEST
+                        ? '#00FFA3'
+                        : skill >= REASONABLE
+                          ? '#FFB800'
+                          : '#FF3366';
+                    return `0 0 6px ${c}b3`;
+                  },
             }}
           />
         )}
       </Box>
-      <Typography variant="caption" sx={{ color: 'text.disabled', lineHeight: 1.2 }}>
+      <Typography
+        variant="caption"
+        sx={{
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: '0.68rem',
+          color: 'text.secondary',
+          lineHeight: 1.2,
+          fontWeight: 500,
+        }}
+      >
         {skill === null ? '\u2014' : `${skill.toFixed(0)}%`}
       </Typography>
       <Box component="span" sx={HIDDEN}>
@@ -213,7 +292,7 @@ function LuckMeter({ bits, note }: { bits: number; note: string }) {
   const share = Math.min(Math.abs(bits) / LUCK_FULL, 1) * 50;
 
   return (
-    <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
+    <Stack spacing={0.3} sx={{ alignItems: 'flex-end' }}>
       <Box
         aria-hidden
         sx={{
@@ -221,12 +300,28 @@ function LuckMeter({ bits, note }: { bits: number; note: string }) {
           width: METER_WIDTH,
           height: METER_HEIGHT,
           borderRadius: METER_HEIGHT,
-          bgcolor: 'action.hover',
+          bgcolor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(8, 12, 22, 0.85)' : 'action.hover',
+          border: '1px solid',
+          borderColor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+          boxShadow: (theme) =>
+            theme.palette.mode === 'dark' ? 'inset 0 1px 3px rgba(0, 0, 0, 0.8)' : undefined,
         }}
       >
-        {/* The zero mark, so a round that broke as expected shows something. */}
+        {/* The zero mark, illuminated containment divider */}
         <Box
-          sx={{ position: 'absolute', left: '50%', top: -2, bottom: -2, width: '1px', bgcolor: 'divider' }}
+          sx={{
+            position: 'absolute',
+            left: '50%',
+            top: -2,
+            bottom: -2,
+            width: '1px',
+            bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#00F0FF' : 'divider'),
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark' ? '0 0 4px #00F0FF' : undefined,
+            zIndex: 1,
+          }}
         />
         <Box
           sx={{
@@ -237,10 +332,25 @@ function LuckMeter({ bits, note }: { bits: number; note: string }) {
             width: `${share}%`,
             borderRadius: METER_HEIGHT,
             bgcolor: hot ? 'warning.main' : 'info.main',
+            boxShadow: (theme) => {
+              const isDark = theme.palette.mode === 'dark';
+              if (!isDark) return undefined;
+              const c = hot ? '#FFB800' : '#00D2FF';
+              return `0 0 6px ${c}b3`;
+            },
           }}
         />
       </Box>
-      <Typography variant="caption" sx={{ color: 'text.disabled', lineHeight: 1.2 }}>
+      <Typography
+        variant="caption"
+        sx={{
+          fontFamily: 'JetBrains Mono, monospace',
+          fontSize: '0.68rem',
+          color: 'text.secondary',
+          lineHeight: 1.2,
+          fontWeight: 500,
+        }}
+      >
         {hot ? '+' : ''}
         {bits.toFixed(1)}
       </Typography>
@@ -253,15 +363,55 @@ function LuckMeter({ bits, note }: { bits: number; note: string }) {
 
 function Figure({ label, value, caption }: { label: string; value: string; caption?: string }) {
   return (
-    <Stack spacing={0} sx={{ alignItems: 'center', flex: '1 1 0' }}>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+    <Stack
+      spacing={0.25}
+      sx={{
+        alignItems: 'center',
+        flex: '1 1 0',
+        py: 0.75,
+        px: 0.5,
+        borderRadius: 1.5,
+        backgroundColor: (theme) =>
+          theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+        border: '1px solid',
+        borderColor: (theme) =>
+          theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.12)' : 'transparent',
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          fontSize: '0.68rem',
+          fontWeight: 600,
+        }}
+      >
         {label}
       </Typography>
-      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+      <Typography
+        variant="h6"
+        sx={{
+          fontWeight: 800,
+          fontFamily: 'Space Grotesk, sans-serif',
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+          lineHeight: 1.1,
+        }}
+      >
         {value}
       </Typography>
       {caption !== undefined && (
-        <Typography variant="caption" sx={{ color: 'text.disabled', textAlign: 'center' }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.disabled',
+            textAlign: 'center',
+            fontSize: '0.68rem',
+            lineHeight: 1.15,
+          }}
+        >
           {caption}
         </Typography>
       )}
@@ -286,7 +436,17 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
   return (
     <Stack spacing={1.5} sx={{ width: '100%' }}>
       <Stack spacing={0.5} sx={{ textAlign: 'center' }}>
-        <Typography variant="overline" sx={{ color: 'text.secondary', letterSpacing: '0.08em' }}>
+        <Typography
+          variant="overline"
+          sx={{
+            color: (theme) => (theme.palette.mode === 'dark' ? '#00F0FF' : 'text.secondary'),
+            letterSpacing: '0.14em',
+            fontWeight: 700,
+            fontSize: '0.72rem',
+            textShadow: (theme) =>
+              theme.palette.mode === 'dark' ? '0 0 10px rgba(0, 240, 255, 0.4)' : undefined,
+          }}
+        >
           {words.title}
         </Typography>
         <Box sx={{ my: 0.5, width: '100%' }}>
@@ -306,18 +466,38 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
 
       <Stack
         direction="row"
-        spacing={0.5}
+        spacing={0.75}
         data-testid="badges"
         sx={{ flexWrap: 'wrap', justifyContent: 'center' }}
       >
         {resultsBadges(score, settings).map((badge) => (
-          <Chip key={badge} size="small" label={badge} variant="outlined" />
+          <Chip
+            key={badge}
+            size="small"
+            label={badge}
+            variant="outlined"
+            sx={{
+              fontFamily: 'Space Grotesk, sans-serif',
+              fontWeight: 600,
+              fontSize: '0.72rem',
+              letterSpacing: '0.04em',
+              borderColor: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.28)' : 'divider',
+              backgroundColor: (theme) =>
+                theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.05)' : 'transparent',
+            }}
+          />
         ))}
       </Stack>
 
-      <Divider />
+      <Divider
+        sx={{
+          borderColor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.14)' : 'divider',
+        }}
+      />
 
-      <Stack direction="row" sx={{ justifyContent: 'space-around' }}>
+      <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-around' }}>
         <Figure label={RESULTS.skillLabel} value={`${score.skill.toFixed(0)}%`} />
         <Figure
           label={RESULTS.parLabel}
@@ -329,21 +509,98 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
         )}
       </Stack>
 
-      <Divider />
+      <Divider
+        sx={{
+          borderColor: (theme) =>
+            theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.14)' : 'divider',
+        }}
+      />
 
-      <Stack spacing={0.5}>
-        <Typography variant="subtitle2">{RESULTS.breakdownTitle}</Typography>
-        <Table size="small" aria-label={RESULTS.breakdownTitle}>
+      <Stack spacing={0.75}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontFamily: 'Space Grotesk, sans-serif',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            fontSize: '0.78rem',
+            color: (theme) => (theme.palette.mode === 'dark' ? '#00F0FF' : 'text.primary'),
+          }}
+        >
+          {RESULTS.breakdownTitle}
+        </Typography>
+        <Table
+          size="small"
+          aria-label={RESULTS.breakdownTitle}
+          sx={{
+            borderCollapse: 'separate',
+            borderSpacing: '0 2px',
+          }}
+        >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ px: 0.5 }}>{RESULTS.columns.turn}</TableCell>
-              <TableCell sx={{ px: 0.5 }} align="right">
+              <TableCell
+                sx={{
+                  px: 0.75,
+                  py: 0.5,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '0.68rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.18)' : 'divider',
+                }}
+              >
+                {RESULTS.columns.turn}
+              </TableCell>
+              <TableCell
+                sx={{
+                  px: 0.75,
+                  py: 0.5,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '0.68rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.18)' : 'divider',
+                }}
+                align="right"
+              >
                 {RESULTS.columns.progress}
               </TableCell>
-              <TableCell sx={{ px: 0.5 }} align="right">
+              <TableCell
+                sx={{
+                  px: 0.75,
+                  py: 0.5,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '0.68rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.18)' : 'divider',
+                }}
+                align="right"
+              >
                 {RESULTS.columns.skill}
               </TableCell>
-              <TableCell sx={{ px: 0.5 }} align="right">
+              <TableCell
+                sx={{
+                  px: 0.75,
+                  py: 0.5,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '0.68rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(0, 240, 255, 0.18)' : 'divider',
+                }}
+                align="right"
+              >
                 {RESULTS.columns.luck}
               </TableCell>
             </TableRow>
@@ -357,41 +614,90 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
               );
 
               return (
-              <TableRow key={row.turn}>
-                <TableCell sx={{ px: 0.5 }}>
-                  <Box
-                    component="span"
-                    sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}
+                <TableRow
+                  key={row.turn}
+                  sx={{
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(12, 17, 29, 0.4)' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(0, 240, 255, 0.04)'
+                          : 'rgba(0, 0, 0, 0.02)',
+                    },
+                  }}
+                >
+                  <TableCell
+                    sx={{
+                      px: 0.75,
+                      py: 0.5,
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'divider',
+                    }}
                   >
-                    {row.guess}
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ px: 0.5 }} align="right">
-                  {/*
-                    How far this guess got, in bands rather than in words. The
-                    row still describes its own guess; it simply says so without
-                    handing over the size of the answer pool. `progressLevel`
-                    has the argument.
-                  */}
-                  <ProgressPips level={progress} />
-                </TableCell>
-                <TableCell sx={{ px: 0.5 }} align="right">
-                  {/*
-                    The note that used to sit under the word lives here. Every
-                    branch of it but `forced` and the unscored pair is a band of
-                    this very number, so on the page it restated the score in
-                    words, once per row.
-                  */}
-                  <SkillMeter
-                    skill={row.skill}
-                    forced={row.forced}
-                    note={guessNote(row.skill, row.forced, row.turn, row.candidateCount)}
-                  />
-                </TableCell>
-                <TableCell sx={{ px: 0.5 }} align="right">
-                  <LuckMeter bits={row.luck} note={luckNote(row.luck)} />
-                </TableCell>
-              </TableRow>
+                    <Box
+                      component="span"
+                      sx={{
+                        fontWeight: 700,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: 'text.primary',
+                      }}
+                    >
+                      {row.guess}
+                    </Box>
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      px: 0.75,
+                      py: 0.5,
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'divider',
+                    }}
+                    align="right"
+                  >
+                    {/*
+                      How far this guess got, in bands rather than in words. The
+                      row still describes its own guess; it simply says so without
+                      handing over the size of the answer pool. `progressLevel`
+                      has the argument.
+                    */}
+                    <ProgressPips level={progress} />
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      px: 0.75,
+                      py: 0.5,
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'divider',
+                    }}
+                    align="right"
+                  >
+                    {/*
+                      The note that used to sit under the word lives here. Every
+                      branch of it but `forced` and the unscored pair is a band of
+                      this very number, so on the page it restated the score in
+                      words, once per row.
+                    */}
+                    <SkillMeter
+                      skill={row.skill}
+                      forced={row.forced}
+                      note={guessNote(row.skill, row.forced, row.turn, row.candidateCount)}
+                    />
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      px: 0.75,
+                      py: 0.5,
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'divider',
+                    }}
+                    align="right"
+                  >
+                    <LuckMeter bits={row.luck} note={luckNote(row.luck)} />
+                  </TableCell>
+                </TableRow>
               );
             })}
           </TableBody>

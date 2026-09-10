@@ -34,7 +34,14 @@ export function Confetti() {
 
   // Captured at mount rather than read each render, so switching theme
   // mid-flight cannot re-run the effect and fire the cannons a second time.
-  const [colors] = useState(() => [tiles.correct, tiles.present, palette.primary.main]);
+  const [colors] = useState(() => [
+    '#00FFA3',
+    '#00F0FF',
+    '#FFB800',
+    tiles.correct,
+    tiles.present,
+    palette.primary.main,
+  ]);
 
   useEffect(() => {
     if (canvas.current === null) return;
@@ -59,11 +66,12 @@ export function Confetti() {
       // Wider spread and a longer life than the defaults, which are tuned for a
       // small pop. `startVelocity` has to clear the corner it is fired from.
       void fire({
-        particleCount: 90,
-        startVelocity: 55,
-        spread: 70,
-        ticks: 260,
-        scalar: 0.9,
+        particleCount: 100,
+        startVelocity: 65,
+        spread: 75,
+        ticks: 320,
+        scalar: 0.95,
+        shapes: ['star', 'circle'],
         colors,
         ...cannon,
       });

@@ -272,11 +272,26 @@ export function GameScreen({
             <Typography
               component="h1"
               variant="h5"
-              sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
+              sx={{
+                fontWeight: 800,
+                letterSpacing: '0.2em',
+                fontFamily: 'Orbitron, sans-serif',
+                textShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? '0 0 12px rgba(0, 240, 255, 0.6), 0 0 24px rgba(0, 240, 255, 0.3)'
+                    : 'none',
+              }}
             >
               PAR
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontFamily: 'JetBrains Mono, monospace',
+                letterSpacing: '0.08em',
+              }}
+            >
               Puzzle {puzzleNumber}
             </Typography>
           </Stack>
