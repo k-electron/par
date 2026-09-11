@@ -58,8 +58,8 @@ function Key({ label, ariaLabel, wide, state, disabled, onPress, children }: Key
       ? `linear-gradient(180deg, ${tiles.correct} 0%, ${isAccessible ? '#00A3C7' : '#00D687'} 100%)`
       : tiles.correct;
     border = `1px solid ${tiles.correct}`;
-    color = tiles.text;
-    textShadow = isDark ? '0 1px 2px rgba(0, 0, 0, 0.5)' : 'none';
+    color = tiles.textOnCorrect ?? tiles.text;
+    textShadow = 'none';
     boxShadow = isDark
       ? `inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 0 ${edgeGlow}, 0 0 14px ${bloomColor}, 0 2px 5px rgba(0, 0, 0, 0.4)`
       : 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.15)';
@@ -70,8 +70,8 @@ function Key({ label, ariaLabel, wide, state, disabled, onPress, children }: Key
       ? `linear-gradient(180deg, ${tiles.present} 0%, ${isAccessible ? '#D95700' : '#D99B00'} 100%)`
       : tiles.present;
     border = `1px solid ${tiles.present}`;
-    color = tiles.text;
-    textShadow = isDark ? '0 1px 2px rgba(0, 0, 0, 0.5)' : 'none';
+    color = tiles.textOnPresent ?? tiles.text;
+    textShadow = 'none';
     boxShadow = isDark
       ? `inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 0 ${edgeGlow}, 0 0 14px ${bloomColor}, 0 2px 5px rgba(0, 0, 0, 0.4)`
       : 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.15)';
@@ -99,7 +99,7 @@ function Key({ label, ariaLabel, wide, state, disabled, onPress, children }: Key
         height: { xs: 52, sm: 58 },
         borderRadius: 1,
         fontFamily: theme.typography.fontFamily,
-        fontWeight: 700,
+        fontWeight: state === Tile.Correct || state === Tile.Present ? 800 : 700,
         fontSize: wide === true ? { xs: '0.72rem', sm: '0.8rem' } : { xs: '1rem', sm: '1.1rem' },
         letterSpacing: '0.04em',
         textTransform: 'uppercase',

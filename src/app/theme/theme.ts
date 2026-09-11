@@ -27,6 +27,8 @@ export interface TileColours {
   readonly present: string;
   readonly correct: string;
   readonly text: string;
+  readonly textOnCorrect: string;
+  readonly textOnPresent: string;
   readonly emptyBorder: string;
   readonly filledBorder: string;
   readonly keyIdle: string;
@@ -46,6 +48,8 @@ const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
       present: '#FFB800',
       correct: '#00FFA3',
       text: '#FFFFFF',
+      textOnCorrect: '#05070E',
+      textOnPresent: '#05070E',
       emptyBorder: 'rgba(0, 240, 255, 0.18)',
       filledBorder: 'rgba(0, 240, 255, 0.45)',
       keyIdle: '#1E2536',
@@ -55,6 +59,8 @@ const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
       present: '#FF6B00',
       correct: '#00D2FF',
       text: '#FFFFFF',
+      textOnCorrect: '#05070E',
+      textOnPresent: '#05070E',
       emptyBorder: 'rgba(0, 210, 255, 0.25)',
       filledBorder: 'rgba(0, 210, 255, 0.55)',
       keyIdle: '#1E2536',
@@ -66,6 +72,8 @@ const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
       present: '#c9b458',
       correct: '#6aaa64',
       text: '#ffffff',
+      textOnCorrect: '#ffffff',
+      textOnPresent: '#ffffff',
       emptyBorder: '#d3d6da',
       filledBorder: '#878a8c',
       keyIdle: '#d3d6da',
@@ -75,6 +83,8 @@ const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
       present: '#d2691e',
       correct: '#0f5c8c',
       text: '#ffffff',
+      textOnCorrect: '#ffffff',
+      textOnPresent: '#ffffff',
       emptyBorder: '#d3d6da',
       filledBorder: '#878a8c',
       keyIdle: '#d3d6da',

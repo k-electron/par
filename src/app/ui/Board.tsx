@@ -139,7 +139,7 @@ export function Board({
     [Tile.Present]: {
       bg: tiles.present,
       border: tiles.present,
-      color: tiles.text,
+      color: tiles.textOnPresent ?? tiles.text,
       boxShadow: isDark
         ? isAccessible
           ? 'inset 0 0 12px rgba(255, 107, 0, 0.35), 0 0 16px rgba(255, 107, 0, 0.3)'
@@ -149,7 +149,7 @@ export function Board({
     [Tile.Correct]: {
       bg: tiles.correct,
       border: tiles.correct,
-      color: tiles.text,
+      color: tiles.textOnCorrect ?? tiles.text,
       boxShadow: isDark
         ? isAccessible
           ? 'inset 0 0 12px rgba(0, 210, 255, 0.35), 0 0 16px rgba(0, 210, 255, 0.3)'
@@ -256,7 +256,7 @@ export function Board({
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 'clamp(1.4rem, 8vw, 2rem)',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     textTransform: 'uppercase',
                     userSelect: 'none',
                     borderRadius: 0.5,
