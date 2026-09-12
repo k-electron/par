@@ -165,33 +165,7 @@ describe('a row turning over', () => {
     expect(await screen.findByTestId('confetti', {}, PATIENCE)).toBeInTheDocument();
   });
 
-  it('does not celebrate with confetti on reload of a game already solved on an earlier visit', async () => {
-    const store = new Repository(createMemoryStorage());
-    store.saveDay({
-      puzzleNumber: 165,
-      settings: { hardMode: false, useHouseStarter: true, confirmed: true },
-      guesses: [PUZZLE.starter, PUZZLE.answer],
-      status: 'won',
-      completedAt: Date.now(),
-    });
-
-    render(
-      <ThemeProvider theme={theme}>
-        <App
-          repository={store}
-          now={FIXED_NOW}
-          scoring={createDirectScoringClient()}
-          reveal={INSTANT_REVEAL}
-        />
-      </ThemeProvider>,
-    );
-
-    // Board and score are present, but confetti is not rendered on reload
-    expect(screen.getByTestId('tile-0-0')).toBeInTheDocument();
-    expect(screen.queryByTestId('confetti')).not.toBeInTheDocument();
-  });
-
-  it('auto-scrolls to the score on reload of an already-solved game', async () => {
+  it('reloads a completed game with board, score, and auto-scroll, without replaying the celebration', async () => {
     const scrollMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollMock;
 
@@ -215,11 +189,22 @@ describe('a row turning over', () => {
       </ThemeProvider>,
     );
 
+    // Board rows are restored face up
+    expect(screen.getByTestId('tile-0-0')).toHaveTextContent(PUZZLE.starter[0]!);
+    expect(screen.getByTestId('tile-1-0')).toHaveTextContent(PUZZLE.answer[0]!);
+
+    // Results table renders
+    expect(await screen.findByRole('table', { name: /guess by guess/i })).toBeInTheDocument();
+
+    // Auto-scrolls to the score
     await waitFor(() =>
       expect(scrollMock).toHaveBeenCalledWith(
         expect.objectContaining({ block: 'nearest' }),
       ),
     );
+
+    // Confetti celebrated the live solve, not reopening the page
+    expect(screen.queryByTestId('confetti')).not.toBeInTheDocument();
   });
 
   it('leaves the keys alone until the row it belongs to has settled', async () => {

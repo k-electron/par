@@ -322,7 +322,7 @@ test('an in-progress game survives a reload exactly', async ({ page }) => {
   expect(await boardRows(page)).toEqual(before);
 });
 
-test('a completed game reloaded from storage auto-scrolls to the score without confetti', async ({ page }) => {
+test('a completed game survives a reload', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
 
@@ -334,17 +334,23 @@ test('a completed game reloaded from storage auto-scrolls to the score without c
     await revealed(page);
   }
   await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  const before = await boardRows(page);
+  const total = await readTotal(page);
 
   await page.reload();
 
   // No settings gate: restored from storage
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
-  // Confetti must not be present on reload of an already-finished game
-  await expect(page.getByTestId('confetti')).toHaveCount(0);
+  // The board and score come back exactly
+  expect(await boardRows(page)).toEqual(before);
+  expect(await readTotal(page)).toBe(total);
 
-  // Auto-scroll to score: the score headline must be in the viewport
+  // Auto-scrolls to the score report
   await expect(page.getByText(/played at \d+%/)).toBeInViewport({ timeout: 5_000 });
+
+  // Confetti celebrated the live solve, not reopening the page
+  await expect(page.getByTestId('confetti')).toHaveCount(0);
 });
 
 test('a malformed link fails gracefully', async ({ page }) => {
