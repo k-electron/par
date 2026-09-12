@@ -1,11 +1,27 @@
 /**
- * Player-facing copy for the results view.
+ * Every player-facing phrase in the results view.
  *
- * Key design constraints:
- * - Never name a better word (no optimal words, alternatives, or hints).
- * - Never scold (price suboptimal plays neutrally without criticism).
- * - Never count the answer pool (communicate progress in bands rather than pool sizes).
- * - Over-par phrasing is the primary path and given equal care, as par reflects strong play.
+ * Gathered here because the tone is a design constraint, not decoration. The
+ * score should read like a golf card, not a report card: a bad guess is priced,
+ * never criticised. Keeping the words in one file makes that reviewable in one
+ * sitting instead of scattered across components.
+ *
+ * Three rules hold throughout, and all three are testable because they live
+ * here:
+ *
+ * - **Never name a better word.** Not the optimal guess, not an alternative,
+ *   not a hint. Showing someone the word they missed is a lecture, and it
+ *   teaches exactly the memorise-the-meta habit the game is built to avoid.
+ * - **Never scold.** No "should have", no "mistake", no "wasted". A guess that
+ *   cost expected guesses gets a number and moves on.
+ * - **Never count the answer pool.** How far a guess got is the interesting
+ *   part and is said in bands. The pool's size, and how many of its words a
+ *   given pattern leaves, are ours rather than the player's — `progressLevel`
+ *   has the argument, and `docs/decisions/0003` the full account.
+ *
+ * Par is anchored to strong play, so **most players are over par most days**.
+ * The over-par phrasing is therefore the main path and gets the same care as the
+ * celebratory one.
  */
 
 import {
@@ -144,11 +160,22 @@ export function luckNote(bits: number): string {
 }
 
 /**
- * Uncertainty removed by a guess: `log2(before / after) / log2(before)`.
+ * How much of what was still unknown a guess cleared away.
  *
- * Evaluated via integer power comparisons (`after^n <= before^(n - k)`) to avoid
- * cross-platform floating point divergence. 'slight' covers zero-reduction cuts to avoid
- * leaking whether a guess was a valid answer.
+ * **The one measure, not three.** What matters about a cut is neither its size
+ * in words nor its size as a fraction, but its size against how much there was
+ * left to find out — which is why this is `log2(before / after) / log2(before)`,
+ * the share of the standing uncertainty the guess removed. That single ratio
+ * carries all three things a light has to be sensitive to:
+ * - **Where the round has got to**, because late narrowing is scarcer and counts for more.
+ * - **The proportion cut**, which is the numerator.
+ * - **The count cut**, because a fraction alone would rate 3000 → 1500 and 2 → 1 the same.
+ *
+ * Bands are evaluated via integer power comparisons (`after^n <= before^(n - k)`)
+ * so two machines cannot compute different bounds from floating-point rounding.
+ * `slight` covers zero-reduction cuts as well, because a possible word always
+ * eliminates itself when it fails; isolating "nothing ruled out" would leak that
+ * the guess was never in the candidate pool.
  */
 export type ProgressLevel = 'solved' | 'major' | 'minor' | 'slight' | 'none';
 

@@ -1,10 +1,34 @@
 /**
- * Explainer copy generator for a completed round.
+ * Where *this* round's numbers came from.
  *
- * Key constraints:
- * - Computes no score; figures are read directly from the engine.
- * - Cannot count or expose the answer pool size (`RoundToExplain` structurally omits candidate counts).
- * - Formats points to two decimals so displayed components visibly sum to the total.
+ * The explainer taught the model in the abstract and left the reader to map it
+ * onto their own card. Everything here is the same model said with the round's
+ * own guesses in it: what each guess scored and why, how those scores became
+ * one skill figure, what par paid, and how the parts add up to the total on the
+ * card.
+ *
+ * Three constraints shape it, and all three are why this is a copy module
+ * rather than prose inside the component:
+ *
+ * - **It computes no score.** Every figure is read off the score the engine
+ *   already produced. The one arithmetic here is a share of the skill average,
+ *   which is a weight the scorer recorded divided by the sum of them. Nothing in
+ *   this file can move a total, and a round scored months ago explains itself
+ *   from the same fields it always carried.
+ *
+ * - **It cannot count the answer pool, by construction.** `RoundToExplain` is a
+ *   structural subset of `GameScore` that omits `candidateCount` and
+ *   `remainingCount` entirely, so the size of the field is not a number this
+ *   module could print if it wanted to — the same guarantee `scoreGuess` gets by
+ *   never returning the argmin. What survives is `weight`, which is `log2 |S_i|`,
+ *   and it is only ever shown as a share of the round's total weight: a ratio
+ *   between two logarithms fixes neither of them. Decision 0003 has the argument
+ *   for why the count itself stays ours.
+ *
+ * - **The arithmetic on screen has to add up on screen.** Points are shown to two
+ *   decimals rather than the card's one, because parts rounded to a tenth sum to
+ *   the wrong tenth about half the time, and an explanation whose own addition
+ *   looks broken is worse than no explanation.
  */
 
 import { C_PAR, PAR, UNSOLVED_GUESSES } from '../../engine/config/constants';
