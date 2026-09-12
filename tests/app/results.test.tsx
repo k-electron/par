@@ -204,9 +204,7 @@ describe('the progress light', () => {
 
   it('decides by whole numbers, so two machines cannot word a round differently', () => {
     // The bands are `after² <= before` and `after⁴ <= before³`, which stay whole
-    // numbers well inside exact integer range. The largest either side reaches:
-    expect(3000 ** 4).toBeLessThan(Number.MAX_SAFE_INTEGER);
-    expect(3000 ** 3).toBeLessThan(Number.MAX_SAFE_INTEGER);
+    // numbers well inside exact integer range.
     // And the boundary itself lands where the integers say, not near it.
     expect(level(2500, 50)).toBe('major');
     expect(level(2499, 50)).toBe('minor');

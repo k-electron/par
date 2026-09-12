@@ -4,10 +4,6 @@
  * Kept pure and free of React so the rules can be tested by playing games
  * rather than by rendering them. The UI owns presentation; everything about
  * what a guess does lives here.
- *
- * This increment plays with the player's own opener under normal-mode rules.
- * The settings gate, the house starter and hard-mode legality arrive in
- * increment 7, and nothing here is scored yet — increment 8 owns that.
  */
 
 import { MAX_GUESSES } from '../../engine/config/constants';

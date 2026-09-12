@@ -18,14 +18,12 @@ export const ALPHABET_SIZE = 26;
 /** Char code of `a`, the base every letter index is measured from. */
 export const CODE_A = 97;
 
-/** Letter code in 0..25, or -1 if the character is not a lowercase a-z. */
 function letterCodeOf(word: string, index: number): number {
   const code = word.charCodeAt(index) - CODE_A;
   // A read past the end gives NaN, which fails both comparisons.
   return code >= 0 && code < ALPHABET_SIZE ? code : -1;
 }
 
-/** Whether `value` is five lowercase letters and so can be encoded. */
 export function isEncodableWord(value: string): boolean {
   if (value.length !== WORD_LENGTH) {
     return false;
@@ -44,7 +42,6 @@ function requireEncodable(word: string): void {
   }
 }
 
-/** Write the five letter codes of `word` into `into` at `offset`. */
 export function encodeWordInto(word: string, into: Uint8Array, offset = 0): void {
   requireEncodable(word);
   for (let index = 0; index < WORD_LENGTH; index += 1) {
@@ -52,14 +49,12 @@ export function encodeWordInto(word: string, into: Uint8Array, offset = 0): void
   }
 }
 
-/** The five letter codes of `word`. */
 export function encodeWord(word: string): Uint8Array {
   const codes = new Uint8Array(WORD_LENGTH);
   encodeWordInto(word, codes, 0);
   return codes;
 }
 
-/** The word held by five letter codes starting at `offset`. */
 export function decodeWord(codes: ArrayLike<number>, offset = 0): string {
   let word = '';
   for (let index = 0; index < WORD_LENGTH; index += 1) {
@@ -68,10 +63,7 @@ export function decodeWord(codes: ArrayLike<number>, offset = 0): string {
   return word;
 }
 
-/**
- * Add the letter multiset of `word` into a 26-slot count table at `offset`.
- * The table is not cleared first, so a caller reusing scratch must clear it.
- */
+// Callers reusing scratch must clear the table first.
 export function addLetterCounts(word: string, into: Uint8Array, offset = 0): void {
   requireEncodable(word);
   for (let index = 0; index < WORD_LENGTH; index += 1) {

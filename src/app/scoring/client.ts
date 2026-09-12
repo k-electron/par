@@ -37,7 +37,7 @@ function cacheKey(query: ScoreQuery): string {
 }
 
 /** Wrap any scorer with a per-game cache. */
-function withCache(score: (query: ScoreQuery) => Promise<GameScore>): ScoringClient {
+export function withCache(score: (query: ScoreQuery) => Promise<GameScore>): ScoringClient {
   const cache = new Map<string, Promise<GameScore>>();
   return {
     score(query) {

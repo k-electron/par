@@ -16,41 +16,28 @@ import {
 afterEach(cleanup);
 
 describe('zoneForScore', () => {
-  it('identifies troll zone for scores below 75', () => {
-    expect(zoneForScore(60).id).toBe('troll');
-    expect(zoneForScore(70).id).toBe('troll');
-    expect(zoneForScore(74.9).id).toBe('troll');
-  });
-
-  it('identifies bad zone for scores [75, 90)', () => {
-    expect(zoneForScore(75).id).toBe('bad');
-    expect(zoneForScore(82.5).id).toBe('bad');
-    expect(zoneForScore(89.9).id).toBe('bad');
-  });
-
-  it('identifies meh zone for scores [90, 98)', () => {
-    expect(zoneForScore(90).id).toBe('meh');
-    expect(zoneForScore(95).id).toBe('meh');
-    expect(zoneForScore(97.9).id).toBe('meh');
-  });
-
-  it('identifies good zone for scores [98, 104)', () => {
-    expect(zoneForScore(98).id).toBe('good');
-    expect(zoneForScore(100).id).toBe('good');
-    expect(zoneForScore(103.9).id).toBe('good');
-  });
-
-  it('identifies ultra zone for scores [104, 110)', () => {
-    expect(zoneForScore(104).id).toBe('ultra');
-    expect(zoneForScore(107.5).id).toBe('ultra');
-    expect(zoneForScore(109.9).id).toBe('ultra');
-  });
-
-  it('identifies godlike zone for scores 110 and above', () => {
-    expect(zoneForScore(110).id).toBe('godlike');
-    expect(zoneForScore(112.5).id).toBe('godlike');
-    expect(zoneForScore(115).id).toBe('godlike');
-    expect(zoneForScore(120).id).toBe('godlike');
+  it.each([
+    [60, 'troll'],
+    [70, 'troll'],
+    [74.9, 'troll'],
+    [75, 'bad'],
+    [82.5, 'bad'],
+    [89.9, 'bad'],
+    [90, 'meh'],
+    [95, 'meh'],
+    [97.9, 'meh'],
+    [98, 'good'],
+    [100, 'good'],
+    [103.9, 'good'],
+    [104, 'ultra'],
+    [107.5, 'ultra'],
+    [109.9, 'ultra'],
+    [110, 'godlike'],
+    [112.5, 'godlike'],
+    [115, 'godlike'],
+    [120, 'godlike'],
+  ])('maps score %d to %s zone', (score, expectedZone) => {
+    expect(zoneForScore(score).id).toBe(expectedZone);
   });
 
   it('defines 6 contiguous zones spanning from 60 to 115', () => {

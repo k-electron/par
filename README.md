@@ -2,292 +2,153 @@
 
 Par is a daily five-letter word game that scores the quality of your decisions rather than the
 luck of your outcomes. A conventional word game rewards you for how few guesses you took; Par
-measures each guess against what was actually knowable when you made it, so a lucky hit earns no
-credit for its luck and a well-judged guess that happened not to land still scores well.
+measures each guess against what was knowable when you made it.
 
 **Play it at [par-e7i.pages.dev](https://par-e7i.pages.dev).**
 
-**Status: complete and deployed.** All eleven increments have landed. The scoring engine is proven
-against the specification's verification suite, and the daily loop runs end to end: confirm your
-settings, play, see your round scored, share it, and open somebody else's link to the same total
-they saw.
+**Status: complete and deployed.** The scoring engine is verified against the specification, and the daily loop runs end to end.
 
 ## Requirements
 
-Node, at the version pinned in [`.node-version`](.node-version). Nothing else — no database, no
-environment variables, and no server runtime. The app is a static bundle.
-
-Python is needed only to regenerate the word lists, which is a rare, deliberate act. The generated
-lists are committed, so building, testing and running the app never require it. The icons are the
-same arrangement: they are rasterised from an SVG by the Chromium that Playwright installs for the
-end-to-end suite, and what that writes is committed, so nothing routine needs a browser either.
+- **Node**: version pinned in [`.node-version`](.node-version). The app is a static bundle requiring no database, environment variables, or server runtime.
+- **Python**: required only to regenerate word lists. Generated lists are committed.
+- **Chromium / Playwright**: required only for end-to-end tests and rendering icon rasters.
 
 ## Getting started
 
 ```bash
-npm ci        # install exactly what the lockfile specifies
-npm run dev   # start the dev server on http://localhost:5173
+npm ci        # install dependencies
+npm run dev   # start dev server on http://localhost:5173
 ```
 
-Playing, typing and the reveal all work under `npm run dev`, but the end-of-round
-**score does not**. Scoring is heavy numeric work in a Web Worker, and served
-unbundled by the dev server it is slow enough to hang on "Working out your round…"
-rather than settle. Only the score is affected. To see a round score at usable
-speed, run a production build:
+> **Scoring in dev vs production:** Gameplay works under `npm run dev`, but end-of-round scoring runs in an unbundled Web Worker and can be slow. To test scoring at full speed, run a production build:
 
 ```bash
 npm run build
-npm run preview   # serves the built dist/ on http://localhost:4173
+npm run preview   # serve built dist/ on http://localhost:4173
 ```
 
-This is also why the end-to-end tests run against a production build rather than the
-dev server.
+End-to-end tests (`npm run test:e2e`) also target a production build.
 
 ## Scripts
 
-| Script              | What it does                                              |
-| ------------------- | --------------------------------------------------------- |
-| `npm run dev`       | Vite dev server with hot module replacement                |
-| `npm run build`     | Typecheck, then emit the static production bundle to `dist/` |
-| `npm run preview`   | Serve the built `dist/` locally                            |
-| `npm run typecheck` | TypeScript across `src/` and `tests/`, no emit             |
-| `npm run lint`      | ESLint, including the dependency rule below                |
-| `npm run test`      | Vitest, once                                               |
-| `npm run test:watch`| Vitest in watch mode                                       |
-| `npm run test:e2e`  | Playwright against a production build                      |
+| Script              | What it does                                                 |
+| ------------------- | ------------------------------------------------------------ |
+| `npm run dev`       | Vite dev server with hot module replacement                  |
+| `npm run build`     | Typecheck, then emit static production bundle to `dist/`     |
+| `npm run preview`   | Serve built `dist/` locally                                  |
+| `npm run typecheck` | TypeScript check across `src/` and `tests/` (no emit)        |
+| `npm run lint`      | ESLint, including architectural boundary rules               |
+| `npm run test`      | Vitest unit and integration tests                            |
+| `npm run test:watch`| Vitest in watch mode                                         |
+| `npm run test:e2e`  | Playwright tests against a production build                  |
 
-`typecheck`, `lint`, `test` and `build` form the quality gate, and `test:e2e` runs as a second job.
-CI runs both on every pull request and on pushes to `main`; a push to a feature branch with no open
-pull request runs nothing.
-
-Both jobs are required checks on `main`, which a repository ruleset protects: changes arrive through
-a pull request, the branch must be up to date with `main` before it merges, and neither job may be
-failing. No approving review is required, so a solo change is still one `gh pr merge --auto` away —
-it simply cannot merge red. That requirement is load-bearing for the deploy rather than a matter of
-taste, for the reason given under [deploying](#deploying-to-cloudflare-pages).
+`typecheck`, `lint`, `test`, and `build` form the CI quality gate; `test:e2e` runs as a second job. Both run on every pull request and on pushes to `main`. Branches must be up to date with `main` and pass all checks before merging.
 
 ## Documentation
 
 | Document | What it covers |
 | --- | --- |
 | [`docs/spec.md`](docs/spec.md) | The build specification. Normative. |
-| [`docs/philosophy.md`](docs/philosophy.md) | Why the game is designed this way. Governs judgement calls the spec leaves open. |
-| [`docs/scoring.md`](docs/scoring.md) | The scoring model as implemented, score meter zones, dynamic curve fitting, and what each constant trades. |
-| [`docs/determinism.md`](docs/determinism.md) | Why a score is bit-identical everywhere, and what would break it. |
-| [`docs/wordlists.md`](docs/wordlists.md) | Sources, licensing, generation, and the asserted properties. |
-| [`docs/architecture.md`](docs/architecture.md) | The module map, the ports, and the invariants enforced by shape. |
-| [`docs/decisions/`](docs/decisions) | Calls the spec and philosophy left open. |
-| [`CHANGELOG.md`](CHANGELOG.md) | What landed and what was verified — by increment up to launch, by pull request after it. |
-
-If you read one beyond the spec, read `docs/determinism.md`. Cross-client determinism is the second
-priority in the specification and the requirement most likely to be broken silently by a reasonable
-looking change.
+| [`docs/philosophy.md`](docs/philosophy.md) | Design rationale governing judgement calls left open by the spec. |
+| [`docs/scoring.md`](docs/scoring.md) | Scoring model, score meter zones, dynamic curve fitting, and trade-offs. |
+| [`docs/determinism.md`](docs/determinism.md) | Cross-client bit-identical scoring determinism. Critical reading. |
+| [`docs/wordlists.md`](docs/wordlists.md) | Word list sources, licensing, generation, and asserted properties. |
+| [`docs/architecture.md`](docs/architecture.md) | Module map, ports, and invariants enforced by shape. |
+| [`docs/decisions/`](docs/decisions) | Decision records for design choices. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Historical log of changes and verifications. |
 
 ## Layout and the dependency rule
 
-The module map, the ports, and the invariants the architecture enforces by shape are described in
-[`docs/architecture.md`](docs/architecture.md). The short version is that dependencies run one way:
+Architectural invariants and module layout are detailed in [`docs/architecture.md`](docs/architecture.md). Dependencies run strictly one way:
 
-- `src/engine/` imports nothing from `src/app/`, `src/worker/` or `src/data/`.
-- `src/app/ui/` never imports `src/engine/search/`; it reaches scoring through `src/app/scoring/`.
+- `src/engine/` imports nothing from `src/app/`, `src/worker/`, or `src/data/`.
+- `src/app/ui/` never imports `src/engine/search/`; it accesses scoring through `src/app/scoring/`.
 
-This is enforced by ESLint, not by convention, and `tests/boundaries.test.ts` lints deliberately
-illegal fixtures to prove the rule still reports. If you add a module and the rule refuses it, the
-rule is probably right — read `docs/architecture.md` before working around it.
+Enforced by ESLint and tested in `tests/boundaries.test.ts`.
 
 ## Regenerating the word lists
 
-The three lists under [`src/data/`](src/data) are generated from Collins Scrabble Words 2019
-intersected with the `wordfreq` corpus, and are committed. Regenerate only when the lists
-themselves should change:
+The word lists under [`src/data/`](src/data) are generated from Collins Scrabble Words 2019 intersected with `wordfreq`. To regenerate:
 
 ```bash
 python3 -m pip install --target tools/wordlists/.pydeps -r tools/wordlists/requirements.txt
 PYTHONPATH=tools/wordlists/.pydeps python3 tools/wordlists/build.py
 ```
 
-The generator refuses to emit anything unless every property in spec §4 holds, and prints where
-each list bottoms out so tail quality stays a measured fact. Afterwards, run `npm test` to confirm
-the committed lists still satisfy those properties, and **recompute `PAR`** — it is derived from
-the lists, so changing them leaves it stale.
-
-[`docs/wordlists.md`](docs/wordlists.md) covers the source, the licensing position, why the pool is
-sized as it is, and what the version identifier protects.
+The generator enforces all properties from spec §4 before emitting. Afterwards, run `npm test` and recompute `PAR`.
 
 ## Word selection (v1 and v2)
 
-Par draws each day's puzzle deterministically from the puzzle number and a build-time salt, ensuring
-all players receive the same word worldwide:
+Par deterministically draws each day's puzzle from the puzzle number and a build-time salt:
 
-- **Word selection v1 (Puzzles 0–259)**: Daily answers were picked uniformly at random from the
-  top 3,000 words by frequency ([`src/data/answers.generated.ts`](src/data/answers.generated.ts)).
-- **Word selection v2 (Puzzle 260 onwards)**: Beginning at puzzle 260, answers are chosen using
-  weighted selection over an expanded candidate pool
-  ([`src/data/answers_v2.generated.ts`](src/data/answers_v2.generated.ts), 9,570 words):
-  - **The list**: Built from all 12,972 valid five-letter CSW19 words minus simple 4-letter + 's'
-    regular plurals. Words legitimately ending in 's' (such as `chaos`, `basis`, `focus`, `virus`,
-    `glass`, `bonus`) are retained. Pure 3rd-person singular verbs ending in 's' (`seems`, `wants`,
-    `knows`, `gives`, etc.) are placed specifically in their own block at the bottom of the list.
-    Both blocks are sorted by word frequency.
+- **Word selection v1 (Puzzles 0–259)**: Daily answers were chosen uniformly from the top 3,000 words by frequency ([`src/data/answers.generated.ts`](src/data/answers.generated.ts)).
+- **Word selection v2 (Puzzle 260 onwards)**: Answers use weighted selection over an expanded candidate pool ([`src/data/answers_v2.generated.ts`](src/data/answers_v2.generated.ts), 9,570 words):
+  - **The list**: All 12,972 valid five-letter CSW19 words minus simple 4-letter + 's' regular plurals. Words legitimately ending in 's' (e.g. `chaos`, `focus`, `glass`) are retained. Pure 3rd-person singular verbs ending in 's' are grouped at the end. Both blocks are frequency-sorted.
   - **Deterministic weighted draw**:
     - Tier 1 (top 2,500 words): weight 10 (~59.4% probability)
     - Tier 2 (next 2,500 words): weight 4 (~23.8% probability)
     - Tier 3 (next 2,500 words): weight 2 (~11.9% probability)
-    - Tier 4 (remaining 2,070 words, including pure verbs): weight 1 (~4.9% probability)
-  - **House starters v2 (`starters_v2`)**: In v1, starters were drawn uniformly from a 5,000-word dictionary pool
-    that contained regular plurals (`MASKS`, `BOATS`, etc.). Since v2 filters plurals from candidate answers, drawing a word
-    like `MASKS` made it obvious that the starter had a 0% chance of being a hole-in-one. From puzzle 260 onwards, daily
-    house starters are drawn from `starters_v2`, dynamically derived from the top 5,000 words of `answers_v2` that contain no
-    triple letters (Philosophy §9). Every house starter in the v2 era is a legitimate answer candidate in `answers_v2` with 0%
-    simple regular plurals and 0% triple letters.
-  - **Backward compatibility and Path A scoring**: Puzzles 0 through 259 and all historical share links continue to use
-    v1 selection and score against the legacy lexicon with unweighted search (`SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`)
-    without divergence or version warnings. Games from puzzle 260 onward use Path A probability-weighted search
-    against the v2 candidate distribution (`SCORER_VERSION_V2 = 2`, `PAR_V2 = 3.9800`), ensuring decision evaluation exactly matches
-    word probability. Replay links from both eras open cleanly with complete fidelity.
+    - Tier 4 (remaining 2,070 words): weight 1 (~4.9% probability)
+  - **House starters v2 (`starters_v2`)**: Drawn from top 5,000 words of `answers_v2` containing no triple letters (Philosophy §9). Every v2 starter is a legitimate answer candidate.
+  - **Backward compatibility and Path A scoring**: Puzzles 0–259 and legacy share links use v1 selection and score against the legacy lexicon with unweighted search (`SCORER_VERSION_V1 = 1`, `PAR_V1 = 3.7100`). Puzzles 260+ use probability-weighted search (`SCORER_VERSION_V2 = 2`, `PAR_V2 = 3.9800`). Both eras reproduce bit-identical scores.
 
-See [`docs/wordlists.md`](docs/wordlists.md) and [`docs/scoring.md`](docs/scoring.md) for generation scripts, POS filtering, and scoring math.
+See [`docs/wordlists.md`](docs/wordlists.md) and [`docs/scoring.md`](docs/scoring.md) for details.
 
 ## When the puzzle rolls over
 
-The day boundary is anchored to **US Eastern** (`America/New_York`), and puzzle 0 is
-**1 January 2026**. Both are build-time constants in
-[`src/engine/daily/calendar.ts`](src/engine/daily/calendar.ts) and deliberately not settings: if
-players could change the anchor they would get different puzzles on the same day and the whole
-premise of comparing scores collapses.
+The day boundary is anchored to **US Eastern** (`America/New_York`), and puzzle 0 is **1 January 2026** ([`src/engine/daily/calendar.ts`](src/engine/daily/calendar.ts)).
 
-So the puzzle changes at midnight Eastern — 05:00 UTC in winter, 04:00 in summer — wherever the
-player happens to be. A friend in London gets the same word as a friend in New York, and they roll
-over at the same moment rather than eight hours apart.
-
-To move the anchor, change `PUZZLE_TIME_ZONE`. Be aware that it shifts which puzzle every date maps
-to, so existing share links will point at a different day's board.
+The puzzle changes at midnight Eastern worldwide (05:00 UTC winter / 04:00 UTC summer). To move the anchor, change `PUZZLE_TIME_ZONE` (shifts date-to-puzzle mappings).
 
 ## Recomputing `PAR`
 
-`PAR` is the mean guess count for strong play opening from house starters. It is derived from
-the word lists, so regenerating them leaves it stale and every total mis-centred:
+`PAR` is the mean guess count for strong play opening from house starters:
 
 ```bash
-npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts (defaults to v2, parallel workers)
+npm run compute-par -- --days 300      # writes src/engine/config/par.generated.ts (defaults to v2)
 npm run compute-par -- --v1 --days 300 # recomputes legacy v1 PAR
-npm run check-incentives -- --days 120 # confirms the incentives still point the right way (defaults to v2)
-npm run check-incentives -- --v1 --days 120 # confirms v1 legacy incentives
-npm run check-lights -- --days 150     # confirms the progress light still says something
+npm run check-incentives -- --days 120 # confirms incentive direction (defaults to v2)
+npm run check-incentives -- --v1 --days 120 # confirms v1 incentives
+npm run check-lights -- --days 150     # confirms progress light sensitivity
 npm run simulate-zones                 # validates 16,000+ game scenarios across dynamic score zones
 ```
 
-The first runs multi-threaded across worker threads and prints the guess distribution plus what
-the house starter costs against a fixed strong opener (`PAR_V2 = 3.9800`). The second exits non-zero if taking the house starter
-stops being the mildly better habit, or if collecting the bonus and then ignoring the clues
-stops being the worst option. The third exits non-zero if the results table's progress light
-stops discriminating between guesses, or if its red band hardens from a hint into a proof
-that a guess was never a possible answer — both are properties of the lists rather than of
-the code, which is why regenerating the lists is what puts them at risk.
-
-Recomputing `PAR` moves the golden score snapshots, because the outcome term is measured
-against it. That is intended — it forces someone to look at the new numbers. Review the diff,
-then `npx vitest run -u`.
-
-[`docs/scoring.md`](docs/scoring.md) explains the model, what each constant trades, and what
-these runs measured for the shipped lists.
+Recomputing `PAR` updates golden score snapshots because the outcome term depends on it. Review the diff and run `npx vitest run -u`.
 
 ## Regenerating the icons
 
-[`public/favicon.svg`](public/favicon.svg) is the mark: a flagstick on the green, which is also a P.
-The two files beside it are fallbacks for clients that will not take an SVG — `favicon.ico` for Safari
-before 17 and a Windows taskbar pin, `apple-touch-icon.png` for an iOS home screen, which ignores
-`rel="icon"` — and they are rasterised from it rather than drawn:
+[`public/favicon.svg`](public/favicon.svg) is the source vector. Fallback rasters are generated using Playwright:
 
 ```bash
-npx playwright install chromium  # already there if you have run the end-to-end suite
+npx playwright install chromium
 npm run render-icons             # writes public/favicon.ico and public/apple-touch-icon.png
 ```
 
-Run it after editing the SVG, and commit what it writes. Every size is rendered from the vector at its
-own size rather than resampled from one large bitmap, which is the whole point: at 16 pixels the
-difference between a placed edge and a downscaled one is the entire icon. It is also why the mark's
-coordinates are all even, and why the flag is one outline rather than a stem meeting a pennant — the
-SVG explains both, and `tests/icons.test.ts` enforces them.
-
-Nothing checks that the committed rasters are current with the SVG. Chromium does not promise
-byte-identical antialiasing across versions, so that audit would fail on a Playwright bump for reasons
-having nothing to do with the icon, and an audit that cries wolf is one people stop reading. What is
-checked without a browser is everything else: that each file `index.html` names exists and holds the
-sizes claimed for it, that no undeclared icon is left behind by a rename, that the SVG is well-formed
-XML, and that the mark's colours are the theme's. `e2e/icons.spec.ts` then proves a production build
-serves those exact bytes.
+Tests in `tests/icons.test.ts` assert file presence, valid XML, and theme palette agreement. `e2e/icons.spec.ts` verifies that production builds serve expected raster assets.
 
 ## Deploying to Cloudflare Pages
 
-The build is fully static, so connecting the repository once is the whole of the setup.
+The app is fully static and connects directly to Cloudflare Pages via Git.
 
-**Why the branch protection matters here.** Cloudflare's Git integration builds and deploys every
-push to `main` independently of GitHub Actions. It runs `npm run build` and ships whatever comes
-out, and because the build only typechecks, a commit with failing tests would deploy perfectly
-happily. The spec rules out the obvious alternative — routing the deploy through CI needs an API
-token, and §11 requires that no deploy credentials live in CI — so the gate sits at the branch
-instead: nothing reaches `main` red, therefore nothing Cloudflare sees is red. Delete that ruleset
-and you have silently removed the only thing between a failing test and production.
+Branch protection on `main` ensures only tested, passing code is built and deployed.
 
-In the Cloudflare dashboard:
+Settings for Cloudflare Pages:
 
-1. Go to **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**.
-2. Authorise Cloudflare for the GitHub account, then **Install & Authorize** and **Begin setup**.
-   Public and private repositories both work; you can grant access to all of them or to this one.
-3. In **Set up builds and deployments**, enter exactly:
+| Setting                 | Value                                                 |
+| ----------------------- | ----------------------------------------------------- |
+| Project name            | `par` (active deployment: `par-e7i.pages.dev`)        |
+| Production branch       | `main`                                                |
+| Framework preset        | `React (Vite)` or `None`                              |
+| Build command           | `npm run build`                                       |
+| Build output directory  | `dist`                                                |
+| Root directory          | *(leave empty)*                                       |
+| Environment variables   | *(none)*                                              |
 
-   | Setting                 | Value                                     |
-   | ----------------------- | ----------------------------------------- |
-   | Project name            | `par` (see the note on hostnames below)   |
-   | Production branch       | `main`                                    |
-   | Framework preset        | `React (Vite)` — or `None`, see below     |
-   | Build command           | `npm run build`                           |
-   | Build output directory  | `dist`                                    |
-   | Root directory          | *leave empty* (the project is at the repo root) |
-   | Environment variables   | *none*                                    |
-
-   The framework preset only pre-fills the build command and output directory. `React (Vite)` fills
-   in exactly the two values above; if the preset is not offered, choose `None` and type them in.
-   The result is identical.
-
-   The project name feeds the hostname, but it does not determine it. `pages.dev` subdomains are
-   globally unique, and `par` was already taken, so Cloudflare appended a suffix and this deployment
-   answers on **`par-e7i.pages.dev`**. Read the hostname off the first deployment rather than
-   assuming it matches the project name.
-
-4. Select **Save and Deploy**.
-
-**Node version.** Do not set one in the dashboard. Cloudflare's v3 build image reads
-[`.node-version`](.node-version) from the repository root, which is the same file CI reads, so the
-build environment and the quality gate cannot drift apart. Any version is supported and the build
-log names the one it used; if that log shows the image default rather than the pinned version, the
-project is on an older build image and wants moving to v3 under **Settings** → **Build**. If you
-ever do need to override it from the dashboard instead, the variable is `NODE_VERSION` and it must
-match that file.
-
-**SPA fallback.** [`public/_redirects`](public/_redirects) maps every path to `index.html` with a
-`200`, and Vite copies it into `dist/` on build. CI asserts it survives. Replay links do not
-actually need it — they are of the form `/#r=...`, so the path is always `/` — but it costs nothing
-and means a mistyped or future deep path lands on the app rather than a 404.
-
-Once connected, Cloudflare builds `main` on every push and gives each pull request its own preview
-URL. Since every change now arrives through a pull request, that preview is the ordinary way to see
-a change running before it merges.
-
-**On Pages versus Workers.** Cloudflare froze Pages for new features in 2025 and points new projects
-at Workers static assets instead. Pages is still supported and still the shortest path for a bundle
-with no server code, which is exactly what this is, so there is nothing to gain by moving today. If
-that changes, the migration is a `wrangler.jsonc` with an `assets` block pointing at `dist/`, and
-`_redirects` is honoured either way.
+- **Node version**: Cloudflare's build system reads [`.node-version`](.node-version) automatically.
+- **SPA fallback**: [`public/_redirects`](public/_redirects) maps all routes to `index.html` with a 200 status.
 
 ## Toolchain notes
 
-Two version constraints are deliberate and worth knowing before you upgrade anything:
-
-- **TypeScript is pinned to 6.0.x.** TypeScript 7 is released, but `typescript-eslint` 8 declares a
-  peer range of `>=4.8.4 <6.1.0`, so moving to 7 would leave the project unable to lint TypeScript
-  at all. Revisit when `typescript-eslint` ships TypeScript 7 support.
-- **MUI 9 removed system props from components.** Shorthands such as `alignItems`, `fontWeight` and
-  `textAlign` are no longer accepted as direct props and must be written inside `sx`. This is a
-  typecheck error rather than a silent no-op, so it surfaces immediately.
+- **TypeScript pinned to 6.0.x**: `typescript-eslint` 8 requires `<6.1.0`. Update when upstream adds TypeScript 7 support.
+- **MUI 9 system props**: System props (`alignItems`, `fontWeight`, `textAlign`) must be declared within `sx`.

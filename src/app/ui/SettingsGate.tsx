@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import type { Preferences } from '../storage/repository';
+import { sciFiSwitchSx } from '../theme/theme';
 
 export interface SettingsGateProps {
   readonly puzzleNumber: number;
@@ -110,37 +111,7 @@ export function SettingsGate({ puzzleNumber, initial, onConfirm }: SettingsGateP
                 <Switch
                   checked={useHouseStarter}
                   onChange={(event) => setUseHouseStarter(event.target.checked)}
-                  sx={{
-                    '& .MuiSwitch-switchBase': {
-                      '&.Mui-checked': {
-                        color: '#00FFA3',
-                        transform: 'translateX(20px)',
-                        '& + .MuiSwitch-track': {
-                          backgroundColor: '#00FFA3',
-                          opacity: 0.35,
-                        },
-                        '& .MuiSwitch-thumb': {
-                          backgroundColor: '#00FFA3',
-                          boxShadow: '0 0 10px rgba(0, 255, 163, 0.8)',
-                        },
-                      },
-                    },
-                    '& .MuiSwitch-track': {
-                      borderRadius: 16,
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.2)'
-                          : 'rgba(0, 0, 0, 0.25)',
-                      opacity: 0.5,
-                      border: (theme) =>
-                        theme.palette.mode === 'dark'
-                          ? '1px solid rgba(0, 240, 255, 0.2)'
-                          : undefined,
-                    },
-                    '& .MuiSwitch-thumb': {
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-                    },
-                  }}
+                  sx={sciFiSwitchSx}
                 />
               }
               label="Use the house starter"
@@ -165,37 +136,7 @@ export function SettingsGate({ puzzleNumber, initial, onConfirm }: SettingsGateP
                 <Switch
                   checked={hardMode}
                   onChange={(event) => setHardMode(event.target.checked)}
-                  sx={{
-                    '& .MuiSwitch-switchBase': {
-                      '&.Mui-checked': {
-                        color: '#00FFA3',
-                        transform: 'translateX(20px)',
-                        '& + .MuiSwitch-track': {
-                          backgroundColor: '#00FFA3',
-                          opacity: 0.35,
-                        },
-                        '& .MuiSwitch-thumb': {
-                          backgroundColor: '#00FFA3',
-                          boxShadow: '0 0 10px rgba(0, 255, 163, 0.8)',
-                        },
-                      },
-                    },
-                    '& .MuiSwitch-track': {
-                      borderRadius: 16,
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === 'dark'
-                          ? 'rgba(255, 255, 255, 0.2)'
-                          : 'rgba(0, 0, 0, 0.25)',
-                      opacity: 0.5,
-                      border: (theme) =>
-                        theme.palette.mode === 'dark'
-                          ? '1px solid rgba(0, 240, 255, 0.2)'
-                          : undefined,
-                    },
-                    '& .MuiSwitch-thumb': {
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-                    },
-                  }}
+                  sx={sciFiSwitchSx}
                 />
               }
               label="Hard mode"

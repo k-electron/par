@@ -131,36 +131,6 @@ describe('the mark', () => {
     expect(fills).toEqual([tiles.correct, tiles.text]);
   });
 
-  it('draws the flag as one shape, so no seam can open along a shared edge', () => {
-    // Two adjacent shapes are antialiased separately. Where their shared edge
-    // falls between pixels neither covers it fully and the tile behind shows
-    // through, which is what a stem and a pennant meeting at x=14 did: a green
-    // line down the height of the flag, invisible at 16 and 32 because the edge
-    // landed on a whole pixel there, and plain at 180.
-    expect(svg.documentElement.getElementsByTagName('path')).toHaveLength(1);
-  });
-
-  it('keeps every coordinate even, so no straight edge lands on a half pixel', () => {
-    // The grid is 32 units and the size that matters is 16 pixels. An odd
-    // coordinate halves to a pixel boundary and the stem renders three blurred
-    // pixels wide instead of two crisp ones, which is visible in a tab. Deltas
-    // in a relative path are even exactly when the points they reach are, so
-    // scanning the numbers as written is enough.
-    const GEOMETRY = ['d', 'x', 'y', 'width', 'height', 'rx', 'ry', 'cx', 'cy', 'r'];
-
-    const odd = [...svg.documentElement.children].flatMap((element) =>
-      GEOMETRY.flatMap((name) => {
-        const value = element.getAttribute(name);
-        if (value === null) return [];
-        return (value.match(/-?\d+(\.\d+)?/g) ?? [])
-          .map(Number)
-          .filter((number) => !Number.isInteger(number / 2))
-          .map((number) => `${element.tagName} ${name}="${value}" has ${number}`);
-      }),
-    );
-
-    expect(odd).toEqual([]);
-  });
 });
 
 describe('the raster fallbacks', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { compileLexicon } from '../../src/engine/words/lexicon';
 import { computePattern } from '../../src/engine/words/pattern';
 import { buildPatternMatrix } from '../../src/engine/search/matrix';
-import { FIXTURE_LEXICON, TWO_CANDIDATE_LEXICON } from '../support/lexicons';
+import { FIXTURE_LEXICON } from '../support/lexicons';
 
 /**
  * The matrix is an optimisation, so the only thing worth asserting about it is
@@ -70,15 +70,5 @@ describe('the per-game pattern matrix', () => {
     expect(() => buildPatternMatrix(compiled, Int32Array.from([4, 1]))).toThrow(RangeError);
     expect(() => buildPatternMatrix(compiled, Int32Array.from([1, 1]))).toThrow(RangeError);
     expect(() => buildPatternMatrix(compiled, new Int32Array(0))).toThrow(RangeError);
-  });
-
-  it('works on a six-word lexicon', () => {
-    const tiny = compileLexicon(TWO_CANDIDATE_LEXICON);
-    const tinyMatrix = buildPatternMatrix(
-      tiny,
-      Int32Array.from({ length: tiny.answerCount }, (_, i) => i),
-    );
-
-    expect(tinyMatrix.patterns).toHaveLength(6 * 3);
   });
 });

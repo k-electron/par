@@ -32,33 +32,24 @@ function mix32(input: number): number {
 const ANSWER_SALT = 0x5061_7241; // 'ParA'
 const STARTER_SALT = 0x5061_7253; // 'ParS'
 
-/**
- * Word selection v2 cutover day.
- * Puzzles before this day draw from the legacy 3,000-word answer list.
- * Puzzles from this day onwards use weighted selection over the 9,570-word v2 candidate list.
- */
-export const CUTOVER_PUZZLE_NUMBER = 260;
+import { CUTOVER_PUZZLE_NUMBER } from '../config/constants';
 
-/** Tier 1: Top 2,500 words by frequency (indices 0..2499) weighted 10. */
-export const V2_TIER_1_COUNT = 2_500;
-export const V2_TIER_1_WEIGHT = 10;
-export const V2_TIER_1_CUMULATIVE = V2_TIER_1_COUNT * V2_TIER_1_WEIGHT; // 25,000
+export { CUTOVER_PUZZLE_NUMBER };
 
-/** Tier 2: Next 2,500 words by frequency (indices 2500..4999) weighted 4. */
-export const V2_TIER_2_COUNT = 2_500;
-export const V2_TIER_2_WEIGHT = 4;
-export const V2_TIER_2_CUMULATIVE = V2_TIER_1_CUMULATIVE + V2_TIER_2_COUNT * V2_TIER_2_WEIGHT; // 35,000
+export interface WordTier {
+  readonly count: number;
+  readonly weight: number;
+}
 
-/** Tier 3: Next 2,500 words by frequency (indices 5000..7499) weighted 2. */
-export const V2_TIER_3_COUNT = 2_500;
-export const V2_TIER_3_WEIGHT = 2;
-export const V2_TIER_3_CUMULATIVE = V2_TIER_2_CUMULATIVE + V2_TIER_3_COUNT * V2_TIER_3_WEIGHT; // 40,000
+export const V2_TIERS: readonly WordTier[] = [
+  { count: 2_500, weight: 10 },
+  { count: 2_500, weight: 4 },
+  { count: 2_500, weight: 2 },
+  { count: 2_070, weight: 1 },
+];
 
-/** Tier 4: Remaining 2,070 words (indices 7500..9569, including pure verbs) weighted 1. */
 export const V2_TOTAL_WORDS = 9_570;
-export const V2_TIER_4_WEIGHT = 1;
-export const V2_TOTAL_WEIGHT =
-  V2_TIER_3_CUMULATIVE + (V2_TOTAL_WORDS - (V2_TIER_1_COUNT + V2_TIER_2_COUNT + V2_TIER_3_COUNT)) * V2_TIER_4_WEIGHT; // 42,070
+export const V2_TOTAL_WEIGHT = 42_070;
 
 function drawIndex(puzzleNumber: number, salt: number, listLength: number): number {
   if (!Number.isSafeInteger(puzzleNumber)) {
@@ -79,26 +70,19 @@ export function drawWeightedIndex(puzzleNumber: number, salt: number): number {
   if (!Number.isSafeInteger(puzzleNumber)) {
     throw new RangeError(`Puzzle number ${puzzleNumber} is not an integer.`);
   }
-  const ticket = mix32((puzzleNumber | 0) ^ salt) % V2_TOTAL_WEIGHT;
-  if (ticket < V2_TIER_1_CUMULATIVE) {
-    return Math.floor(ticket / V2_TIER_1_WEIGHT);
+  let ticket = mix32((puzzleNumber | 0) ^ salt) % V2_TOTAL_WEIGHT;
+  let wordOffset = 0;
+
+  for (const tier of V2_TIERS) {
+    const tierTickets = tier.count * tier.weight;
+    if (ticket < tierTickets) {
+      return wordOffset + Math.floor(ticket / tier.weight);
+    }
+    ticket -= tierTickets;
+    wordOffset += tier.count;
   }
-  if (ticket < V2_TIER_2_CUMULATIVE) {
-    return V2_TIER_1_COUNT + Math.floor((ticket - V2_TIER_1_CUMULATIVE) / V2_TIER_2_WEIGHT);
-  }
-  if (ticket < V2_TIER_3_CUMULATIVE) {
-    return (
-      V2_TIER_1_COUNT +
-      V2_TIER_2_COUNT +
-      Math.floor((ticket - V2_TIER_2_CUMULATIVE) / V2_TIER_3_WEIGHT)
-    );
-  }
-  return (
-    V2_TIER_1_COUNT +
-    V2_TIER_2_COUNT +
-    V2_TIER_3_COUNT +
-    Math.floor((ticket - V2_TIER_3_CUMULATIVE) / V2_TIER_4_WEIGHT)
-  );
+
+  return wordOffset - 1;
 }
 
 export interface DailyPuzzle {

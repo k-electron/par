@@ -6,44 +6,14 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Switch from '@mui/material/Switch';
 import { Sun } from 'lucide-react';
-import type { Theme } from '@mui/material/styles';
 import { useState } from 'react';
 
-import type { AppearancePreferences } from '../theme/theme';
+import { sciFiSwitchSx, type AppearancePreferences } from '../theme/theme';
 
 export interface AppearanceMenuProps {
   readonly preferences: AppearancePreferences;
   readonly onChange: (preferences: AppearancePreferences) => void;
 }
-
-const sciFiSwitchSx = {
-  ml: 1,
-  '& .MuiSwitch-switchBase': {
-    '&.Mui-checked': {
-      color: '#00FFA3',
-      transform: 'translateX(20px)',
-      '& + .MuiSwitch-track': {
-        backgroundColor: '#00FFA3',
-        opacity: 0.35,
-      },
-      '& .MuiSwitch-thumb': {
-        backgroundColor: '#00FFA3',
-        boxShadow: '0 0 10px rgba(0, 255, 163, 0.8)',
-      },
-    },
-  },
-  '& .MuiSwitch-track': {
-    borderRadius: 16,
-    backgroundColor: (theme: Theme) =>
-      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.25)',
-    opacity: 0.5,
-    border: (theme: Theme) =>
-      theme.palette.mode === 'dark' ? '1px solid rgba(0, 240, 255, 0.2)' : undefined,
-  },
-  '& .MuiSwitch-thumb': {
-    boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
-  },
-};
 
 /**
  * Appearance options: light or dark, and the colourblind-safe tile palette.

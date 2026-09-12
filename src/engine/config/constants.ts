@@ -55,9 +55,16 @@ export const PAR_V1 = GENERATED_PAR_V1;
 export const PAR_V2 = GENERATED_PAR_V2;
 export const PAR = GENERATED_PAR;
 
-/** Return the appropriate PAR value for a given puzzle number (cutover at 260). */
+/**
+ * Word selection v2 cutover day.
+ * Puzzles before this day draw from the legacy 3,000-word answer list.
+ * Puzzles from this day onwards use weighted selection over the 9,570-word v2 candidate list.
+ */
+export const CUTOVER_PUZZLE_NUMBER = 260;
+
+/** Return the appropriate PAR value for a given puzzle number (cutover at CUTOVER_PUZZLE_NUMBER). */
 export function parFor(puzzleNumber?: number): number {
-  if (puzzleNumber !== undefined && puzzleNumber >= 260) {
+  if (puzzleNumber !== undefined && puzzleNumber >= CUTOVER_PUZZLE_NUMBER) {
     return PAR_V2;
   }
   return PAR_V1;
@@ -113,9 +120,9 @@ export const SCORER_VERSION_V1 = 1;
 export const SCORER_VERSION_V2 = 2;
 export const SCORER_VERSION = SCORER_VERSION_V1;
 
-/** Return the expected scorer version for a given puzzle number (cutover at 260). */
+/** Return the expected scorer version for a given puzzle number (cutover at CUTOVER_PUZZLE_NUMBER). */
 export function scorerVersionFor(puzzleNumber?: number): number {
-  if (puzzleNumber !== undefined && puzzleNumber >= 260) {
+  if (puzzleNumber !== undefined && puzzleNumber >= CUTOVER_PUZZLE_NUMBER) {
     return SCORER_VERSION_V2;
   }
   return SCORER_VERSION_V1;

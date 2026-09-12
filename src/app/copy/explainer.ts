@@ -1,38 +1,14 @@
 /**
- * Where *this* round's numbers came from.
+ * Explainer copy generator for a completed round.
  *
- * The explainer taught the model in the abstract and left the reader to map it
- * onto their own card. Everything here is the same model said with the round's
- * own guesses in it: what each guess scored and why, how those scores became
- * one skill figure, what par paid, and how the parts add up to the total on the
- * card.
- *
- * Three constraints shape it, and all three are why this is a copy module
- * rather than prose inside the component.
- *
- * **It computes no score.** Every figure is read off the score the engine
- * already produced. The one arithmetic here is a share of the skill average,
- * which is a weight the scorer recorded divided by the sum of them. Nothing in
- * this file can move a total, and a round scored months ago explains itself
- * from the same fields it always carried.
- *
- * **It cannot count the answer pool, by construction.** `RoundToExplain` is a
- * structural subset of `GameScore` that omits `candidateCount` and
- * `remainingCount` entirely, so the size of the field is not a number this
- * module could print if it wanted to — the same guarantee `scoreGuess` gets by
- * never returning the argmin. What survives is `weight`, which is `log2 |S_i|`,
- * and it is only ever shown as a share of the round's total weight: a ratio
- * between two logarithms fixes neither of them. Decision 0003 has the argument
- * for why the count itself stays ours.
- *
- * **The arithmetic on screen has to add up on screen.** Points are shown to two
- * decimals rather than the card's one, because parts rounded to a tenth sum to
- * the wrong tenth about half the time, and an explanation whose own addition
- * looks broken is worse than no explanation.
+ * Key constraints:
+ * - Computes no score; figures are read directly from the engine.
+ * - Cannot count or expose the answer pool size (`RoundToExplain` structurally omits candidate counts).
+ * - Formats points to two decimals so displayed components visibly sum to the total.
  */
 
 import { C_PAR, PAR, UNSOLVED_GUESSES } from '../../engine/config/constants';
-import { computeDynamicZones, zoneForScore, type ScoreZone, type ZoneDefinition } from '../ui/scoreZones';
+import { computeDynamicZones, zoneForScore, type ScoreZone, type ZoneDefinition } from '../scoring/zones';
 import { LUCK_NOTICEABLE, NEAR_BEST } from './results';
 
 /** A guess, as this module is allowed to see it. No count of anything. */
@@ -210,25 +186,8 @@ function moreTurns(skill: number): string {
 }
 
 /**
- * How the tiles ran, on one four-step scale.
- *
-
-/**
- * The luck figure as a size, rather than in bits.
- *
- * A bit is a halving, so `2^-luck` is exactly how the field came out against
- * what a guess like that usually leaves — the same number the column shows,
- * said as something a reader can see. Percentages under a doubling and
- * multiples over it, because "about 140% as many" is not a sentence.
- *
- * The two directions are not the same arithmetic, which is the easy thing to
- * get wrong here. A field that came out `f` times too big is `(f − 1)` more
- * than usual, but one that came out `f` times too small is `(1 − 1/f)` fewer,
- * not `(f − 1)` fewer. Both are computed from the multiple below rather than
- * from each other.
- *
- * The clause carries its own connector, because a multiple takes "as" and a
- * percentage takes "than".
+ * Formats luck bits (`2^-luck`) into human-readable relative field size changes
+ * (percentages for small shifts, multiples for large shifts).
  */
 const MULTIPLES = ['twice', 'three times', 'four times', 'five times'];
 const FRACTIONS_OF = ['half', 'a third', 'a quarter', 'a fifth'];
@@ -282,32 +241,8 @@ const ROUNDS_TO_FULL_MARKS = 99.95;
 const NOTABLE_RISK = 0.35;
 
 /**
- * Where the guess sat among the words that still fitted, in words.
- *
- * This is the single most useful thing the dialog can teach, and it is the
- * player's own heuristic said back to them: after each round of tiles some
- * words still fit, the answer is always one of the likelier ones, and a guess
- * is either a bet from up there or a question from below. The general account
- * spends a section on why the second can beat the first; placing each of the
- * reader's own guesses is what connects that lesson to their card.
- *
- * **Likely rather than common, which is a deliberate retreat from the
- * mechanism.** What actually selects the answer list is word frequency, and
- * "commonest" says so — but it reads as a claim about English rather than about
- * this position, and a player does not need to know how the list was built to
- * use the idea. The lead names frequency once, in passing, and every row after
- * it talks about likelihood.
- *
- * **Bands rather than a figure, and that is a requirement rather than a
- * simplification.** Only the likely end of the pool carries an order, so a
- * standing from below it is an estimate, and printing "67% of the way down"
- * would dress that up as a measurement. Coarse bands also blur the cut the
- * ranking stops at, where a precise figure would let a reader find it — the
- * argument in `standingOf` and decision 0005.
- *
- * The two edges of the scale carry an extra clause because they are the two
- * rows where a player has something to take away. Everything between them is
- * described and left alone.
+ * Classifies candidate likelihood into bands (e.g. top, strong, plausible, outside, low-probability).
+ * Uses coarse bands to describe position intuitively without revealing the answer list cutoff.
  */
 const LIKELIEST = 0.02;
 const NEAR_THE_TOP = 0.15;

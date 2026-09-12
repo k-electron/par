@@ -5,17 +5,8 @@
  * s_i = 100 × Q(best legal guess, S_i) / Q(actual guess, S_i)
  * ```
  *
- * ## What this function is not allowed to know
- *
- * It takes the history and the guess. **Not the answer**, and not the feedback
- * the guess earned. That is spec §3's "no future information" made structural:
- * a function that cannot be told what happened cannot let what happened change
- * a score, so philosophy position 1 holds by signature rather than by review.
- *
- * The result carries no argmin either. Spec §10: "never reveal the optimal
- * word", and the surest way to keep a secret out of a UI is for the value it
- * would be read from not to exist. The best guess is a number in here and is
- * never named.
+ * Takes only the history and guess without access to the answer or feedback,
+ * evaluating decision quality strictly on known information while never revealing optimal words.
  */
 
 import { expectedInformationBits } from '../numeric/information';
@@ -40,20 +31,11 @@ export interface GuessScore {
   /** `|S_i|`, which is also the aggregation weight's input in spec §3. */
   readonly candidateCount: number;
   /**
-   * Whether the position offered no real choice, so the 100 was unavoidable.
-   *
-   * Decision 0001: this covers the coin flip — two live candidates where either
-   * scores 100 — as well as the single-legal-guess case §10 names. Philosophy
-   * position 12's motivating player is the one forced to pick between two words
-   * and unlucky; the label is how the results page says the score was not earned
-   * and the miss was not a mistake.
+   * True when the position offered no real choice (e.g. single candidate, coin flip,
+   * or single legal guess) so a 100 was unavoidable.
    */
   readonly forced: boolean;
-  /**
-   * Expected bits the guess reveals. Display only, and the reason it is here
-   * rather than in the scorer's own arithmetic: it is what the luck stat is
-   * measured against.
-   */
+  /** Expected bits revealed by the guess; baseline for measuring luck. */
   readonly expectedBits: number;
 }
 
@@ -62,37 +44,12 @@ export interface PositionScorer {
    * Score `guess` played against the position `history` leads to.
    *
    * Throws when the guess is not in the dictionary, when it is illegal under the
-   * ruleset, or when the history leaves no candidate at all — each of which is a
-   * caller bug rather than a score.
+   * ruleset, or when the history leaves no candidate at all.
    */
   scoreGuess(history: readonly Observation[], guess: string): GuessScore;
   /**
-   * Where `guess` sat among the words that still fitted, from the common end
-   * down: 0 is the commonest of them and 1 is the bottom.
-   *
-   * ## What the number means
-   *
-   * The pool is every **dictionary** word consistent with the feedback so far,
-   * which is the pool as a player sees it — they have no idea which of those
-   * words we would accept as an answer. Ordered by how common the words are,
-   * the answer list is the top slice of it, so "near the top" and "a plausible
-   * answer" are the same statement said two ways.
-   *
-   * Only that top slice carries an order, because frequency is what selected
-   * it; below the cut there is no ranking to read. **A word down there is
-   * therefore placed in the middle of the unranked tail**, which is the honest
-   * expectation when all that is known is which side of the cut it fell. That
-   * deliberately blurs the cut rather than reporting it: a bare "below the
-   * slice" would publish one word's absence from the answer list every time a
-   * round was explained, which is decision 0003's enumeration arriving a word
-   * at a time. Decision 0005 has the argument.
-   *
-   * A guess the tiles had already ruled out is not in the pool at all and sits
-   * at the bottom, 1.
-   *
-   * Display only. Nothing here reaches a score, and like `scoreGuess` this is
-   * never told the answer — a standing is a function of the history and the
-   * guess alone.
+   * Relative standing of `guess` among consistent dictionary words from commonest (0) to bottom (1).
+   * Unranked words below the answer cut are placed in the middle of the tail to avoid leaking answer list membership.
    */
   standingOf(history: readonly Observation[], guess: string): number;
   /** The candidates a history leaves, as words, for the UI's own stats. */
@@ -103,6 +60,28 @@ export interface PositionScorer {
   readonly lexicon: CompiledLexicon;
   /** How many positions the search has solved, for the performance tests. */
   readonly solved: number;
+}
+
+/**
+ * Partition candidate weights by feedback pattern for a given guess.
+ * Builds an Int32Array of length PATTERN_COUNT and sums candidate weights.
+ */
+export function partitionCandidateWeights(
+  lexicon: CompiledLexicon,
+  candidates: ArrayLike<number>,
+  guess: string,
+): { counts: Int32Array; totalCandidateWeight: number } {
+  const counts = new Int32Array(PATTERN_COUNT);
+  let totalCandidateWeight = 0;
+  for (let i = 0; i < candidates.length; i += 1) {
+    const answer = candidates[i]!;
+    const word = lexicon.answerWords[answer]!;
+    const pattern = computePattern(guess, word);
+    const w = lexicon.answerWeights[answer]!;
+    counts[pattern] = counts[pattern]! + w;
+    totalCandidateWeight += w;
+  }
+  return { counts, totalCandidateWeight };
 }
 
 export function createPositionScorer(dependencies: ScoringDependencies): PositionScorer {
@@ -201,16 +180,11 @@ export function createPositionScorer(dependencies: ScoringDependencies): Positio
         skill === 100 &&
         (candidateCount === 1 || isCoinFlip || search.legalCount(constraints) === 1);
 
-      const counts = new Int32Array(PATTERN_COUNT);
-      let totalCandidateWeight = 0;
-      for (let i = 0; i < candidates.length; i += 1) {
-        const answer = candidates[i]!;
-        const word = lexicon.answerWords[answer]!;
-        const pattern = computePattern(guess, word);
-        const w = lexicon.answerWeights[answer]!;
-        counts[pattern] = counts[pattern]! + w;
-        totalCandidateWeight += w;
-      }
+      const { counts, totalCandidateWeight } = partitionCandidateWeights(
+        lexicon,
+        candidates,
+        guess,
+      );
 
       return {
         skill,

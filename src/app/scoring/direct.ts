@@ -7,14 +7,13 @@
  */
 
 import { answers, answersV2, answersV2Weights, guesses } from '../../data';
-import { parFor } from '../../engine/config/constants';
-import { CUTOVER_PUZZLE_NUMBER } from '../../engine/daily/puzzle';
+import { CUTOVER_PUZZLE_NUMBER, parFor } from '../../engine/config/constants';
 import { rulesetFor } from '../../engine/rules/ruleset';
 import { scoreGame } from '../../engine/score/scoreGame';
 import { createPositionScorer } from '../../engine/score/scoreGuess';
 import { validatedPolicy } from '../../engine/search/policy';
 import { compileLexicon, type CompiledLexicon } from '../../engine/words/lexicon';
-import type { ScoreQuery, ScoringClient } from './client';
+import { withCache, type ScoreQuery, type ScoringClient } from './client';
 import type { GameScore } from './protocol';
 
 let legacyLexicon: CompiledLexicon | undefined;
@@ -50,28 +49,5 @@ export function scoreDirectly(query: ScoreQuery): GameScore {
 }
 
 export function createDirectScoringClient(): ScoringClient {
-  const cache = new Map<string, GameScore>();
-
-  return {
-    async score(query) {
-      const era = query.puzzleNumber !== undefined && query.puzzleNumber >= 260 ? 'v2' : 'v1';
-      const key = [
-        era,
-        query.hardMode ? 'h' : 'n',
-        query.tookHouseStarter ? 's' : 'o',
-        query.answer,
-        ...query.guesses,
-      ].join('|');
-
-      let score = cache.get(key);
-      if (score === undefined) {
-        score = scoreDirectly(query);
-        cache.set(key, score);
-      }
-      return score;
-    },
-    dispose() {
-      cache.clear();
-    },
-  };
+  return withCache(async (query) => scoreDirectly(query));
 }

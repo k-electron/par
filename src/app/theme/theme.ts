@@ -1,4 +1,4 @@
-import { createTheme, type Theme } from '@mui/material/styles';
+import { createTheme, type Theme, type SxProps } from '@mui/material/styles';
 
 /**
  * Appearance, including the accessibility options spec §9 asks for.
@@ -216,6 +216,59 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
 
 /** The default theme, for anything that does not read preferences. */
 export const theme = createAppTheme(DEFAULT_APPEARANCE);
+
+/** Glowing sci-fi switch styling for AppearanceMenu and SettingsGate. */
+export const sciFiSwitchSx: SxProps<Theme> = {
+  ml: 1,
+  '& .MuiSwitch-switchBase': {
+    '&.Mui-checked': {
+      color: '#00FFA3',
+      transform: 'translateX(20px)',
+      '& + .MuiSwitch-track': {
+        backgroundColor: '#00FFA3',
+        opacity: 0.35,
+      },
+      '& .MuiSwitch-thumb': {
+        backgroundColor: '#00FFA3',
+        boxShadow: '0 0 10px rgba(0, 255, 163, 0.8)',
+      },
+    },
+  },
+  '& .MuiSwitch-track': {
+    borderRadius: 16,
+    backgroundColor: (theme: Theme) =>
+      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.25)',
+    opacity: 0.5,
+    border: (theme: Theme) =>
+      theme.palette.mode === 'dark' ? '1px solid rgba(0, 240, 255, 0.2)' : undefined,
+  },
+  '& .MuiSwitch-thumb': {
+    boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+  },
+};
+
+/**
+ * Off the screen, still in the accessibility tree.
+ *
+ * Every length here is a string on purpose. `sx` is not CSS: it runs numbers
+ * through MUI's transforms, and the two that apply here disagree about what a
+ * bare 1 means. `width: 1` and `height: 1` go through the sizing transform,
+ * which reads anything up to 1 as a fraction — so these were 100% × 100%,
+ * eighteen viewport-sized absolutely-positioned boxes that scrolled the page
+ * 670px past its own content once the table appeared. `m: -1` goes through
+ * the spacing scale instead and means -8px, where the recipe wants -1px.
+ */
+export const visuallyHiddenStyle = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+} as const;
 
 declare module '@mui/material/styles' {
   interface Theme {

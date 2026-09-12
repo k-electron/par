@@ -1,27 +1,11 @@
 /**
- * Every player-facing phrase in the results view.
+ * Player-facing copy for the results view.
  *
- * Gathered here because the tone is a design constraint, not decoration. The
- * score should read like a golf card, not a report card: a bad guess is priced,
- * never criticised. Keeping the words in one file makes that reviewable in one
- * sitting instead of scattered across components.
- *
- * Three rules hold throughout, and all three are testable because they live
- * here:
- *
- * - **Never name a better word.** Not the optimal guess, not an alternative,
- *   not a hint. Showing someone the word they missed is a lecture, and it
- *   teaches exactly the memorise-the-meta habit the game is built to avoid.
- * - **Never scold.** No "should have", no "mistake", no "wasted". A guess that
- *   cost expected guesses gets a number and moves on.
- * - **Never count the answer pool.** How far a guess got is the interesting
- *   part and is said in bands. The pool's size, and how many of its words a
- *   given pattern leaves, are ours rather than the player's — `progressLevel`
- *   has the argument, and `docs/decisions/0003` the full account.
- *
- * Par is anchored to strong play, so **most players are over par most days**.
- * The over-par phrasing is therefore the main path and gets the same care as the
- * celebratory one.
+ * Key design constraints:
+ * - Never name a better word (no optimal words, alternatives, or hints).
+ * - Never scold (price suboptimal plays neutrally without criticism).
+ * - Never count the answer pool (communicate progress in bands rather than pool sizes).
+ * - Over-par phrasing is the primary path and given equal care, as par reflects strong play.
  */
 
 import {
@@ -131,25 +115,8 @@ export const NEAR_BEST = 90;
 export const REASONABLE = 70;
 
 /**
- * Where the track starts, and why it is not zero.
- *
- * `skill` is `100 × best/cost`, a ratio of expected guesses, so it cannot reach
- * 0. Measured over 120 puzzles at three player strengths — about a thousand
- * scored rows — nothing came in below 50. The bottom half of a 0–100 track is
- * unreachable rather than merely unvisited, and spending half the width on it
- * left 95 and 100 drawn almost identically, which is most of where rows land.
- *
- * 50 is where a whole turn goes: `best 1.000, yours 2.000` is one word left and
- * a guess that was not it. So the track covers exactly the range from giving up
- * a turn to giving up nothing.
- *
- * A truncated axis has to disclose itself, and the exact figure under the bar is
- * the disclosure: the bar ranks the rows, the number says what they scored.
- *
- * ponytail: measured, not proved. A score under the floor clamps to an empty
- * track rather than a negative one, and the number beside it still reads
- * correctly, so this degrades rather than lies. Lower it if real rows ever
- * arrive below 50.
+ * Skill track floor. Skill scores rarely fall below 50 (giving up a whole turn).
+ * Starting at 50 gives meaningful visual separation between high scores (90-100).
  */
 const SKILL_FLOOR = 50;
 
@@ -177,45 +144,11 @@ export function luckNote(bits: number): string {
 }
 
 /**
- * How much of what was still unknown a guess cleared away.
+ * Uncertainty removed by a guess: `log2(before / after) / log2(before)`.
  *
- * **The one measure, not three.** What matters about a cut is neither its size
- * in words nor its size as a fraction, but its size against how much there was
- * left to find out — which is why this is `log2(before / after) / log2(before)`,
- * the share of the standing uncertainty the guess removed. That single ratio
- * carries all three things a light has to be sensitive to:
- *
- * - **Where the round has got to**, because the denominator shrinks as the field
- *   does. Late narrowing is scarcer, so it counts for more.
- * - **The proportion cut**, which is the numerator.
- * - **The count cut**, because a fraction alone would rate 3000 → 1500 and
- *   2 → 1 the same. Against the uncertainty each faced, the first is a twelfth
- *   of the way home and the second is all of it.
- *
- * So a hundred words struck off a field of three thousand rates near nothing,
- * and one struck off a field of two rates as everything, which is the ordering a
- * player recognises.
- *
- * **Bands by integer comparison, never by logarithm.** `progress >= k / n` is
- * exactly `after^n <= before^(n - k)`, so a threshold at a half is `after² <=
- * before` and a quarter is `after⁴ <= before³`. Both stay whole numbers well
- * inside exact integer range, so no band can straddle a floating-point boundary
- * and word the same round differently on two machines — a replay link must read
- * identically for both friends holding it.
- *
- * **`slight` deliberately covers a cut of nothing as well as a small one.** A
- * guess that ruled nothing out is not separable here, and that is the point: a
- * word still possible always eliminates itself when it fails, so a row that
- * singled out "nothing ruled out" would prove the guess was never a possible
- * answer. Saying "little or nothing" is both honest about the band and mute
- * about which end of it a row sits at.
- *
- * **A field already down to one word gets no light at all.** There was no
- * uncertainty to remove, so there is no progress to report. The scorer reaches
- * the same conclusion by a different route: such a row weighs `log2 1 = 0` in
- * the skill average, so whatever it scores it cannot move the total either way.
- * A red mark would then be the only judgement on a row the score itself declines
- * to count.
+ * Evaluated via integer power comparisons (`after^n <= before^(n - k)`) to avoid
+ * cross-platform floating point divergence. 'slight' covers zero-reduction cuts to avoid
+ * leaking whether a guess was a valid answer.
  */
 export type ProgressLevel = 'solved' | 'major' | 'minor' | 'slight' | 'none';
 
@@ -254,20 +187,7 @@ export const RESULTS = {
   unsolved: 'Not solved',
   /** Column headers for the per-guess table. */
   columns: {
-    /**
-     * The word played. It read `#` over a column that has carried the guess and
-     * never its number since the table had one.
-     */
     turn: 'Guess',
-    /**
-     * How far the guess on this row got, rather than how many words it left.
-     *
-     * It was "In play" and showed the count going *in*, which described the
-     * position the previous guess had left rather than what this one did with it.
-     * Then "Words left", which reported the count going out and so promised a
-     * number the column no longer gives — see `progressLevel` for why it stopped
-     * giving one.
-     */
     progress: 'Progress',
     skill: 'Skill',
     luck: 'Luck',
@@ -350,23 +270,8 @@ export const OUTCOME: Record<
 };
 
 /**
- * The celebratory badges a finished round has earned.
- *
- * **The only place these rules live.** Two surfaces show them — the results view
- * and the shared text — and they used to test the same three conditions
- * independently, which meant tuning a threshold in one place left the screen
- * disagreeing with the text a player pastes to friends. Same class of divergence
- * as a score that differs between machines, just cheaper to notice.
- *
- * Returns keys rather than words because the two surfaces phrase them
- * differently on purpose: "Clean round" reads as a chip, "✨ clean round" reads
- * in a message. Both render from an exhaustive `Record`, so adding a fourth
- * badge fails to compile until each surface has decided how to show it.
- *
- * The factual badges — starter choice, hard mode, solved or not — are
- * deliberately *not* here. The shared text omits two of them because its first
- * line already carries them, and unifying that would add noise to everything
- * anyone pastes.
+ * Single source of truth for celebratory badge qualification across results and sharing.
+ * Returns badge identifiers rendered through exhaustive records by each consuming surface.
  */
 export type CelebratoryBadge = 'holeInOne' | 'quickRound' | 'cleanRound';
 

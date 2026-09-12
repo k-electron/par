@@ -11,6 +11,8 @@ import {
   zoneForScore,
 } from './scoreZones';
 
+import { visuallyHiddenStyle } from '../theme/theme';
+
 export interface HorizontalScoreMeterProps {
   readonly score: number;
   readonly par?: number | undefined;
@@ -19,18 +21,6 @@ export interface HorizontalScoreMeterProps {
   readonly starterBonus?: number | undefined;
   readonly guessesUsed?: number | undefined;
 }
-
-const visuallyHiddenStyle = {
-  position: 'absolute',
-  width: '1px',
-  height: '1px',
-  padding: 0,
-  margin: '-1px',
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-} as const;
 
 export function HorizontalScoreMeter({
   score,

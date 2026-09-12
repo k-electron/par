@@ -30,6 +30,7 @@ import { PAR } from '../../engine/config/constants';
 import { WIN_PATTERN } from '../../engine/words/pattern';
 import type { GameScore } from '../scoring/protocol';
 import type { ConfirmedSettings } from '../storage/repository';
+import { visuallyHiddenStyle } from '../theme/theme';
 import { HorizontalScoreMeter } from './HorizontalScoreMeter';
 
 export interface ResultsProps {
@@ -78,32 +79,6 @@ const PIPS = [0, 1, 2, 3];
 /** Shared by both meters so the columns line up down the table. */
 const METER_WIDTH = 46;
 const METER_HEIGHT = 6;
-
-/**
- * Off the screen, still in the accessibility tree.
- *
- * Every phrase this table stopped drawing is still rendered through one of
- * these. A meter means nothing to a screen reader, and the words were the whole
- * signal before there were meters to replace them.
- */
-const HIDDEN = {
-  position: 'absolute',
-  // Every length here is a string on purpose. `sx` is not CSS: it runs numbers
-  // through MUI's transforms, and the two that apply here disagree about what a
-  // bare 1 means. `width: 1` and `height: 1` go through the sizing transform,
-  // which reads anything up to 1 as a fraction — so these were 100% × 100%,
-  // eighteen viewport-sized absolutely-positioned boxes that scrolled the page
-  // 670px past its own content once the table appeared. `m: -1` goes through
-  // the spacing scale instead and means -8px, where the recipe wants -1px.
-  width: '1px',
-  height: '1px',
-  padding: 0,
-  margin: '-1px',
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-} as const;
 
 function ProgressPips({ level }: { level: ProgressLevel }) {
   const colour = PROGRESS_COLOUR[level];
@@ -164,7 +139,7 @@ function ProgressPips({ level }: { level: ProgressLevel }) {
           />
         );
       })}
-      <Box component="span" sx={HIDDEN}>
+      <Box component="span" sx={visuallyHiddenStyle}>
         {PROGRESS[level]}
       </Box>
     </Stack>
@@ -268,7 +243,7 @@ function SkillMeter({
       >
         {skill === null ? '\u2014' : `${skill.toFixed(0)}%`}
       </Typography>
-      <Box component="span" sx={HIDDEN}>
+      <Box component="span" sx={visuallyHiddenStyle}>
         {note}
       </Box>
     </Stack>
@@ -354,7 +329,7 @@ function LuckMeter({ bits, note }: { bits: number; note: string }) {
         {hot ? '+' : ''}
         {bits.toFixed(1)}
       </Typography>
-      <Box component="span" sx={HIDDEN}>
+      <Box component="span" sx={visuallyHiddenStyle}>
         {note}
       </Box>
     </Stack>

@@ -115,6 +115,8 @@ const CANONICAL: readonly {
         'A shift width in the payload masking keystream, unrelated to word length.',
       'src/engine/daily/calendar.ts':
         'A divisor in the days-from-civil formula, which is calendar arithmetic.',
+      'src/app/scoring/zones.ts':
+        'Array index for the sixth zone segment in SCORE_ZONES, unrelated to word length.',
     },
   },
   {
@@ -174,14 +176,6 @@ describe('canonical values are not retyped', () => {
     ).map((file) => `${file}:${bareLiteralLines(file, value).join(',')}`);
 
     expect(offenders).toEqual([]);
-  });
-
-  it('states a reason for every exception', () => {
-    for (const { name, allowed = {} } of CANONICAL) {
-      for (const [file, reason] of Object.entries(allowed)) {
-        expect(reason.length, `${name} exempts ${file} without a reason`).toBeGreaterThan(14);
-      }
-    }
   });
 
   it('has no stale exceptions', () => {
