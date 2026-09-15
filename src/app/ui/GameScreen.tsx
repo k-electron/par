@@ -84,6 +84,14 @@ export function GameScreen({
     () => replaySession(answer, rules.ruleset, restoredGuesses),
   );
 
+  /**
+   * Whether the round was already solved when this screen mounted.
+   *
+   * Confetti celebrates an actual solve earned in this session, not a reload of
+   * an already-finished day restored from storage.
+   */
+  const [alreadyWonOnMount] = useState(() => session.status === 'won' && !revealOnMount);
+
   // Somebody who has asked for less motion gets the board's state without the
   // theatre. The theme already neuters the animation itself; this also collapses
   // the wait, so nothing is gated behind a flip they will not see.
@@ -261,9 +269,13 @@ export function GameScreen({
       {/*
         Waits on `finished` rather than on the win itself, so the celebration
         lands with the last tile instead of over a row still turning over.
-        Skipped entirely under a reduced-motion preference.
+        Celebrates an actual solve earned in this session, not a reload of an
+        already-finished day restored from storage. Skipped entirely under a
+        reduced-motion preference.
       */}
-      {finished && session.status === 'won' && !stillness && <Confetti />}
+      {finished && session.status === 'won' && !stillness && !alreadyWonOnMount && (
+        <Confetti />
+      )}
 
       <Stack spacing={0.75} sx={{ textAlign: 'center' }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -272,11 +284,26 @@ export function GameScreen({
             <Typography
               component="h1"
               variant="h5"
-              sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
+              sx={{
+                fontWeight: 800,
+                letterSpacing: '0.2em',
+                fontFamily: 'Orbitron, sans-serif',
+                textShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? '0 0 12px rgba(0, 240, 255, 0.6), 0 0 24px rgba(0, 240, 255, 0.3)'
+                    : 'none',
+              }}
             >
               PAR
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontFamily: 'JetBrains Mono, monospace',
+                letterSpacing: '0.08em',
+              }}
+            >
               Puzzle {puzzleNumber}
             </Typography>
           </Stack>

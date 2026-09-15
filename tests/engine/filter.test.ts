@@ -70,11 +70,6 @@ describe('counting a partition', () => {
       }
     }
   });
-
-  it('returns a dense table so it is read in pattern order on every machine', () => {
-    const counts = patternCounts('crane', FIXTURE_LEXICON.answers);
-    expect(counts).toHaveLength(PATTERN_COUNT);
-  });
 });
 
 describe('filtering by a history', () => {

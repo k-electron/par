@@ -62,8 +62,7 @@ export interface PositionScorer {
    * Score `guess` played against the position `history` leads to.
    *
    * Throws when the guess is not in the dictionary, when it is illegal under the
-   * ruleset, or when the history leaves no candidate at all — each of which is a
-   * caller bug rather than a score.
+   * ruleset, or when the history leaves no candidate at all.
    */
   scoreGuess(history: readonly Observation[], guess: string): GuessScore;
   /**
@@ -103,6 +102,28 @@ export interface PositionScorer {
   readonly lexicon: CompiledLexicon;
   /** How many positions the search has solved, for the performance tests. */
   readonly solved: number;
+}
+
+/**
+ * Partition candidate weights by feedback pattern for a given guess.
+ * Builds an Int32Array of length PATTERN_COUNT and sums candidate weights.
+ */
+export function partitionCandidateWeights(
+  lexicon: CompiledLexicon,
+  candidates: ArrayLike<number>,
+  guess: string,
+): { counts: Int32Array; totalCandidateWeight: number } {
+  const counts = new Int32Array(PATTERN_COUNT);
+  let totalCandidateWeight = 0;
+  for (let i = 0; i < candidates.length; i += 1) {
+    const answer = candidates[i]!;
+    const word = lexicon.answerWords[answer]!;
+    const pattern = computePattern(guess, word);
+    const w = lexicon.answerWeights[answer]!;
+    counts[pattern] = counts[pattern]! + w;
+    totalCandidateWeight += w;
+  }
+  return { counts, totalCandidateWeight };
 }
 
 export function createPositionScorer(dependencies: ScoringDependencies): PositionScorer {
@@ -201,16 +222,11 @@ export function createPositionScorer(dependencies: ScoringDependencies): Positio
         skill === 100 &&
         (candidateCount === 1 || isCoinFlip || search.legalCount(constraints) === 1);
 
-      const counts = new Int32Array(PATTERN_COUNT);
-      let totalCandidateWeight = 0;
-      for (let i = 0; i < candidates.length; i += 1) {
-        const answer = candidates[i]!;
-        const word = lexicon.answerWords[answer]!;
-        const pattern = computePattern(guess, word);
-        const w = lexicon.answerWeights[answer]!;
-        counts[pattern] = counts[pattern]! + w;
-        totalCandidateWeight += w;
-      }
+      const { counts, totalCandidateWeight } = partitionCandidateWeights(
+        lexicon,
+        candidates,
+        guess,
+      );
 
       return {
         skill,

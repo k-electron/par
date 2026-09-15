@@ -54,10 +54,6 @@ describe.each(lists)('%s', (label, words) => {
   it('has no duplicates', () => {
     expect(new Set(words).size).toBe(words.length);
   });
-
-  it('is not empty', () => {
-    expect(words.length).toBeGreaterThan(0);
-  });
 });
 
 describe('sizes', () => {

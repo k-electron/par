@@ -17,6 +17,6 @@
     that edge falls between pixels neither of them covers it fully and the tile
     shows through: a green seam ran the height of the flag at 180 pixels.
   -->
-  <rect width="32" height="32" rx="2" fill="#538d4e" />
-  <path fill="#ffffff" d="M8 4h6l10 6-10 6v12H8z" />
+  <rect width="32" height="32" rx="2" fill="#00FFA3" />
+  <path fill="#FFFFFF" d="M8 4h6l10 6-10 6v12H8z" />
 </svg>

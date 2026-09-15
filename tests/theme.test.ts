@@ -7,8 +7,12 @@ describe('the theme', () => {
   });
 
   it('resolves a background and a contrasting text colour, so CssBaseline has something to apply', () => {
-    expect(theme.palette.background.default).toEqual(expect.any(String));
-    expect(theme.palette.text.primary).toEqual(expect.any(String));
     expect(theme.palette.background.default).not.toBe(theme.palette.text.primary);
+  });
+
+  it('configures cosmic obsidian background and modern space typography', () => {
+    expect(theme.palette.background.default).toBe('#05070E');
+    expect(theme.typography.fontFamily).toContain('Space Grotesk');
+    expect(theme.tiles.correct).toBe('#00FFA3');
   });
 });

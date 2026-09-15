@@ -1,4 +1,4 @@
-import { createTheme, type Theme } from '@mui/material/styles';
+import { createTheme, type Theme, type SxProps } from '@mui/material/styles';
 
 /**
  * Appearance, including the accessibility options spec §9 asks for.
@@ -27,6 +27,8 @@ export interface TileColours {
   readonly present: string;
   readonly correct: string;
   readonly text: string;
+  readonly textOnCorrect: string;
+  readonly textOnPresent: string;
   readonly emptyBorder: string;
   readonly filledBorder: string;
   readonly keyIdle: string;
@@ -42,22 +44,26 @@ export interface TileColours {
 const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
   dark: {
     classic: {
-      absent: '#3a3a3c',
-      present: '#b59f3b',
-      correct: '#538d4e',
-      text: '#ffffff',
-      emptyBorder: '#3a3a3c',
-      filledBorder: '#565758',
-      keyIdle: '#818384',
+      absent: '#141923',
+      present: '#FFB800',
+      correct: '#00FFA3',
+      text: '#FFFFFF',
+      textOnCorrect: '#05070E',
+      textOnPresent: '#05070E',
+      emptyBorder: 'rgba(0, 240, 255, 0.18)',
+      filledBorder: 'rgba(0, 240, 255, 0.45)',
+      keyIdle: '#1E2536',
     },
     accessible: {
-      absent: '#3a3a3c',
-      present: '#cc7722',
-      correct: '#1b6ca8',
-      text: '#ffffff',
-      emptyBorder: '#3a3a3c',
-      filledBorder: '#565758',
-      keyIdle: '#818384',
+      absent: '#141923',
+      present: '#FF6B00',
+      correct: '#00D2FF',
+      text: '#FFFFFF',
+      textOnCorrect: '#05070E',
+      textOnPresent: '#05070E',
+      emptyBorder: 'rgba(0, 210, 255, 0.25)',
+      filledBorder: 'rgba(0, 210, 255, 0.55)',
+      keyIdle: '#1E2536',
     },
   },
   light: {
@@ -66,6 +72,8 @@ const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
       present: '#c9b458',
       correct: '#6aaa64',
       text: '#ffffff',
+      textOnCorrect: '#ffffff',
+      textOnPresent: '#ffffff',
       emptyBorder: '#d3d6da',
       filledBorder: '#878a8c',
       keyIdle: '#d3d6da',
@@ -75,6 +83,8 @@ const TILES: Record<Appearance, Record<TilePalette, TileColours>> = {
       present: '#d2691e',
       correct: '#0f5c8c',
       text: '#ffffff',
+      textOnCorrect: '#ffffff',
+      textOnPresent: '#ffffff',
       emptyBorder: '#d3d6da',
       filledBorder: '#878a8c',
       keyIdle: '#d3d6da',
@@ -92,17 +102,51 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
   return createTheme({
     palette: {
       mode: preferences.appearance,
-      ...(preferences.appearance === 'light' ? { background: { default: '#ffffff' } } : {}),
+      ...(preferences.appearance === 'light'
+        ? {
+            background: { default: '#ffffff', paper: '#f8fafc' },
+            text: { primary: '#0f172a', secondary: '#475569' },
+          }
+        : {
+            background: {
+              default: '#05070E',
+              paper: 'rgba(12, 17, 29, 0.85)',
+            },
+            text: {
+              primary: '#F1F5F9',
+              secondary: '#94A3B8',
+            },
+            primary: {
+              main: '#00FFA3',
+              contrastText: '#05070E',
+            },
+            secondary: {
+              main: '#00D2FF',
+              contrastText: '#05070E',
+            },
+            divider: 'rgba(0, 240, 255, 0.14)',
+          }),
     },
     typography: {
       fontFamily: [
+        'Space Grotesk',
         'system-ui',
         '-apple-system',
+        'BlinkMacSystemFont',
         'Segoe UI',
         'Roboto',
         'Helvetica',
         'Arial',
         'sans-serif',
+      ].join(','),
+      fontFamilyMonospace: [
+        'JetBrains Mono',
+        'ui-monospace',
+        'SFMono-Regular',
+        'Menlo',
+        'Monaco',
+        'Consolas',
+        'monospace',
       ].join(','),
     },
     components: {
@@ -115,8 +159,37 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
       MuiStack: {
         defaultProps: { useFlexGap: true },
       },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            ...(preferences.appearance === 'dark'
+              ? {
+                  backgroundColor: 'rgba(12, 17, 29, 0.85)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(0, 240, 255, 0.12)',
+                }
+              : {}),
+          },
+        },
+      },
       MuiCssBaseline: {
         styleOverrides: {
+          body: {
+            backgroundColor: preferences.appearance === 'dark' ? '#05070E' : '#ffffff',
+            color: preferences.appearance === 'dark' ? '#F1F5F9' : '#0f172a',
+          },
+          'code, kbd, samp, pre': {
+            fontFamily: [
+              'JetBrains Mono',
+              'ui-monospace',
+              'SFMono-Regular',
+              'Menlo',
+              'Monaco',
+              'Consolas',
+              'monospace',
+            ].join(','),
+          },
           // Respect a reduced-motion preference globally rather than per
           // component, so a new animation cannot forget to honour it.
           '@media (prefers-reduced-motion: reduce)': {
@@ -144,11 +217,70 @@ export function createAppTheme(preferences: AppearancePreferences): Theme {
 /** The default theme, for anything that does not read preferences. */
 export const theme = createAppTheme(DEFAULT_APPEARANCE);
 
+/** Glowing sci-fi switch styling for AppearanceMenu and SettingsGate. */
+export const sciFiSwitchSx: SxProps<Theme> = {
+  ml: 1,
+  '& .MuiSwitch-switchBase': {
+    '&.Mui-checked': {
+      color: '#00FFA3',
+      transform: 'translateX(20px)',
+      '& + .MuiSwitch-track': {
+        backgroundColor: '#00FFA3',
+        opacity: 0.35,
+      },
+      '& .MuiSwitch-thumb': {
+        backgroundColor: '#00FFA3',
+        boxShadow: '0 0 10px rgba(0, 255, 163, 0.8)',
+      },
+    },
+  },
+  '& .MuiSwitch-track': {
+    borderRadius: 16,
+    backgroundColor: (theme: Theme) =>
+      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.25)',
+    opacity: 0.5,
+    border: (theme: Theme) =>
+      theme.palette.mode === 'dark' ? '1px solid rgba(0, 240, 255, 0.2)' : undefined,
+  },
+  '& .MuiSwitch-thumb': {
+    boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+  },
+};
+
+/**
+ * Off the screen, still in the accessibility tree.
+ *
+ * Every length here is a string on purpose. `sx` is not CSS: it runs numbers
+ * through MUI's transforms, and the two that apply here disagree about what a
+ * bare 1 means. `width: 1` and `height: 1` go through the sizing transform,
+ * which reads anything up to 1 as a fraction — so these were 100% × 100%,
+ * eighteen viewport-sized absolutely-positioned boxes that scrolled the page
+ * 670px past its own content once the table appeared. `m: -1` goes through
+ * the spacing scale instead and means -8px, where the recipe wants -1px.
+ */
+export const visuallyHiddenStyle = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  margin: '-1px',
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+} as const;
+
 declare module '@mui/material/styles' {
   interface Theme {
     tiles: TileColours;
   }
   interface ThemeOptions {
     tiles?: TileColours;
+  }
+  interface TypographyVariants {
+    fontFamilyMonospace: string;
+  }
+  interface TypographyVariantsOptions {
+    fontFamilyMonospace?: string;
   }
 }

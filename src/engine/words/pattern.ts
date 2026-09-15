@@ -4,7 +4,7 @@
  * A pattern is five base-three digits packed into 0..242, with **position 0 as
  * the most significant digit**, so the digits read in the same order as the
  * tiles. That choice is arbitrary but it has to be pinned down: patterns are
- * memo keys, matrix entries and (from increment 9) share-link content, so the
+ * memo keys, matrix entries and share-link content, so the
  * encoding is part of the scorer's contract and cannot drift. `WIN_PATTERN` is
  * therefore 242, all five digits at 2.
  *

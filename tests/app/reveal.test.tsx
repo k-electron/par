@@ -18,7 +18,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createDirectScoringClient } from '../../src/app/scoring/direct';
 import { keyboardState, replaySession } from '../../src/app/state/gameSession';
@@ -98,6 +98,7 @@ async function mountScored(played: readonly string[]) {
     answer: PUZZLE.answer,
     tookHouseStarter: true,
     hardMode: false,
+    puzzleNumber: 165,
   });
   return mountApp(new Repository(createMemoryStorage()), scoring);
 }
@@ -163,6 +164,48 @@ describe('a row turning over', () => {
     expect(screen.queryByTestId('confetti')).not.toBeInTheDocument();
 
     expect(await screen.findByTestId('confetti', {}, PATIENCE)).toBeInTheDocument();
+  });
+
+  it('reloads a completed game with board, score, and auto-scroll, without replaying the celebration', async () => {
+    const scrollMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollMock;
+
+    const store = new Repository(createMemoryStorage());
+    store.saveDay({
+      puzzleNumber: 165,
+      settings: { hardMode: false, useHouseStarter: true, confirmed: true },
+      guesses: [PUZZLE.starter, PUZZLE.answer],
+      status: 'won',
+      completedAt: Date.now(),
+    });
+
+    render(
+      <ThemeProvider theme={theme}>
+        <App
+          repository={store}
+          now={FIXED_NOW}
+          scoring={createDirectScoringClient()}
+          reveal={INSTANT_REVEAL}
+        />
+      </ThemeProvider>,
+    );
+
+    // Board rows are restored face up
+    expect(screen.getByTestId('tile-0-0')).toHaveTextContent(PUZZLE.starter[0]!);
+    expect(screen.getByTestId('tile-1-0')).toHaveTextContent(PUZZLE.answer[0]!);
+
+    // Results table renders
+    expect(await screen.findByRole('table', { name: /guess by guess/i })).toBeInTheDocument();
+
+    // Auto-scrolls to the score
+    await waitFor(() =>
+      expect(scrollMock).toHaveBeenCalledWith(
+        expect.objectContaining({ block: 'nearest' }),
+      ),
+    );
+
+    // Confetti celebrated the live solve, not reopening the page
+    expect(screen.queryByTestId('confetti')).not.toBeInTheDocument();
   });
 
   it('leaves the keys alone until the row it belongs to has settled', async () => {

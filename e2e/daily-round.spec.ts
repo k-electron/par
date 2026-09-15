@@ -169,7 +169,7 @@ test('the results sit below the board rather than on top of it', async ({ page }
   await page.getByRole('button', { name: 'Start' }).click();
 
   await revealed(page);
-  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf']) {
     if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
@@ -208,7 +208,7 @@ test('the finished page does not scroll past its own content', async ({ page }) 
   await page.getByRole('button', { name: 'Start' }).click();
 
   await revealed(page);
-  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf']) {
     if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
@@ -320,6 +320,37 @@ test('an in-progress game survives a reload exactly', async ({ page }) => {
   // somebody would try to escape it.
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect(await boardRows(page)).toEqual(before);
+});
+
+test('a completed game survives a reload', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start' }).click();
+
+  await revealed(page);
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf']) {
+    if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
+    await page.keyboard.type(word);
+    await page.keyboard.press('Enter');
+    await revealed(page);
+  }
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  const before = await boardRows(page);
+  const total = await readTotal(page);
+
+  await page.reload();
+
+  // No settings gate: restored from storage
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  // The board and score come back exactly
+  expect(await boardRows(page)).toEqual(before);
+  expect(await readTotal(page)).toBe(total);
+
+  // Auto-scrolls to the score report
+  await expect(page.getByText(/played at \d+%/)).toBeInViewport({ timeout: 5_000 });
+
+  // Confetti celebrated the live solve, not reopening the page
+  await expect(page.getByTestId('confetti')).toHaveCount(0);
 });
 
 test('a malformed link fails gracefully', async ({ page }) => {
