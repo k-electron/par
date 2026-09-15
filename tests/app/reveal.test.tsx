@@ -98,6 +98,7 @@ async function mountScored(played: readonly string[]) {
     answer: PUZZLE.answer,
     tookHouseStarter: true,
     hardMode: false,
+    puzzleNumber: 165,
   });
   return mountApp(new Repository(createMemoryStorage()), scoring);
 }

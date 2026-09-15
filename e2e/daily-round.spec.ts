@@ -169,7 +169,7 @@ test('the results sit below the board rather than on top of it', async ({ page }
   await page.getByRole('button', { name: 'Start' }).click();
 
   await revealed(page);
-  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf']) {
     if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
@@ -208,7 +208,7 @@ test('the finished page does not scroll past its own content', async ({ page }) 
   await page.getByRole('button', { name: 'Start' }).click();
 
   await revealed(page);
-  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf']) {
     if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
@@ -327,7 +327,7 @@ test('a completed game survives a reload', async ({ page }) => {
   await page.getByRole('button', { name: 'Start' }).click();
 
   await revealed(page);
-  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf', 'skimp']) {
+  for (const word of ['crane', 'moist', 'pluck', 'begun', 'dwarf']) {
     if (await page.getByText(/played at \d+%/).isVisible().catch(() => false)) break;
     await page.keyboard.type(word);
     await page.keyboard.press('Enter');
