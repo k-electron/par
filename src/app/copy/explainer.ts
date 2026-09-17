@@ -63,6 +63,7 @@ export interface RoundToExplain {
   readonly breakdown: readonly GuessToExplain[];
   readonly par?: number;
   readonly maxScore?: number;
+  readonly parScore?: number;
 }
 
 export interface ExplainedGuess {
@@ -448,6 +449,7 @@ function explainZones(round: RoundToExplain): ExplainedZones {
     starterBonus: round.starterBonus,
     guessesUsed: round.guessesUsed,
     totalScore: round.total,
+    parScore: round.parScore,
   });
 
   const activeZone = zoneForScore(round.total, dynamic.zones);
@@ -478,8 +480,8 @@ function explainZones(round: RoundToExplain): ExplainedZones {
       `Your score was ${activeZone.label.toLowerCase()} (${activeZone.minScore.toFixed(1)} to ` +
       `${activeZone.maxScore.toFixed(1)} pts). The score meter is calibrated specifically for ` +
       `today's puzzle (benchmark par ${par}, strategic ceiling ${dynamic.meterMaxScore.toFixed(1)}). ` +
-      `A score of ${dynamic.parScore.toFixed(0)} represents meeting par expectation with 100% skill, ` +
-      `marking the boundary between Good and Ultra.`;
+      `A score of ${dynamic.parScore.toFixed(1)} marks the dynamic boundary between Good and Ultra, ` +
+      `calibrated to the difficulty of today's board.`;
   }
 
   return {

@@ -85,6 +85,8 @@ export interface GameScore {
   readonly breakdown: readonly GuessBreakdown[];
   readonly par?: number;
   readonly maxScore?: number;
+  readonly parScore?: number;
+  readonly boardPar?: number;
 }
 
 export interface GameToScore {
@@ -197,21 +199,43 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
   const outcome = outcomePoints(guessesUsed, solved, par);
   const starterBonus = tookHouseStarter ? EPSILON : 0;
 
+  const p0 = computePattern(guesses[0]!, answer);
+  const h0: Observation[] = [{ guess: guesses[0]!, pattern: p0 }];
+
+  // Dynamic board baseline strokes (boardPar) and par separator (parScore)
+  let boardPar: number;
+  if (tookHouseStarter) {
+    if (guesses[0] === answer) {
+      boardPar = Math.max(3.0, par);
+    } else {
+      const remaining = scorer.expectedTurnsFrom(h0);
+      boardPar = Math.max(3.0, 1 + remaining);
+    }
+  } else {
+    const isV2 = scorer.lexicon.answerCount > 5000;
+    const isHard = scorer.ruleset.mode === 'hard';
+    boardPar = isV2 ? (isHard ? 3.80 : 3.70) : (isHard ? 3.58 : 3.50);
+  }
+  const parOffset = C_PAR * (par - boardPar);
+  const rawParScore = 100 + parOffset + starterBonus;
+
+  // True achievable apex (maxScore)
   let maxScore: number;
   if (tookHouseStarter) {
     if (guesses[0] === answer) {
       maxScore = 100 + outcomePoints(1, true, par) + starterBonus;
     } else {
-      const p0 = computePattern(guesses[0]!, answer);
-      const s2 = scorer.scoreGuess([{ guess: guesses[0]!, pattern: p0 }], answer).skill;
-      maxScore = Math.max(
-        s2 + outcomePoints(2, true, par) + starterBonus,
-        100 + outcomePoints(3, true, par) + starterBonus,
-      );
+      const s2 = scorer.scoreGuess(h0, answer).skill;
+      const score2 = s2 + outcomePoints(2, true, par) + starterBonus;
+      const score3 = 100 + outcomePoints(3, true, par) + starterBonus;
+      maxScore = Math.max(score2, score3);
     }
   } else {
     maxScore = 100 + outcomePoints(2, true, par);
   }
+
+  // Ensure dynamic par maintains at least 1.0 point headroom below apex
+  const parScore = Math.min(rawParScore, maxScore - 1.0);
 
   return {
     skill,
@@ -223,5 +247,7 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     breakdown,
     par,
     maxScore,
+    parScore,
+    boardPar,
   };
 }

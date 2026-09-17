@@ -432,6 +432,8 @@ export function Results({ score, settings, variant = 'own' }: ResultsProps) {
             maxScore={score.maxScore}
             starterBonus={score.starterBonus}
             guessesUsed={score.guessesUsed}
+            parScore={score.parScore}
+            hardMode={settings.hardMode}
           />
         </Box>
         <Typography variant="body2" sx={{ mt: 0.5 }}>

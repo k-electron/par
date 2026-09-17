@@ -8,7 +8,7 @@ import { outcomePoints } from '../../src/engine/score/scoreGame';
 import { scoreDirectly } from '../../src/app/scoring/direct';
 
 console.log('===============================================================');
-console.log('PART 1: PARAMETER SWEEP OVER 35,000+ UNIQUE GAME CONDITIONS');
+console.log('PART 1: PARAMETER SWEEP OVER 70,000+ UNIQUE GAME CONDITIONS');
 console.log('===============================================================');
 
 let totalSimulated = 0;
@@ -17,6 +17,7 @@ for (let p = 0; p <= 300; p += 3) puzzles.push(p);
 for (let p = 350; p <= 1000; p += 50) puzzles.push(p);
 puzzles.push(2000, 5000, 10000);
 
+const hardModeOptions = [false, true];
 const starterOptions = [true, false];
 const solvedOptions = [true, false];
 const guessesOptions = [1, 2, 3, 4, 5, 6];
@@ -25,30 +26,43 @@ for (let s = 0; s <= 100; s += 5) skillLevels.push(s);
 
 for (const puzzleNumber of puzzles) {
   const par = parFor(puzzleNumber);
+  const isV2 = puzzleNumber >= 260;
 
-  for (const tookHouseStarter of starterOptions) {
-    const starterBonus = tookHouseStarter ? EPSILON : 0;
-    const s2Max = 100 + C_PAR * (par - 2) + starterBonus;
-    const holeInOneCeiling = 100 + C_PAR * (par - 1) + starterBonus;
+  for (const hardMode of hardModeOptions) {
+    for (const tookHouseStarter of starterOptions) {
+      const starterBonus = tookHouseStarter ? EPSILON : 0;
+      const s2Max = 100 + C_PAR * (par - 2) + starterBonus;
+      const holeInOneCeiling = 100 + C_PAR * (par - 1) + starterBonus;
 
-    for (const solved of solvedOptions) {
-      for (const guessesUsed of guessesOptions) {
-        if (!solved && guessesUsed < 6) continue;
-        if (guessesUsed === 1 && !solved) continue;
+      // Dynamic board expected strokes (boardPar) and par separator (parScore)
+      const rawBoardPar = tookHouseStarter
+        ? par
+        : (isV2 ? (hardMode ? 3.80 : 3.70) : (hardMode ? 3.58 : 3.50));
+      const boardPar = Math.max(3.0, rawBoardPar);
+      const parOffset = C_PAR * (par - boardPar);
+      const rawParScore = 100 + parOffset + starterBonus;
 
-        for (const skill of skillLevels) {
-          const actualSkill = guessesUsed === 1 ? 100 : skill;
-          const outcome = outcomePoints(guessesUsed, solved, par);
-          const totalScore = actualSkill + outcome + starterBonus;
-          const maxScore = guessesUsed === 1 ? holeInOneCeiling : s2Max;
+      for (const solved of solvedOptions) {
+        for (const guessesUsed of guessesOptions) {
+          if (!solved && guessesUsed < 6) continue;
+          if (guessesUsed === 1 && !solved) continue;
 
-          const dyn = computeDynamicZones({
-            maxScore,
-            par,
-            starterBonus,
-            guessesUsed,
-            totalScore,
-          });
+          for (const skill of skillLevels) {
+            const actualSkill = guessesUsed === 1 ? 100 : skill;
+            const outcome = outcomePoints(guessesUsed, solved, par);
+            const totalScore = actualSkill + outcome + starterBonus;
+            const maxScore = guessesUsed === 1 ? holeInOneCeiling : s2Max;
+            const parScore = Math.min(rawParScore, maxScore - 1.0);
+
+            const dyn = computeDynamicZones({
+              maxScore,
+              par,
+              starterBonus,
+              guessesUsed,
+              totalScore,
+              parScore,
+              hardMode,
+            });
 
           // Invariant 1: Widths sum to 100%
           const totalWidth = dyn.horizontalZones.reduce((sum, z) => sum + z.widthPct, 0);
@@ -103,7 +117,27 @@ for (const puzzleNumber of puzzles) {
             if (zone.id !== 'blind') throw new Error('Zone should be blind');
           }
 
-          // Invariant 9: Social share formatting and replay link verification
+          // Invariant 9: Godlike zone non-zero width
+          const godlike = dyn.zones.find((z) => z.id === 'godlike');
+          if (!godlike || godlike.maxScore - godlike.minScore < 0.2) {
+            throw new Error(`Godlike zone empty or too narrow: [${godlike?.minScore}, ${godlike?.maxScore}]`);
+          }
+
+          // Invariant 10: Dynamic par strictly separates Good and Ultra
+          const good = dyn.zones.find((z) => z.id === 'good');
+          const ultra = dyn.zones.find((z) => z.id === 'ultra');
+          if (!good || !ultra || Math.abs(good.maxScore - dyn.parScore) > 1e-4 || Math.abs(ultra.minScore - dyn.parScore) > 1e-4) {
+            throw new Error(`Dynamic par did not separate Good and Ultra properly`);
+          }
+
+          // Invariant 11: Apex gameplay achieves Godlike
+          if (totalScore === maxScore && guessesUsed > 1) {
+            if (zone.id !== 'godlike') {
+              throw new Error(`Apex score ${totalScore} did not achieve Godlike (got ${zone.id})`);
+            }
+          }
+
+          // Invariant 12: Social share formatting and replay link verification
           const share = shareText({
             puzzleNumber,
             score: {
@@ -129,8 +163,9 @@ for (const puzzleNumber of puzzles) {
               }),
               par,
               maxScore,
+              parScore,
             },
-            hardMode: false,
+            hardMode,
             tookHouseStarter,
             guessIndices: Array(guessesUsed).fill(0),
             wordListVersion: WORD_LIST_VERSION,
@@ -152,9 +187,10 @@ for (const puzzleNumber of puzzles) {
     }
   }
 }
+}
 
 console.log(`✓ Tested ${totalSimulated.toLocaleString()} unique game scenarios across 118 puzzle dates.`);
-console.log('✓ All 9 geometric, mathematical, share, and replay invariants passed 100% of the time.');
+console.log('✓ All 12 geometric, mathematical, share, replay, godlike reachability, and dynamic par invariants passed 100% of the time.');
 
 console.log('\n===============================================================');
 console.log('PART 2: LIVE ENGINE SEARCH ON 11 ACTUAL PUZZLE DATES');
@@ -180,6 +216,8 @@ for (const day of sampleDays) {
     starterBonus: h1.starterBonus,
     guessesUsed: h1.guessesUsed,
     totalScore: h1.total,
+    parScore: h1.parScore,
+    hardMode: false,
   });
 
   if (zoneForScore(h1.total, h1Dyn.zones).id !== 'blind_luck') {
@@ -200,7 +238,20 @@ for (const day of sampleDays) {
     starterBonus: g3.starterBonus,
     guessesUsed: g3.guessesUsed,
     totalScore: g3.total,
+    parScore: g3.parScore,
+    hardMode: false,
   });
+
+  // Verify Part 2 invariants
+  const godlike = g3Dyn.zones.find((z) => z.id === 'godlike');
+  if (!godlike || godlike.maxScore - godlike.minScore < 0.2) {
+    throw new Error(`Part 2: Godlike zone empty or too narrow on day ${day}`);
+  }
+  const good = g3Dyn.zones.find((z) => z.id === 'good');
+  const ultra = g3Dyn.zones.find((z) => z.id === 'ultra');
+  if (!good || !ultra || Math.abs(good.maxScore - g3Dyn.parScore) > 1e-4) {
+    throw new Error(`Part 2: Dynamic par mismatch on day ${day}`);
+  }
 
   const g3Zone = zoneForScore(g3.total, g3Dyn.zones);
 

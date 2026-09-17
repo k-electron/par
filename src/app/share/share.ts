@@ -89,6 +89,8 @@ export function shareText(input: ShareInput): string {
     starterBonus: score.starterBonus,
     guessesUsed: score.guessesUsed,
     totalScore: score.total,
+    parScore: score.parScore,
+    hardMode: input.hardMode,
   });
   const zone = zoneForScore(score.total, dynamic.zones);
 
