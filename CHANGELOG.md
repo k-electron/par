@@ -8,6 +8,21 @@ landed as pull requests against a live site.
 The site went up on Cloudflare Pages at [par-e7i.pages.dev](https://par-e7i.pages.dev). Everything
 here landed afterwards, each behind a pull request and a green quality gate.
 
+- **Reachable Godlike solutions, dynamic par separator, and board curve fitting** ([#42](https://github.com/k-electron/par/pull/42)).
+  Eliminates mathematically unreachable score bands by calculating the true session apex $S_{\text{apex}}$ and dynamically
+  calibrating the Good/Ultra boundary ($\text{parScore}$) according to board difficulty and game mode.
+  - **Reachable Godlike band**: For own openers, anchors Godlike to an optimal 2-guess solve ($S_{\text{apex}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2)$),
+    proven 100% achievable across all 3,000 (v1) and 9,570 (v2) answer words. For house starters, sets $S_{\text{apex}} = \max(S_2, S_3)$ where
+    $S_2$ evaluates guessing the answer on turn 2 and $S_3$ evaluates strategic probe play solving on turn 3 with 100% skill,
+    guaranteeing non-empty Godlike bands with reachable solutions on every day in v1 and v2.
+  - **Dynamic par separator**: Computes $\text{parScore} = \min(100 + C_{\text{PAR}} \times (\text{PAR} - \text{boardPar}) + \text{starterBonus}, \; S_{\text{apex}} - 1.0)$,
+    evaluating board difficulty from the house starter's clue feedback ($\text{boardPar} = \max(3.0, 1 + \text{expectedTurnsFrom}(h_0))$)
+    or game mode baselines for own openers. Rewards disciplined play on brutal boards (e.g. `dizzy`) and requires sharper play on generous boards (e.g. `korma`).
+  - **Ironclad client invariants**: Enforces non-empty Godlike bands ($S_{\text{apex}} - t_4 \ge 0.2$), exact Good/Ultra par alignment,
+    strict monotonicity, and 100% width contiguity in [`src/app/scoring/zones.ts`](src/app/scoring/zones.ts).
+  - **Verification**: Validated 69,384 parameter combinations across 118 puzzle dates and live engine puzzles with zero invariant failures
+    in [`tools/par/simulate-zones.ts`](tools/par/simulate-zones.ts). Updated [`docs/scoring.md`](docs/scoring.md), ADR [0006](docs/decisions/0006-horizontal-score-meter-and-dynamic-zones.md),
+    [`src/app/copy/explainer.ts`](src/app/copy/explainer.ts), and [`src/app/ui/ScoringExplainer.tsx`](src/app/ui/ScoringExplainer.tsx).
 - **Clean up legacy 'radial' naming and update score documentation** ([#33](https://github.com/k-electron/par/pull/33)).
   Renames `src/app/ui/radialScore.ts` to [`src/app/ui/scoreZones.ts`](src/app/ui/scoreZones.ts), completely removing
   vestigial "radial" naming from code and tests following the transition to the horizontal bar meter. Adds

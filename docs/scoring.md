@@ -441,22 +441,44 @@ A static score scale (e.g. 60 to 115) fails because the reachable score ceiling 
 - **Word lists and ruleset**: `PAR` varies between eras (`PAR_V1 = 3.7100`, `PAR_V2 = 3.9800`) and the daily board position.
 - **The hole-in-one paradox**: Finishing on guess 1 gives an outcome score of $C_{\text{PAR}} \times (\text{PAR} - 1)$ with a default 100 skill score. However, a hole-in-one is pure unearned opener luck where skill was not tested. If the scale ceiling were pegged to $n = 1$, Godlike would be mathematically unreachable for all strategic players (who require at least 2 guesses to deduce the word).
 
-To preserve fair calibration, [`computeDynamicZones`](../src/app/ui/scoreZones.ts) dynamically computes the strategic maximum $S_{\text{max}}$ for each specific game session:
+To preserve fair calibration, [`computeDynamicZones`](../src/app/scoring/zones.ts) and [`scoreGame`](../src/engine/score/scoreGame.ts) dynamically compute the true board apex $S_{\text{apex}}$ and board expected strokes $\text{boardPar}$ for each specific game session:
 
-$$S_{\text{max}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2) + (\text{took house starter} ? \epsilon : 0)$$
+#### 1. True Board Apex ($S_{\text{apex}}$)
+- **Own Opener**: $S_{\text{apex}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2)$. 100% of all answer words in both v1 (3,000 words) and v2 (9,570 words) have at least one legal opener that partitions the remaining field down to $\le 1$ candidate. Playing that opener and solving on guess 2 faces a singleton endgame, earning 100% deduction skill and reaching the exact theoretical 2-guess ceiling (106.84 in v1, 107.92 in v2).
+- **House Starter**: $S_{\text{apex}} = \max(S_2, S_3)$, where:
+  - $S_2 = s_2 + 100 + C_{\text{PAR}} \times (\text{PAR} - 2) + \epsilon$ (evaluates guessing the answer directly on turn 2).
+  - $S_3 = 100 + 100 + C_{\text{PAR}} \times (\text{PAR} - 3) + \epsilon$ (evaluates playing the optimal probe on turn 2 to eliminate candidate uncertainty with 100% skill, then solving on turn 3).
+  - When the starter leaves few candidates ($s_2 \ge 96\%$), guessing the answer on turn 2 beats 3 guesses ($S_{\text{apex}} = S_2$). When the starter leaves many candidates ($s_2 < 96\%$), strategic 3-guess play represents the true pinnacle of skill ($S_{\text{apex}} = S_3$, which is 105.84 in v1, 106.92 in v2).
 
-This represents the maximum score achievable through deliberate skill (finishing in 2 guesses with 100.0% skill).
+This mathematical anchoring guarantees that the Godlike band $[t_4, S_{\text{apex}}]$ **always contains achievable, non-zero gameplay solutions on 100% of days in both v1 and v2**.
 
-#### Threshold Interpolation
+#### 2. Dynamic Par Separator ($\text{parScore}$)
+In golf, par represents the difficulty of the specific hole. To make the boundary between **Good** (meeting expectations) and **Ultra** (beating expectations) dynamically reflect today's conditions:
 
-- **Par Score**: $\text{parScore} = 100.0 + (\text{took house starter} ? \epsilon : 0)$.
-- **Below Par**: Interpolated over $\Delta_{\text{below}} = \text{parScore} - 60.0$:
+$$\text{parScore} = \min\left(100 + C_{\text{PAR}} \times (\text{PAR} - \text{boardPar}) + \text{starterBonus}, \; S_{\text{apex}} - 1.0\right)$$
+
+- **For House Starter**: $\text{boardPar} = \max(3.0, 1 + \text{scorer.expectedTurnsFrom}(h_0))$, evaluated directly from the house starter's clue feedback against today's answer.
+  - On **brutal boards** (e.g. `dizzy` where expected strokes $\approx 4.4$), $\text{parScore}$ drops to ~101.2. The engine recognizes the extreme difficulty, allowing disciplined 4-guess play to enter **Ultra**.
+  - On **generous boards** (e.g. `korma` where expected strokes $\approx 3.2$), $\text{parScore}$ rises to ~105.1. Simply solving in 4 guesses is only "Good"; entering **Ultra** demands a sharp 3-guess solve.
+- **For Own Opener**: Evaluated from mode and era baselines:
+  - Normal Mode: baseline 3.50 (v1) / 3.70 (v2) $\implies \text{parScore} = 100.84$ (v1) / $101.12$ (v2).
+  - Hard Mode: baseline 3.58 (v1) / 3.80 (v2) $\implies \text{parScore} = 100.52$ (v1) / $100.72$ (v2).
+- **Headroom Safety Clamp**: $\text{parScore} \le S_{\text{apex}} - 1.0$ guarantees at least 1.0 point of separation below the apex, ensuring Ultra and Godlike always maintain clear, meaningful width.
+
+#### 3. Threshold Interpolation & Invariants
+- **Below Par**: Interpolated over $\Delta_{\text{below}} = \max(1.0, \text{parScore} - 60.0)$:
   - $t_1 = 60.0 + 0.30 \times \Delta_{\text{below}}$ (Troll $\to$ Bad)
   - $t_2 = 60.0 + 0.60 \times \Delta_{\text{below}}$ (Bad $\to$ Meh)
   - $t_3 = 60.0 + 0.80 \times \Delta_{\text{below}}$ (Meh $\to$ Good)
-- **Above Par**: Proportional interpolation over $\Delta_{\text{above}} = \max(0.1, S_{\text{max}} - \text{parScore})$:
+  - $t_{\text{Par}} = \text{parScore}$ (Good $\to$ Ultra)
+- **Above Par**: Proportional interpolation over $\Delta_{\text{above}} = \max(0.5, S_{\text{apex}} - \text{parScore})$:
   - $t_4 = \text{parScore} + 0.60 \times \Delta_{\text{above}}$ (Ultra $\to$ Godlike)
-  - $S_{\text{max}}$ marks the upper bound of Godlike.
+  - $S_{\text{apex}}$ marks the upper bound of Godlike.
+- **Client-Side Runtime Invariants**: `computeDynamicZones` strictly asserts at runtime:
+  1. Non-empty Godlike band: $t_4 < S_{\text{apex}}$ with $(S_{\text{apex}} - t_4) \ge 0.2$.
+  2. Exact par alignment: $\text{good.maxScore} === \text{parScore} === \text{ultra.minScore}$.
+  3. Strict monotonicity: $60 < t_1 < t_2 < t_3 < \text{parScore} < t_4 \le S_{\text{apex}} \le S_{\text{hole-in-one}}$.
+  4. Contiguity: Segment widths sum to exactly 100%.
 
 ### Secret Dynamic Edge Zones
 

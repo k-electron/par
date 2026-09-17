@@ -189,7 +189,7 @@ export function ScoringExplainer({
                   })}
                 </Stack>
                 <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, lineHeight: 1.5 }}>
-                  <strong>Why 100 is the anchor:</strong> Finishing in benchmark par with 100% deduction skill scores exactly {round.zones.parScore.toFixed(0)}, separating Good from Ultra. Godlike marks the theoretical ceiling for solving the puzzle in 2 sharp moves.
+                  <strong>Why 100 is the anchor:</strong> Finishing at par expectation with 100% deduction skill scores {round.zones.parScore.toFixed(1)}, dynamically dividing Good from Ultra based on today&rsquo;s board difficulty. Godlike represents the pinnacle of skill for today&rsquo;s puzzle (an optimal 2-guess or flawless 3-guess solve).
                 </Typography>
               </Stack>
 

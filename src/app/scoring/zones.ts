@@ -116,6 +116,10 @@ export interface DynamicZonesOptions {
   readonly guessesUsed?: number | undefined;
   /** Final total score. */
   readonly totalScore?: number | undefined;
+  /** Dynamic par score separating Good from Ultra. */
+  readonly parScore?: number | undefined;
+  /** Whether hard mode was played. */
+  readonly hardMode?: boolean | undefined;
 }
 
 export interface DynamicZonesResult {
@@ -136,17 +140,23 @@ export interface DynamicZonesResult {
 export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZonesResult {
   const starterBonus = options.starterBonus ?? 0;
   const parStrokes = options.par !== undefined && options.par < 50 ? options.par : PAR;
-  const parScore = 100 + starterBonus;
+  const defaultParScore = 100 + starterBonus;
+  const parScore = options.parScore !== undefined ? options.parScore : defaultParScore;
 
   // Hole-in-one theoretical maximum (Option 2B)
   const holeInOneScore = 100 + C_PAR * (parStrokes - 1) + starterBonus;
 
   // Theoretical ceiling for 2-guess play (Option 2A)
   const s2Max = 100 + C_PAR * (parStrokes - 2) + starterBonus;
-  const sMax =
+  let sMax =
     options.maxScore !== undefined && options.maxScore < holeInOneScore - 0.5
       ? options.maxScore
       : s2Max;
+
+  // Ensure sMax is strictly above parScore with healthy headroom
+  if (sMax <= parScore) {
+    sMax = parScore + 0.5;
+  }
 
   // Reveal secret "Blind" zone if player scored below Troll (< 60)
   const isBlind = options.totalScore !== undefined && options.totalScore < METER_MIN_SCORE;
@@ -163,7 +173,7 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
 
   // Below PAR: proportional interpolation of (parScore - 60)
   // Troll (30%), Bad (30%), Meh (20%), Good (20%)
-  const deltaBelow = parScore - METER_MIN_SCORE;
+  const deltaBelow = Math.max(1.0, parScore - METER_MIN_SCORE);
   const t1 = METER_MIN_SCORE + 0.30 * deltaBelow;
   const t2 = METER_MIN_SCORE + 0.60 * deltaBelow;
   const t3 = METER_MIN_SCORE + 0.80 * deltaBelow;
@@ -171,8 +181,25 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
 
   // Above PAR: proportional interpolation of (sMax - parScore)
   // Ultra (60%), Godlike (40%)
-  const deltaAbove = Math.max(0.1, sMax - parScore);
+  const deltaAbove = Math.max(0.5, sMax - parScore);
   const t4 = parScore + 0.60 * deltaAbove;
+
+  // Runtime Invariant 1: Godlike non-zero window (t4 < sMax)
+  if (t4 >= sMax) {
+    throw new RangeError(`Godlike zone empty: t4 (${t4}) >= sMax (${sMax})`);
+  }
+
+  // Runtime Invariant 2: Dynamic par divides Good and Ultra
+  if (tPar !== parScore) {
+    throw new RangeError(`Par separator mismatch: tPar (${tPar}) !== parScore (${parScore})`);
+  }
+
+  // Runtime Invariant 3: Strict monotonicity across standard zones
+  if (!(METER_MIN_SCORE < t1 && t1 < t2 && t2 < t3 && t3 < tPar && tPar < t4 && t4 <= sMax)) {
+    throw new RangeError(
+      `Non-monotonic zone boundaries: [${METER_MIN_SCORE}, ${t1}, ${t2}, ${t3}, ${tPar}, ${t4}, ${sMax}]`,
+    );
+  }
 
   const zones: ZoneDefinition[] = [];
 

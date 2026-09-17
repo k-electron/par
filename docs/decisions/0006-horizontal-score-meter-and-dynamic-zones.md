@@ -21,12 +21,14 @@ While visually striking, user testing revealed several ergonomics and layout iss
    - Implemented in [`src/app/ui/HorizontalScoreMeter.tsx`](../../src/app/ui/HorizontalScoreMeter.tsx) and [`src/app/ui/scoreZones.ts`](../../src/app/ui/scoreZones.ts).
    - Conserves vertical viewport height, keeping the score, stroke phrase, and celebratory badges above the fold on mobile screens.
 
-2. **Compute dynamic per-day per-mode curve fitting**:
-   - Rather than static global cutoffs, [`computeDynamicZones`](../../src/app/ui/scoreZones.ts) dynamically computes the strategic maximum $S_{\text{max}}$ for the player's specific game:
-     $$S_{\text{max}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2) + (\text{took house starter} ? \epsilon : 0)$$
-   - This anchors the upper bound of Godlike to the best possible result achievable through deliberate skill ($n = 2$, 100% skill).
-   - Below PAR, thresholds interpolate linearly between 60.0 and PAR.
-   - Above PAR, Ultra spans 60% of $(S_{\text{max}} - \text{PAR})$, with Godlike occupying the remainder up to $S_{\text{max}}$.
+2. **Compute dynamic per-day per-mode curve fitting with guaranteed reachable Godlike**:
+   - Rather than static global cutoffs, [`computeDynamicZones`](../../src/app/scoring/zones.ts) and [`scoreGame`](../../src/engine/score/scoreGame.ts) dynamically compute the true board apex $S_{\text{apex}}$ and dynamic par separator $\text{parScore}$ tailored to today's board and starter:
+     - **Own Opener**: $S_{\text{apex}} = 100 + C_{\text{PAR}} \times (\text{PAR} - 2)$. Guaranteed 100% achievable by finding an opener leaving $\le 1$ candidate.
+     - **House Starter**: $S_{\text{apex}} = \max(S_2, S_3)$, where $S_2$ evaluates guessing the answer on turn 2 and $S_3 = 100 + C_{\text{PAR}} \times (\text{PAR} - 3) + \epsilon$ evaluates strategic 3-guess deduction with 100% skill.
+     - **Dynamic Par**: $\text{parScore} = \min(100 + C_{\text{PAR}} \times (\text{PAR} - \text{boardPar}) + \text{bonus}, \; S_{\text{apex}} - 1.0)$ dynamically divides Good from Ultra based on board difficulty ($\text{boardPar} = \max(3.0, 1 + \text{expectedTurnsFrom}(h_0))$).
+   - Below PAR, thresholds interpolate linearly between 60.0 and $\text{parScore}$.
+   - Above PAR, Ultra spans 60% of $(S_{\text{apex}} - \text{parScore})$, with Godlike occupying the remainder up to $S_{\text{apex}}$.
+   - Guarantees: Godlike band is non-empty on 100% of days ($t_4 < S_{\text{apex}}$), real gameplay solutions achieve Godlike on every day in v1 and v2, and runtime assertions strictly enforce monotonicity and exact boundary alignment.
 
 3. **Isolate edge cases into secret dynamic zones**:
    - **`blind_luck`**: If a player scores a hole-in-one ($n = 1$), a 7th golden zone ("Blind luck", rendered across 2 lines) is dynamically appended beyond $S_{\text{max}}$. It remains hidden for all normal multi-guess play.

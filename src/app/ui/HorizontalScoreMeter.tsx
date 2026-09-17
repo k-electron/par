@@ -20,6 +20,8 @@ export interface HorizontalScoreMeterProps {
   readonly maxScore?: number | undefined;
   readonly starterBonus?: number | undefined;
   readonly guessesUsed?: number | undefined;
+  readonly parScore?: number | undefined;
+  readonly hardMode?: boolean | undefined;
 }
 
 export function HorizontalScoreMeter({
@@ -29,6 +31,8 @@ export function HorizontalScoreMeter({
   maxScore,
   starterBonus,
   guessesUsed,
+  parScore,
+  hardMode,
 }: HorizontalScoreMeterProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -44,8 +48,10 @@ export function HorizontalScoreMeter({
         starterBonus,
         guessesUsed,
         totalScore: score,
+        parScore,
+        hardMode,
       }),
-    [maxScore, par, starterBonus, guessesUsed, score],
+    [maxScore, par, starterBonus, guessesUsed, score, parScore, hardMode],
   );
 
   const [animatedScore, setAnimatedScore] = useState(dynamic.meterMinScore);

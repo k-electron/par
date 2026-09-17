@@ -98,6 +98,10 @@ export interface PositionScorer {
   candidatesAfter(history: readonly Observation[]): string[];
   /** The candidates a history leaves, as answer indices. */
   candidateIndicesAfter(history: readonly Observation[]): Int32Array;
+  /** Expected guesses to finish from the position `history` leads to under optimal play. */
+  expectedTurnsFrom(history: readonly Observation[]): number;
+  /** The ruleset used by this scorer. */
+  readonly ruleset: Ruleset;
   /** The compiled lexicon used by this scorer. */
   readonly lexicon: CompiledLexicon;
   /** How many positions the search has solved, for the performance tests. */
@@ -288,6 +292,16 @@ export function createPositionScorer(dependencies: ScoringDependencies): Positio
     candidateIndicesAfter(history) {
       return candidateIndices(history);
     },
+
+    expectedTurnsFrom(history) {
+      const candidates = candidateIndices(history);
+      if (candidates.length === 0) return 0;
+      const constraints = constraintsFrom(history);
+      const search = searcherFor(candidates);
+      return search.valueOf(candidates, constraints);
+    },
+
+    ruleset,
 
     lexicon,
 

@@ -691,14 +691,15 @@ describe('scorer version support and dynamic zones in the explainer', () => {
   it('explains Scorer V1 rounds with PAR 3.71 and V1 zone calibration', () => {
     const v1Round = {
       ...ROUNDS.solved,
-      par: 3.7100,
+      par: 3.7103,
       maxScore: 109.84, // 100 + 4 * (3.71 - 2) + 3
+      parScore: 101.5,
     };
     const explained = explainRound(v1Round);
 
     expect(explained.par.story).toContain('3.71');
     expect(explained.zones.story).toContain('3.71');
-    expect(explained.zones.parScore).toBe(103);
+    expect(explained.zones.parScore).toBeCloseTo(101.5, 2);
     expect(explained.zones.meterMaxScore).toBeCloseTo(109.84, 1);
     expect(explained.zones.activeZone.id).toBeDefined();
   });
@@ -708,12 +709,13 @@ describe('scorer version support and dynamic zones in the explainer', () => {
       ...ROUNDS.solved,
       par: 3.9800,
       maxScore: 110.92, // 100 + 4 * (3.98 - 2) + 3
+      parScore: 102.2,
     };
     const explained = explainRound(v2Round);
 
     expect(explained.par.story).toContain('3.98');
     expect(explained.zones.story).toContain('3.98');
-    expect(explained.zones.parScore).toBe(103);
+    expect(explained.zones.parScore).toBeCloseTo(102.2, 2);
     expect(explained.zones.meterMaxScore).toBeCloseTo(110.92, 1);
   });
 

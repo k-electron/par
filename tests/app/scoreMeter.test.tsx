@@ -12,6 +12,7 @@ import {
   scoreToPositionPct,
   zoneForScore,
 } from '../../src/app/ui/scoreZones';
+import { scoreDirectly } from '../../src/app/scoring/direct';
 
 afterEach(cleanup);
 
@@ -225,6 +226,63 @@ describe('computeDynamicZones', () => {
     // Total score 114.92 must map to blind_luck
     expect(zoneForScore(114.92, dyn.zones).id).toBe('blind_luck');
   });
+
+  it('confirms non-zero real gameplay solutions achieve Godlike for both Own Opener and House Starter', () => {
+    // 1. Own opener: 2-guess solve on day 0 with unique opener achieves 100% skill and S_max (Godlike)
+    const scoreOwn = scoreDirectly({
+      guesses: ['bulky', 'curly'],
+      answer: 'curly',
+      tookHouseStarter: false,
+      hardMode: false,
+      puzzleNumber: 0,
+    });
+    const dynOwn = computeDynamicZones({
+      maxScore: scoreOwn.maxScore,
+      par: scoreOwn.par,
+      starterBonus: scoreOwn.starterBonus,
+      guessesUsed: scoreOwn.guessesUsed,
+      totalScore: scoreOwn.total,
+    });
+    expect(scoreOwn.skill).toBe(100);
+    expect(scoreOwn.total).toBeCloseTo(dynOwn.meterMaxScore, 2);
+    expect(zoneForScore(scoreOwn.total, dynOwn.zones).id).toBe('godlike');
+
+    // 2. House starter: strategic 3-guess solve on day 0 with optimal 100% skill second guess
+    const scoreHouse3 = scoreDirectly({
+      guesses: ['clade', 'trios', 'curly'],
+      answer: 'curly',
+      tookHouseStarter: true,
+      hardMode: false,
+      puzzleNumber: 0,
+    });
+    const dynHouse3 = computeDynamicZones({
+      maxScore: scoreHouse3.maxScore,
+      par: scoreHouse3.par,
+      starterBonus: scoreHouse3.starterBonus,
+      guessesUsed: scoreHouse3.guessesUsed,
+      totalScore: scoreHouse3.total,
+    });
+    expect(scoreHouse3.skill).toBe(100);
+    expect(scoreHouse3.total).toBeCloseTo(dynHouse3.meterMaxScore, 2);
+    expect(zoneForScore(scoreHouse3.total, dynHouse3.zones).id).toBe('godlike');
+
+    // 3. House starter: 2-guess solve on day 10 where second guess achieves Godlike directly
+    const scoreHouse2 = scoreDirectly({
+      guesses: ['molly', 'twain'],
+      answer: 'twain',
+      tookHouseStarter: true,
+      hardMode: false,
+      puzzleNumber: 10,
+    });
+    const dynHouse2 = computeDynamicZones({
+      maxScore: scoreHouse2.maxScore,
+      par: scoreHouse2.par,
+      starterBonus: scoreHouse2.starterBonus,
+      guessesUsed: scoreHouse2.guessesUsed,
+      totalScore: scoreHouse2.total,
+    });
+    expect(zoneForScore(scoreHouse2.total, dynHouse2.zones).id).toBe('godlike');
+  }, 15000);
 });
 
 describe('HORIZONTAL_ZONES and scoreToPositionPct', () => {
