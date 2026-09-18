@@ -455,15 +455,15 @@ This mathematical anchoring guarantees that the Godlike band $[t_4, S_{\text{ape
 #### 2. Dynamic Par Separator ($\text{parScore}$)
 In golf, par represents the difficulty of the specific hole. To make the boundary between **Good** (meeting expectations) and **Ultra** (beating expectations) dynamically reflect today's conditions:
 
-$$\text{parScore} = \min\left(100 + C_{\text{PAR}} \times (\text{PAR} - \text{boardPar}) + \text{starterBonus}, \; S_{\text{apex}} - 1.0\right)$$
+$$\text{parScore} = \min\left(100 + C_{\text{PAR}} \times (\text{PAR} - \max(\text{boardPar}, 4.0)) + \text{starterBonus}, \; S_4^{\max} - 0.5, \; S_{\text{apex}} - 3.5\right)$$
 
 - **For House Starter**: $\text{boardPar} = \max(3.0, 1 + \text{scorer.expectedTurnsFrom}(h_0))$, evaluated directly from the house starter's clue feedback against today's answer.
-  - On **brutal boards** (e.g. `dizzy` where expected strokes $\approx 4.4$), $\text{parScore}$ drops to ~101.2. The engine recognizes the extreme difficulty, allowing disciplined 4-guess play to enter **Ultra**.
-  - On **generous boards** (e.g. `korma` where expected strokes $\approx 3.2$), $\text{parScore}$ rises to ~105.1. Simply solving in 4 guesses is only "Good"; entering **Ultra** demands a sharp 3-guess solve.
+  - On **brutal boards** (e.g. `dizzy` where expected strokes $\approx 4.4$), $\text{parScore}$ drops dynamically (e.g. ~101.3 with house starter). The engine recognizes the extreme difficulty, allowing disciplined 4-guess play to enter **Ultra**.
+  - On **generous boards** (e.g. `thole` where expected strokes $\approx 3.4$), $\text{parScore}$ reaches its cap at $S_4^{\max} - 0.5$ (~102.4 in v2, ~101.3 in v1). Simply solving in 4 guesses is only "Good"; entering **Ultra** demands a sharp 3-guess Birdie ($\ge 95\%$ deduction skill).
 - **For Own Opener**: Evaluated from mode and era baselines:
-  - Normal Mode: baseline 3.50 (v1) / 3.70 (v2) $\implies \text{parScore} = 100.84$ (v1) / $101.12$ (v2).
-  - Hard Mode: baseline 3.58 (v1) / 3.80 (v2) $\implies \text{parScore} = 100.52$ (v1) / $100.72$ (v2).
-- **Headroom Safety Clamp**: $\text{parScore} \le S_{\text{apex}} - 1.0$ guarantees at least 1.0 point of separation below the apex, ensuring Ultra and Godlike always maintain clear, meaningful width.
+  - Normal Mode: baseline 3.70 (v2) / 3.50 (v1) $\implies \text{parScore} = 99.42$ (v2) / $98.34$ (v1).
+  - Hard Mode: baseline 3.80 (v2) / 3.58 (v1) $\implies \text{parScore} = 99.42$ (v2) / $98.34$ (v1).
+- **Headroom Safety Guarantee**: Capping $\text{parScore} \le S_4^{\max} - 0.5$ guarantees at least $4.5$ points of separation below $S_{\text{apex}}$, preventing discrete word skill jumps from bypassing Ultra and ensuring **every band is strictly non-empty across all days**.
 
 #### 3. Threshold Interpolation & Invariants
 - **Below Par**: Interpolated over $\Delta_{\text{below}} = \max(1.0, \text{parScore} - 60.0)$:
@@ -471,14 +471,17 @@ $$\text{parScore} = \min\left(100 + C_{\text{PAR}} \times (\text{PAR} - \text{bo
   - $t_2 = 60.0 + 0.60 \times \Delta_{\text{below}}$ (Bad $\to$ Meh)
   - $t_3 = 60.0 + 0.80 \times \Delta_{\text{below}}$ (Meh $\to$ Good)
   - $t_{\text{Par}} = \text{parScore}$ (Good $\to$ Ultra)
-- **Above Par**: Proportional interpolation over $\Delta_{\text{above}} = \max(0.5, S_{\text{apex}} - \text{parScore})$:
-  - $t_4 = \text{parScore} + 0.60 \times \Delta_{\text{above}}$ (Ultra $\to$ Godlike)
+- **Above Par**: Reserving the apex tier for Godlike and providing a wide window for Ultra:
+  - $\Delta_{\text{above}} = \max(0.5, S_{\text{apex}} - \text{parScore})$
+  - $w_G = \min(1.5, \; \max(0.8, \; 0.25 \times \Delta_{\text{above}}))$
+  - $t_4 = S_{\text{apex}} - \min(w_G, \; \Delta_{\text{above}} - 0.2)$ (Ultra $\to$ Godlike)
   - $S_{\text{apex}}$ marks the upper bound of Godlike.
 - **Client-Side Runtime Invariants**: `computeDynamicZones` strictly asserts at runtime:
-  1. Non-empty Godlike band: $t_4 < S_{\text{apex}}$ with $(S_{\text{apex}} - t_4) \ge 0.2$.
-  2. Exact par alignment: $\text{good.maxScore} === \text{parScore} === \text{ultra.minScore}$.
-  3. Strict monotonicity: $60 < t_1 < t_2 < t_3 < \text{parScore} < t_4 \le S_{\text{apex}} \le S_{\text{hole-in-one}}$.
-  4. Contiguity: Segment widths sum to exactly 100%.
+  1. Non-empty Godlike band: $t_4 < S_{\text{apex}}$ with $(S_{\text{apex}} - t_4) \ge 0.5$.
+  2. Non-empty Ultra band: $(t_4 - \text{parScore}) \ge 2.0$ in production boards (minimum 0.2 in synthetic edge cases).
+  3. Exact par alignment: $\text{good.maxScore} === \text{parScore} === \text{ultra.minScore}$.
+  4. Strict monotonicity: $60 < t_1 < t_2 < t_3 < \text{parScore} < t_4 \le S_{\text{apex}} \le S_{\text{hole-in-one}}$.
+  5. Contiguity: Segment widths sum to exactly 100%.
 
 ### Secret Dynamic Edge Zones
 
