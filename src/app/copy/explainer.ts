@@ -92,6 +92,7 @@ export interface ExplainedFigure {
 export interface ExplainedZoneThreshold {
   readonly id: ScoreZone;
   readonly label: string;
+  readonly description: string;
   readonly minScore: number;
   readonly maxScore: number;
   readonly color: { readonly light: string; readonly dark: string };
@@ -442,6 +443,17 @@ function totalStory(round: RoundToExplain): string {
   );
 }
 
+const ZONE_DESCRIPTIONS: Record<ScoreZone, string> = {
+  godlike: 'Strategic apex — flawless 2-guess or 3-guess finish',
+  ultra: 'Beating par — sharp deduction (e.g. 3-guess birdie or brutal board par)',
+  good: 'Solid play — meeting or nearing 4-stroke par with strong deduction',
+  meh: 'Below par — multiple turns cost more guesses than needed',
+  bad: 'Struggling — missed key letter clues or candidate deductions',
+  troll: 'Erratic play — guess patterns far off the candidate field',
+  blind_luck: 'Hole-in-one — pure opening lottery luck on turn 1',
+  blind: 'Unsolved — score below 60.0',
+};
+
 function explainZones(round: RoundToExplain): ExplainedZones {
   const dynamic = computeDynamicZones({
     maxScore: round.maxScore,
@@ -459,6 +471,7 @@ function explainZones(round: RoundToExplain): ExplainedZones {
   const zones: ExplainedZoneThreshold[] = [...dynamic.zones].reverse().map((zone) => ({
     id: zone.id,
     label: zone.label,
+    description: ZONE_DESCRIPTIONS[zone.id],
     minScore: zone.minScore,
     maxScore: zone.maxScore,
     color: zone.color,
@@ -481,7 +494,7 @@ function explainZones(round: RoundToExplain): ExplainedZones {
       `${activeZone.maxScore.toFixed(1)} pts). The score meter is calibrated specifically for ` +
       `today's puzzle (benchmark par ${par}, strategic ceiling ${dynamic.meterMaxScore.toFixed(1)}). ` +
       `A score of ${dynamic.parScore.toFixed(1)} marks the dynamic boundary between Good and Ultra, ` +
-      `calibrated to the difficulty of today's board.`;
+      `anchored to 4-stroke par and calibrated to the difficulty of today's board.`;
   }
 
   return {

@@ -153,10 +153,7 @@ export function ScoringExplainer({
                     return (
                       <Stack
                         key={zone.id}
-                        direction="row"
                         sx={{
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
                           px: 1.5,
                           py: 0.75,
                           borderRadius: 1.5,
@@ -168,28 +165,41 @@ export function ScoringExplainer({
                           border: zone.isCurrent ? `1.5px solid ${zoneColor}` : '1px solid transparent',
                         }}
                       >
-                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                          <Box
-                            sx={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: '50%',
-                              bgcolor: zoneColor,
-                            }}
-                          />
-                          <Typography variant="subtitle2" sx={{ fontWeight: zone.isCurrent ? 700 : 500 }}>
-                            {zone.label}
+                        <Stack
+                          direction="row"
+                          sx={{
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                            <Box
+                              sx={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                bgcolor: zoneColor,
+                              }}
+                            />
+                            <Typography variant="subtitle2" sx={{ fontWeight: zone.isCurrent ? 700 : 500 }}>
+                              {zone.label}
+                            </Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+                            {zone.minScore.toFixed(1)} &ndash; {zone.maxScore.toFixed(1)}
                           </Typography>
                         </Stack>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
-                          {zone.minScore.toFixed(1)} &ndash; {zone.maxScore.toFixed(1)}
-                        </Typography>
+                        {zone.description && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2.25, pt: 0.25 }}>
+                            {zone.description}
+                          </Typography>
+                        )}
                       </Stack>
                     );
                   })}
                 </Stack>
                 <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, lineHeight: 1.5 }}>
-                  <strong>Why 100 is the anchor:</strong> Finishing at par expectation with 100% deduction skill scores {round.zones.parScore.toFixed(1)}, dynamically dividing Good from Ultra based on today&rsquo;s board difficulty. Godlike represents the pinnacle of skill for today&rsquo;s puzzle (an optimal 2-guess or flawless 3-guess solve).
+                  <strong>Why 100 is the anchor:</strong> In golf and Wordle Par, 4 strokes is benchmark par. Finishing at par with strong deduction scores {round.zones.parScore.toFixed(1)} (Good). Beating par with a 3-guess solve or mastering a brutal board enters Ultra. Godlike represents the strategic apex for today&rsquo;s puzzle (an optimal 2-guess or flawless 3-guess solve).
                 </Typography>
               </Stack>
 
@@ -275,6 +285,15 @@ export function ScoringExplainer({
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 Shows whether you got lucky with helpful tile reveals or unlucky with unhelpful clues.
                 Luck is displayed for interest only — it never enters your final score.
+              </Typography>
+            </Stack>
+
+            <Stack spacing={0.25}>
+              <Typography variant="subtitle2">Performance Zones</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Organizes scores into tiers from Troll and Bad through Meh, Good, Ultra, and Godlike.
+                Anchored to 4-stroke par: solid par rounds land in Good, beating par with a 3-guess
+                birdie enters Ultra, and Godlike marks the strategic apex of skill for today&rsquo;s board.
               </Typography>
             </Stack>
           </Stack>
