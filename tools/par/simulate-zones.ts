@@ -13,16 +13,16 @@ console.log('===============================================================');
 
 let totalSimulated = 0;
 const puzzles: number[] = [];
-for (let p = 0; p <= 300; p += 3) puzzles.push(p);
-for (let p = 350; p <= 1000; p += 50) puzzles.push(p);
-puzzles.push(2000, 5000, 10000);
+for (let p = 0; p <= 500; p += 2) puzzles.push(p);
+for (let p = 550; p <= 3000; p += 50) puzzles.push(p);
+puzzles.push(5000, 10000);
 
 const hardModeOptions = [false, true];
 const starterOptions = [true, false];
 const solvedOptions = [true, false];
 const guessesOptions = [1, 2, 3, 4, 5, 6];
 const skillLevels: number[] = [];
-for (let s = 0; s <= 100; s += 5) skillLevels.push(s);
+for (let s = 0; s <= 100; s += 2.5) skillLevels.push(s);
 
 for (const puzzleNumber of puzzles) {
   const par = parFor(puzzleNumber);
@@ -39,8 +39,9 @@ for (const puzzleNumber of puzzles) {
         ? par
         : (isV2 ? (hardMode ? 3.80 : 3.70) : (hardMode ? 3.58 : 3.50));
       const boardPar = Math.max(3.0, rawBoardPar);
-      const parOffset = C_PAR * (par - boardPar);
-      const rawParScore = 100 + parOffset + starterBonus;
+      const s4Max = 100 + outcomePoints(4, true, par) + starterBonus;
+      const brutalOffset = C_PAR * (par - Math.max(boardPar, 4.0));
+      const rawParScore = 100 + brutalOffset + starterBonus;
 
       for (const solved of solvedOptions) {
         for (const guessesUsed of guessesOptions) {
@@ -52,7 +53,8 @@ for (const puzzleNumber of puzzles) {
             const outcome = outcomePoints(guessesUsed, solved, par);
             const totalScore = actualSkill + outcome + starterBonus;
             const maxScore = guessesUsed === 1 ? holeInOneCeiling : s2Max;
-            const parScore = Math.min(rawParScore, maxScore - 1.0);
+            const parCap = Math.min(s4Max - 0.5, maxScore - 3.5);
+            const parScore = Math.min(rawParScore, parCap);
 
             const dyn = computeDynamicZones({
               maxScore,
@@ -277,6 +279,65 @@ for (const day of sampleDays) {
       `3g=${g3.total.toFixed(1)} (${g3Zone.label})`,
   );
 }
+
+console.log('\n===============================================================');
+console.log('PART 3: EMPIRICAL REACHABILITY ACROSS PUZZLE DAYS AND MODES');
+console.log('===============================================================');
+
+// Verify that every standard band (Troll, Bad, Meh, Good, Ultra, Godlike) has robust non-zero band widths
+const empiricalDays = [0, 10, 25, 50, 100, 150, 200, 250, 260, 280, 300, 350, 500];
+for (const day of empiricalDays) {
+  const p = drawPuzzle(day, { answers, starters, answersV2 });
+  for (const hardMode of [true, false]) {
+    for (const tookHouseStarter of [true, false]) {
+      const base = scoreDirectly({
+        guesses: tookHouseStarter ? [p.starter, p.answer] : ['roate', p.answer],
+        answer: p.answer,
+        tookHouseStarter,
+        hardMode,
+        puzzleNumber: day,
+      });
+
+      const dyn = computeDynamicZones({
+        maxScore: base.maxScore,
+        par: base.par,
+        starterBonus: base.starterBonus,
+        guessesUsed: 2,
+        totalScore: base.total,
+        parScore: base.parScore,
+        hardMode,
+      });
+
+      const godlike = dyn.zones.find((z) => z.id === 'godlike')!;
+      const ultra = dyn.zones.find((z) => z.id === 'ultra')!;
+      const good = dyn.zones.find((z) => z.id === 'good')!;
+      const meh = dyn.zones.find((z) => z.id === 'meh')!;
+      const bad = dyn.zones.find((z) => z.id === 'bad')!;
+      const troll = dyn.zones.find((z) => z.id === 'troll')!;
+
+      // Invariant: Non-zero band widths
+      if (godlike.maxScore - godlike.minScore < 0.5) {
+        throw new Error(`Godlike too narrow on day ${day}`);
+      }
+      if (ultra.maxScore - ultra.minScore < 2.0) {
+        throw new Error(`Ultra too narrow (${(ultra.maxScore - ultra.minScore).toFixed(2)}) on day ${day}`);
+      }
+      if (good.maxScore - good.minScore < 4.0) {
+        throw new Error(`Good too narrow on day ${day}`);
+      }
+      if (meh.maxScore - meh.minScore < 4.0) {
+        throw new Error(`Meh too narrow on day ${day}`);
+      }
+      if (bad.maxScore - bad.minScore < 4.0) {
+        throw new Error(`Bad too narrow on day ${day}`);
+      }
+      if (troll.maxScore - troll.minScore < 4.0) {
+        throw new Error(`Troll too narrow on day ${day}`);
+      }
+    }
+  }
+}
+console.log('All empirical days verified with strictly non-empty, wide bands across all modes.');
 
 console.log('\n===============================================================');
 console.log('ALL VERIFICATIONS COMPLETED SUCCESSFULLY WITH ZERO FAILURES.');

@@ -179,10 +179,12 @@ export function computeDynamicZones(options: DynamicZonesOptions = {}): DynamicZ
   const t3 = METER_MIN_SCORE + 0.80 * deltaBelow;
   const tPar = parScore;
 
-  // Above PAR: proportional interpolation of (sMax - parScore)
-  // Ultra (60%), Godlike (40%)
+  // Above PAR: Godlike reserves the apex tier (top 1.0 - 1.5 pts or 25% of headroom),
+  // leaving the remaining >= 75% (at least 3.0+ pts in production) for Ultra.
   const deltaAbove = Math.max(0.5, sMax - parScore);
-  const t4 = parScore + 0.60 * deltaAbove;
+  const targetGodlike = Math.min(1.5, Math.max(0.8, deltaAbove * 0.25));
+  const godlikeWidth = Math.min(targetGodlike, deltaAbove - 0.2);
+  const t4 = sMax - godlikeWidth;
 
   // Runtime Invariant 1: Godlike non-zero window (t4 < sMax)
   if (t4 >= sMax) {

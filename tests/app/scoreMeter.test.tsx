@@ -90,14 +90,14 @@ describe('computeDynamicZones', () => {
     expect(dyn.zones[3]?.maxScore).toBe(100);
 
     // DeltaAbove = 7.92 (100 -> 107.92)
-    // Ultra: 100 -> 104.75 (60%)
-    // Godlike: 104.75 -> 107.92 (40%)
+    // Ultra: 100 -> 106.42
+    // Godlike: 106.42 -> 107.92 (top 1.5 pts)
     expect(dyn.zones[4]?.id).toBe('ultra');
     expect(dyn.zones[4]?.minScore).toBe(100);
-    expect(dyn.zones[4]?.maxScore).toBeCloseTo(104.75, 1);
+    expect(dyn.zones[4]?.maxScore).toBeCloseTo(106.42, 1);
 
     expect(dyn.zones[5]?.id).toBe('godlike');
-    expect(dyn.zones[5]?.minScore).toBeCloseTo(104.75, 1);
+    expect(dyn.zones[5]?.minScore).toBeCloseTo(106.42, 1);
     expect(dyn.zones[5]?.maxScore).toBe(107.92);
 
     // Proportional visual widths sum to 100%
@@ -242,6 +242,7 @@ describe('computeDynamicZones', () => {
       starterBonus: scoreOwn.starterBonus,
       guessesUsed: scoreOwn.guessesUsed,
       totalScore: scoreOwn.total,
+      parScore: scoreOwn.parScore,
     });
     expect(scoreOwn.skill).toBe(100);
     expect(scoreOwn.total).toBeCloseTo(dynOwn.meterMaxScore, 2);
@@ -261,6 +262,7 @@ describe('computeDynamicZones', () => {
       starterBonus: scoreHouse3.starterBonus,
       guessesUsed: scoreHouse3.guessesUsed,
       totalScore: scoreHouse3.total,
+      parScore: scoreHouse3.parScore,
     });
     expect(scoreHouse3.skill).toBe(100);
     expect(scoreHouse3.total).toBeCloseTo(dynHouse3.meterMaxScore, 2);
@@ -280,6 +282,7 @@ describe('computeDynamicZones', () => {
       starterBonus: scoreHouse2.starterBonus,
       guessesUsed: scoreHouse2.guessesUsed,
       totalScore: scoreHouse2.total,
+      parScore: scoreHouse2.parScore,
     });
     expect(zoneForScore(scoreHouse2.total, dynHouse2.zones).id).toBe('godlike');
   }, 15000);
@@ -453,6 +456,112 @@ describe('HorizontalScoreMeter', () => {
 
     expect(screen.getByRole('meter')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('101.5');
+  });
+});
+
+describe('Band non-emptiness on real puzzle games', () => {
+  it('guarantees Game 260 has populated Ultra and Godlike, classifying user 3-guess round in Ultra', () => {
+    // User played: thole -> sheep -> sheen on Game 260 in Hard Mode with House Starter
+    const userGame = scoreDirectly({
+      guesses: ['thole', 'sheep', 'sheen'],
+      answer: 'sheen',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 260,
+    });
+
+    const dyn = computeDynamicZones({
+      maxScore: userGame.maxScore,
+      par: userGame.par,
+      starterBonus: userGame.starterBonus,
+      guessesUsed: userGame.guessesUsed,
+      totalScore: userGame.total,
+      parScore: userGame.parScore,
+      hardMode: true,
+    });
+
+    // 1. User's 3-guess round (102.80, 95.88% skill) lands in Ultra
+    expect(userGame.total).toBeCloseTo(102.8, 1);
+    expect(zoneForScore(userGame.total, dyn.zones).id).toBe('ultra');
+
+    // 2. Apex move (shear) lands in Godlike
+    const apexGame = scoreDirectly({
+      guesses: ['thole', 'shear', 'sheen'],
+      answer: 'sheen',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 260,
+    });
+    expect(zoneForScore(apexGame.total, dyn.zones).id).toBe('godlike');
+
+    // 3. Move #2 (shred) lands in Ultra
+    const shredGame = scoreDirectly({
+      guesses: ['thole', 'shred', 'sheen'],
+      answer: 'sheen',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 260,
+    });
+    expect(zoneForScore(shredGame.total, dyn.zones).id).toBe('ultra');
+
+    // 4. Standard 4-guess solve lands in Good
+    const fourGuessGame = scoreDirectly({
+      guesses: ['thole', 'sheep', 'sheer', 'sheen'],
+      answer: 'sheen',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 260,
+    });
+    expect(zoneForScore(fourGuessGame.total, dyn.zones).id).toBe('good');
+
+    // 5. Check headroom and zone widths
+    const ultra = dyn.zones.find((z) => z.id === 'ultra')!;
+    const godlike = dyn.zones.find((z) => z.id === 'godlike')!;
+    expect(godlike.maxScore - godlike.minScore).toBeGreaterThanOrEqual(1.0);
+    expect(ultra.maxScore - ultra.minScore).toBeGreaterThanOrEqual(3.0);
+  });
+
+  it('guarantees Day 0 has populated Ultra and Godlike bands', () => {
+    const coils = scoreDirectly({
+      guesses: ['clade', 'coils', 'curly'],
+      answer: 'curly',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 0,
+    });
+
+    const dyn = computeDynamicZones({
+      maxScore: coils.maxScore,
+      par: coils.par,
+      starterBonus: coils.starterBonus,
+      guessesUsed: coils.guessesUsed,
+      totalScore: coils.total,
+      parScore: coils.parScore,
+      hardMode: true,
+    });
+
+    // Coils achieves Godlike
+    expect(zoneForScore(coils.total, dyn.zones).id).toBe('godlike');
+
+    // Cirls (#2 move) achieves Ultra
+    const cirls = scoreDirectly({
+      guesses: ['clade', 'cirls', 'curly'],
+      answer: 'curly',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 0,
+    });
+    expect(zoneForScore(cirls.total, dyn.zones).id).toBe('ultra');
+
+    // Colin achieves Good
+    const colin = scoreDirectly({
+      guesses: ['clade', 'colin', 'curly'],
+      answer: 'curly',
+      tookHouseStarter: true,
+      hardMode: true,
+      puzzleNumber: 0,
+    });
+    expect(zoneForScore(colin.total, dyn.zones).id).toBe('good');
   });
 });
 

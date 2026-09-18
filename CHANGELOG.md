@@ -8,6 +8,11 @@ landed as pull requests against a live site.
 The site went up on Cloudflare Pages at [par-e7i.pages.dev](https://par-e7i.pages.dev). Everything
 here landed afterwards, each behind a pull request and a green quality gate.
 
+- **Guaranteed non-empty score bands across all games and modes**.
+  Eliminates score band emptiness across all puzzle days, game modes, and starter choices by recalibrating `parScore` and `t4`:
+  - **Re-anchor par to 4-guess ceiling**: Caps `parScore` at $S_4^{\max} - 0.5$ on generous boards, preventing board difficulty double-counting from compressing the headroom above par. Guarantees $\ge 4.5$ points of headroom below $S_{\text{apex}}$ on every board, keeping 4-guess solves in Good while allowing sharp 3-guess Birdies ($\ge 95\%$ skill, such as 102.8 on Game 260) to enter Ultra.
+  - **Calibrate Godlike to apex tier**: Reserves the top $1.0 - 1.5$ points of the headroom ($S_{\text{apex}} - w_G$) for Godlike, providing Ultra with a wide, robust $3.0 - 3.5+$ point span across discrete Wordle move distributions.
+  - **Exhaustive verification**: Verified across 347,844 unique game scenarios and live engine searches across puzzle dates in [`tools/par/simulate-zones.ts`](tools/par/simulate-zones.ts), with 100% invariant passes and strictly non-empty standard bands across all game modes. Added regression tests in [`tests/app/scoreMeter.test.tsx`](tests/app/scoreMeter.test.tsx).
 - **Reachable Godlike solutions, dynamic par separator, and board curve fitting** ([#42](https://github.com/k-electron/par/pull/42)).
   Eliminates mathematically unreachable score bands by calculating the true session apex $S_{\text{apex}}$ and dynamically
   calibrating the Good/Ultra boundary ($\text{parScore}$) according to board difficulty and game mode.

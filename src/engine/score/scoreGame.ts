@@ -216,8 +216,6 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     const isHard = scorer.ruleset.mode === 'hard';
     boardPar = isV2 ? (isHard ? 3.80 : 3.70) : (isHard ? 3.58 : 3.50);
   }
-  const parOffset = C_PAR * (par - boardPar);
-  const rawParScore = 100 + parOffset + starterBonus;
 
   // True achievable apex (maxScore)
   let maxScore: number;
@@ -234,8 +232,18 @@ export function scoreGame(game: GameToScore, scorer: PositionScorer): GameScore 
     maxScore = 100 + outcomePoints(2, true, par);
   }
 
-  // Ensure dynamic par maintains at least 1.0 point headroom below apex
-  const parScore = Math.min(rawParScore, maxScore - 1.0);
+  // In golf, par represents meeting expectations on a Par 4 hole.
+  // Solving in 4 guesses (par) with 100% deduction skill earns s4Max.
+  const s4Max = 100 + outcomePoints(4, true, par) + starterBonus;
+
+  // On brutal boards (boardPar > 4.0), rawParScore drops to reward meeting par under extreme difficulty.
+  // On generous boards (boardPar <= 4.0), parScore caps at s4Max - 0.5.
+  // This guarantees at least 4.0 pts of headroom below apex (maxScore >= s4Max + 4.0),
+  // keeping 4-guess solves in Good while allowing sharp 3-guess Birdies (>= 95% skill) to enter Ultra.
+  const brutalOffset = C_PAR * (par - Math.max(boardPar, 4.0));
+  const rawParScore = 100 + brutalOffset + starterBonus;
+  const parCap = Math.min(s4Max - 0.5, maxScore - 3.5);
+  const parScore = Math.min(rawParScore, parCap);
 
   return {
     skill,
