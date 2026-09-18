@@ -787,4 +787,23 @@ describe('scorer version support and dynamic zones in the explainer', () => {
     const section = await screen.findByTestId('explainer-round');
     expect(section).not.toHaveTextContent('(Your Zone)');
   });
+
+  it('provides an informative gameplay description for every performance zone', () => {
+    const explained = explainRound(ROUNDS.solved);
+    for (const zone of explained.zones.zones) {
+      expect(zone.description).toBeDefined();
+      expect(zone.description.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('explains performance zones in What the Numbers Mean section', () => {
+    render(
+      <ThemeProvider theme={theme}>
+        <ScoringExplainer open score={null} onClose={() => {}} />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText('Performance Zones')).toBeInTheDocument();
+    expect(screen.getByText(/4-stroke par/i)).toBeInTheDocument();
+  });
 });
+

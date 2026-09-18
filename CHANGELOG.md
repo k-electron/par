@@ -8,7 +8,13 @@ landed as pull requests against a live site.
 The site went up on Cloudflare Pages at [par-e7i.pages.dev](https://par-e7i.pages.dev). Everything
 here landed afterwards, each behind a pull request and a green quality gate.
 
-- **Guaranteed non-empty score bands across all games and modes**.
+- **Score explainer clarity improvements & documentation of non-empty band guarantees**.
+  Enhanced the player-facing "How this is scored" explainer and engineering documentation to make score bands and par calibration crystal clear:
+  - **Qualitative zone descriptions in dialog**: Added descriptive gameplay subtitles under each performance zone in [`ScoringExplainer.tsx`](src/app/ui/ScoringExplainer.tsx) and [`explainer.ts`](src/app/copy/explainer.ts), clearly conveying what play earns each tier (e.g. Godlike as the strategic apex, Ultra as beating par with sharp deduction, Good as solid 4-stroke par play).
+  - **Par anchor clarification**: Refined caption copy explaining how 4-stroke par serves as the benchmark anchor, why beating par with a 3-guess birdie enters Ultra, and how brutal boards lower the required threshold.
+  - **General explainer coverage**: Added a dedicated "Performance Zones" entry under "What the Numbers Mean" so players exploring the explainer without an active round understand the qualitative meter tiers.
+  - **Documentation of discrete deductions**: Added "Discrete Moves & The Non-Empty Bands Guarantee" to [`docs/scoring.md`](docs/scoring.md), explaining how discrete Wordle candidate deductions require $\ge 4.5$ points of headroom below $S_{\text{apex}}$ to guarantee non-empty bands across all games.
+- **Guaranteed non-empty score bands across all games and modes** ([#43](https://github.com/k-electron/par/pull/43)).
   Eliminates score band emptiness across all puzzle days, game modes, and starter choices by recalibrating `parScore` and `t4`:
   - **Re-anchor par to 4-guess ceiling**: Caps `parScore` at $S_4^{\max} - 0.5$ on generous boards, preventing board difficulty double-counting from compressing the headroom above par. Guarantees $\ge 4.5$ points of headroom below $S_{\text{apex}}$ on every board, keeping 4-guess solves in Good while allowing sharp 3-guess Birdies ($\ge 95\%$ skill, such as 102.8 on Game 260) to enter Ultra.
   - **Calibrate Godlike to apex tier**: Reserves the top $1.0 - 1.5$ points of the headroom ($S_{\text{apex}} - w_G$) for Godlike, providing Ultra with a wide, robust $3.0 - 3.5+$ point span across discrete Wordle move distributions.
