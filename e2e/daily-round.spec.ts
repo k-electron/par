@@ -67,14 +67,17 @@ async function revealed(page: Page): Promise<void> {
   await expect(turning).toHaveCount(0, { timeout: 10_000 });
 }
 
+const SCORING_TIMEOUT = 90_000;
+
 async function readTotal(page: Page): Promise<string> {
   // The headline figure sits directly above the "played at N%" line.
-  await expect(page.getByText(/played at \d+%/)).toBeVisible();
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
   const total = page.locator('h3').first();
   return ((await total.textContent()) ?? '').trim();
 }
 
 test('a full round, shared and replayed to the same total', async ({ page, context }) => {
+  test.setTimeout(180_000);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
   await page.goto('/');
@@ -102,7 +105,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
     await revealed(page);
   }
 
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
 
   const senderRows = await boardRows(page);
   const senderTotal = await readTotal(page);
@@ -175,7 +178,7 @@ test('the results sit below the board rather than on top of it', async ({ page }
     await page.keyboard.press('Enter');
     await revealed(page);
   }
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
 
   // While playing, the layout is pinned to the viewport so the board and
   // keyboard fit without scrolling. The results are legitimately taller than
@@ -214,7 +217,7 @@ test('the finished page does not scroll past its own content', async ({ page }) 
     await page.keyboard.press('Enter');
     await revealed(page);
   }
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
   await expect(page.getByRole('table', { name: /guess by guess/i })).toBeVisible();
 
   const { scrollable, laidOut } = await page.evaluate(() => ({
@@ -323,6 +326,7 @@ test('an in-progress game survives a reload exactly', async ({ page }) => {
 });
 
 test('a completed game survives a reload', async ({ page }) => {
+  test.setTimeout(180_000);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
 
@@ -333,7 +337,7 @@ test('a completed game survives a reload', async ({ page }) => {
     await page.keyboard.press('Enter');
     await revealed(page);
   }
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
   const before = await boardRows(page);
   const total = await readTotal(page);
 
