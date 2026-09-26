@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
 /**
  * The specification's end-to-end check, in one test:
@@ -76,8 +76,32 @@ async function readTotal(page: Page): Promise<string> {
   return ((await total.textContent()) ?? '').trim();
 }
 
+async function pinDate(target: BrowserContext): Promise<void> {
+  await target.addInitScript(() => {
+    const FIXED_TIME = new Date('2026-09-18T12:00:00Z').getTime();
+    const OriginalDate = Date;
+    // @ts-expect-error Mock Date for deterministic e2e runs
+    globalThis.Date = class extends OriginalDate {
+      constructor(...args: unknown[]) {
+        if (args.length === 0) {
+          super(FIXED_TIME);
+        } else {
+          // @ts-expect-error pass through
+          super(...args);
+        }
+      }
+      static override now() {
+        return FIXED_TIME;
+      }
+    };
+  });
+}
+
+test.beforeEach(async ({ context }) => {
+  await pinDate(context);
+});
+
 test('a full round, shared and replayed to the same total', async ({ page, context }) => {
-  test.setTimeout(180_000);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
   await page.goto('/');
@@ -142,6 +166,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   // 4. Open it in a genuinely clean profile — no storage, no history, nothing
   //    that could make the score come out right by remembering it.
   const clean = await page.context().browser()!.newContext();
+  await pinDate(clean);
   await clean.grantPermissions(['clipboard-read', 'clipboard-write']);
   const recipient = await clean.newPage();
   await recipient.goto(link);
@@ -326,7 +351,6 @@ test('an in-progress game survives a reload exactly', async ({ page }) => {
 });
 
 test('a completed game survives a reload', async ({ page }) => {
-  test.setTimeout(180_000);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start' }).click();
 
