@@ -152,3 +152,8 @@ Settings for Cloudflare Pages:
 
 - **TypeScript pinned to 6.0.x**: `typescript-eslint` 8 requires `<6.1.0`. Update when upstream adds TypeScript 7 support.
 - **MUI 9 system props**: System props (`alignItems`, `fontWeight`, `textAlign`) must be declared within `sx`.
+
+## License
+
+[MIT](LICENSE)
+

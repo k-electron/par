@@ -2,10 +2,11 @@
   "name": "par",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "A daily word game scored on the quality of your decisions rather than your luck.",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=26"
   },
   "scripts": {
     "dev": "vite",

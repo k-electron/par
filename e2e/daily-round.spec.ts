@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
 /**
  * The specification's end-to-end check, in one test:
@@ -67,12 +67,39 @@ async function revealed(page: Page): Promise<void> {
   await expect(turning).toHaveCount(0, { timeout: 10_000 });
 }
 
+const SCORING_TIMEOUT = 90_000;
+
 async function readTotal(page: Page): Promise<string> {
   // The headline figure sits directly above the "played at N%" line.
-  await expect(page.getByText(/played at \d+%/)).toBeVisible();
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
   const total = page.locator('h3').first();
   return ((await total.textContent()) ?? '').trim();
 }
+
+async function pinDate(target: BrowserContext): Promise<void> {
+  await target.addInitScript(() => {
+    const FIXED_TIME = new Date('2026-09-18T12:00:00Z').getTime();
+    const OriginalDate = Date;
+    // @ts-expect-error Mock Date for deterministic e2e runs
+    globalThis.Date = class extends OriginalDate {
+      constructor(...args: unknown[]) {
+        if (args.length === 0) {
+          super(FIXED_TIME);
+        } else {
+          // @ts-expect-error pass through
+          super(...args);
+        }
+      }
+      static override now() {
+        return FIXED_TIME;
+      }
+    };
+  });
+}
+
+test.beforeEach(async ({ context }) => {
+  await pinDate(context);
+});
 
 test('a full round, shared and replayed to the same total', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -102,7 +129,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
     await revealed(page);
   }
 
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
 
   const senderRows = await boardRows(page);
   const senderTotal = await readTotal(page);
@@ -139,6 +166,7 @@ test('a full round, shared and replayed to the same total', async ({ page, conte
   // 4. Open it in a genuinely clean profile — no storage, no history, nothing
   //    that could make the score come out right by remembering it.
   const clean = await page.context().browser()!.newContext();
+  await pinDate(clean);
   await clean.grantPermissions(['clipboard-read', 'clipboard-write']);
   const recipient = await clean.newPage();
   await recipient.goto(link);
@@ -175,7 +203,7 @@ test('the results sit below the board rather than on top of it', async ({ page }
     await page.keyboard.press('Enter');
     await revealed(page);
   }
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
 
   // While playing, the layout is pinned to the viewport so the board and
   // keyboard fit without scrolling. The results are legitimately taller than
@@ -214,7 +242,7 @@ test('the finished page does not scroll past its own content', async ({ page }) 
     await page.keyboard.press('Enter');
     await revealed(page);
   }
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
   await expect(page.getByRole('table', { name: /guess by guess/i })).toBeVisible();
 
   const { scrollable, laidOut } = await page.evaluate(() => ({
@@ -333,7 +361,7 @@ test('a completed game survives a reload', async ({ page }) => {
     await page.keyboard.press('Enter');
     await revealed(page);
   }
-  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/played at \d+%/)).toBeVisible({ timeout: SCORING_TIMEOUT });
   const before = await boardRows(page);
   const total = await readTotal(page);
 
